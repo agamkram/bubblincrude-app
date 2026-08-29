@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v48";
+  const APP_VERSION = "v49";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -325,9 +325,9 @@
       if (o.units) Object.assign(state.units, o.units);
       if (o.colorMode) state.colorMode = o.colorMode;
       if (Array.isArray(o.compareIds)) state.compareIds = o.compareIds.slice(0, 3);
-      /* Selection is deliberately not restored — the app should open on the
-         map, not on whatever stream was tapped last session. A /stream/:id
-         URL still selects, because parseUrl() runs after this. */
+      /* Map selection is session-only — never restore streamId. Refresh,
+         close, and reopen should open a clean map. /stream/:id still
+         selects, because parseUrl() runs after this. */
     } catch (_) {}
   }
   function saveStorage() {
