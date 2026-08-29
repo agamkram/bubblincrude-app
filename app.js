@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v43";
+  const APP_VERSION = "v44";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -1412,14 +1412,8 @@
     updateMarkers();
     renderSearchResults();
     saveStorage();
-    /* Debounce the camera so iOS keyboard resizes and per-keystroke fits
-       don’t fight each other into a blank world view. On phone while the
-       field is focused, skip the camera — the results list is the UI. */
     clearTimeout(state._fitFilterTimer);
-    state._fitFilterTimer = setTimeout(() => {
-      if (state._searchFocused && window.innerWidth <= 699) return;
-      fitToFiltered(true);
-    }, 180);
+    state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
   }
 
   function rankedSearchHits() {
@@ -2362,7 +2356,6 @@
       setTimeout(() => {
         state._searchFocused = false;
         if (!state.query.trim()) renderSearchResults();
-        else if (window.innerWidth <= 699) fitToFiltered(true);
       }, 180);
     });
     el.search.addEventListener("keydown", (e) => {
@@ -2523,9 +2516,6 @@
           const key = sz.x + "x" + sz.y;
           if (key !== lastMapSize) {
             lastMapSize = key;
-            /* Keyboard open/close on phone resizes the map. While search is
-               focused the results list is the UI — don’t yank the camera. */
-            if (state._searchFocused && window.innerWidth <= 699) return;
             if (state.query.trim()) fitToFiltered(false);
             else fitMapFull(false);
           }
