@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 67;
+  --bc-css: 68;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -1647,6 +1647,23 @@ html:not(.pwa-standalone).app-home .compare-tray {
 .about-block li {
   color: var(--text-dim);
   font-size: 14px;
+}
+.glossary {
+  margin: 0;
+  display: grid;
+  gap: 10px 0;
+}
+.glossary dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.glossary dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
 }
 .flag-list {
   display: grid;

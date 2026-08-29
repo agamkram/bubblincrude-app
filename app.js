@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v67";
+  const APP_VERSION = "v68";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -2100,6 +2100,25 @@
     el.viewAbout.innerHTML =
       '<h2 class="page-title">About</h2>' +
       '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
+      '<div class="about-block"><h3>Glossary</h3><dl class="glossary">' +
+      "<dt>API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Condensate ≥39°, light 31–39°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°.</dd>" +
+      "<dt>Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to refine. This app’s sweet cutoff is ≤0.5 wt% S.</dd>" +
+      "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher sulfur. Independent of light/heavy (API).</dd>" +
+      "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
+      "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
+      "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
+      "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>" +
+      "<dt>Play</dt><dd>A repeatable exploration/development concept within a basin (Eagle Ford shale, Bakken, Vaca Muerta).</dd>" +
+      "<dt>Assay</dt><dd>Lab characterization of a crude: gravity, sulfur, metals, yields, distillation, SARA, and related properties.</dd>" +
+      "<dt>Blend</dt><dd>A commercial stream mixed from more than one field or grade to meet a quality or logistics specification.</dd>" +
+      "<dt>Dilbit</dt><dd>Diluted bitumen — extra-heavy oil mixed with light diluent so it can flow in a pipeline.</dd>" +
+      "<dt>SCO / synthetic</dt><dd>Synthetic crude oil from upgrading bitumen or heavy oil (e.g. Syncrude), usually lighter and sweeter than the feedstock.</dd>" +
+      "<dt>SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil.</dd>" +
+      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises; shapes naphtha, distillate, VGO, and resid yields.</dd>" +
+      "<dt>Resid</dt><dd>The heavy bottom fraction left after distillation; high resid often means more coking or asphalt-oriented value.</dd>" +
+      "<dt>Metals (Ni, V)</dt><dd>Nickel and vanadium in the oil. They poison refining catalysts and rise with heavier, sourer crudes.</dd>" +
+      "<dt>TAN</dt><dd>Total acid number — organic acidity. Higher TAN can mean corrosion risk in refining equipment.</dd>" +
+      "</dl></div>" +
       '<div class="about-block"><h3>Quality flags</h3><ul class="flag-list">' +
       "<li><strong>measured</strong> — from a cited assay sample or lab report for that stream.</li>" +
       "<li><strong>typical</strong> — widely published representative value for the commercial grade.</li>" +
