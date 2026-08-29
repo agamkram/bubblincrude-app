@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v13";
+  const APP_VERSION = "v14";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -481,22 +481,25 @@
   }
 
   /* —— Map —— */
-  /* Pin-to-pin belt: Escalante 45.8°S to ANS 70.3°N. Polar ice has no
-     streams. Tight pad so Reset fills the pane with crude, not Arctic Ocean. */
+  /* Cut to the pin belt. ANS 70.3°N / Escalante 45.8°S / Gippsland 148°E.
+     A ±180 box is treated as “the whole world” by Leaflet, so maxBounds
+     would not stop a drag into Antarctica — use the real lon span. */
   function crudeBeltBounds() {
     let south = 90;
     let north = -90;
+    let west = 180;
+    let east = -180;
     for (const s of DATA.streams) {
-      if (s.lat == null) continue;
+      if (s.lat == null || s.lon == null) continue;
       if (s.lat < south) south = s.lat;
       if (s.lat > north) north = s.lat;
+      if (s.lon < west) west = s.lon;
+      if (s.lon > east) east = s.lon;
     }
-    south = Math.max(south - 3, -85);
-    north = Math.min(north + 2, 85);
-    return [
-      [south, -180],
-      [north, 180],
-    ];
+    return L.latLngBounds(
+      [south - 1.5, west - 6],
+      [north + 1.5, east + 6]
+    );
   }
   const WORLD_BOUNDS = crudeBeltBounds();
 
@@ -504,23 +507,36 @@
     if (!state.map) return;
     const z = state.map.getZoom();
     state._fullZoom = z;
-    /* Floor = crude-belt framing so zooming out bottoms out there (same as Reset). */
     state.map.setMinZoom(z);
     state._fittingFull = false;
+  }
+
+  function stayInBelt() {
+    if (!state.map || state._fittingFull || state._clamping) return;
+    const belt = WORLD_BOUNDS;
+    const view = state.map.getBounds();
+    if (belt.contains(view)) return;
+    state._clamping = true;
+    const need = state.map.getBoundsZoom(belt, true);
+    if (state.map.getZoom() + 0.001 < need) {
+      state.map.setZoom(need, { animate: false });
+    }
+    state.map.panInsideBounds(belt, { animate: false });
+    state._clamping = false;
   }
 
   function fitMapFull(animate) {
     if (!state.map) return;
     state._fittingFull = true;
     state.map.invalidateSize({ pan: false });
-    /* Unlock so the fit can settle, then lock that zoom as the floor. */
     state.map.setMinZoom(0);
-    const bounds = L.latLngBounds(WORLD_BOUNDS);
-    /* inside=true: the belt COVERS the pane. Showing the whole bounds would
-       leave polar ice in the leftover height of a tall phone. */
-    const zoom = state.map.getBoundsZoom(bounds, true);
-    const center = bounds.getCenter();
-    const finish = () => lockFullZoomFloor();
+    const belt = WORLD_BOUNDS;
+    const zoom = state.map.getBoundsZoom(belt, true);
+    const center = belt.getCenter();
+    const finish = () => {
+      lockFullZoomFloor();
+      stayInBelt();
+    };
     if (animate) {
       let settled = false;
       const once = () => {
@@ -540,7 +556,7 @@
 
   function initMap() {
     if (state.map || !window.L) return;
-    const worldBounds = L.latLngBounds(WORLD_BOUNDS);
+    const belt = WORLD_BOUNDS;
     const map = L.map("map", {
       worldCopyJump: false,
       zoomControl: true,
@@ -549,7 +565,7 @@
       maxZoom: 10,
       zoomSnap: 0,
       zoomDelta: 0.5,
-      maxBounds: worldBounds,
+      maxBounds: belt,
       maxBoundsViscosity: 1.0,
     });
 
@@ -558,14 +574,16 @@
       subdomains: "abcd",
       maxZoom: 19,
       noWrap: true,
-      bounds: worldBounds,
+      bounds: belt,
     }).addTo(map);
 
     state.map = map;
     state.markerLayer = L.layerGroup().addTo(map);
-    /* Zoomed all the way out → same full-world framing as Reset (re-centers if panned). */
+    map.on("drag", stayInBelt);
+    map.on("moveend", stayInBelt);
     map.on("zoomend", () => {
       if (!state.map || state._fittingFull) return;
+      stayInBelt();
       const floor = state._fullZoom;
       if (floor == null) return;
       if (state.map.getZoom() <= floor + 0.01) fitMapFull(true);
