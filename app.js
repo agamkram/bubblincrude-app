@@ -14,7 +14,7 @@
    * paste into CARTO_KEY when the order arrives (https://carto.com/basemaps/apikey/).
    * SpaceXplore’s old key still watermarked in tests — leave blank until the new one lands.
    */
-  const CARTO_KEY = ""; // paste key here
+  const CARTO_KEY = "cb1_27ow_1_73656a41346af19fc01d4d26"; // SpaceXplore basemap key — clears watermark here too
   /* dark_nolabels — no continent/country place names on the basemap */
   const MAP_TILE_URL =
     "https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png" +
@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v38";
+  const APP_VERSION = "v39";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
