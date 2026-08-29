@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v44";
+  const APP_VERSION = "v45";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -2393,6 +2393,7 @@
     $("btn-units")?.addEventListener("click", (e) => {
       e.stopPropagation();
       const open = !el.unitsPopover.classList.contains("hidden");
+      if (!open) placePopover(el.unitsPopover);
       el.unitsPopover.classList.toggle("hidden", open);
       $("menu-popover")?.classList.add("hidden");
       $("btn-units").setAttribute("aria-expanded", open ? "false" : "true");
@@ -2408,6 +2409,14 @@
       render();
     });
 
+    function placePopover(pop) {
+      if (!pop) return;
+      const tb = document.querySelector(".topbar");
+      if (!tb) return;
+      /* Use the real topbar bottom — --topbar-h is stale vs phone title/search. */
+      pop.style.top = Math.ceil(tb.getBoundingClientRect().bottom) + "px";
+    }
+
     $("btn-add-stream")?.addEventListener("click", openPicker);
     $("btn-open-compare")?.addEventListener("click", () => navigate("compare"));
     $("btn-filters")?.addEventListener("click", openFiltersSheet);
@@ -2415,6 +2424,7 @@
     $("btn-menu")?.addEventListener("click", (e) => {
       e.stopPropagation();
       const open = !menuPop.classList.contains("hidden");
+      if (!open) placePopover(menuPop);
       menuPop.classList.toggle("hidden", open);
       el.unitsPopover.classList.add("hidden");
       $("btn-menu").setAttribute("aria-expanded", open ? "false" : "true");
@@ -2422,6 +2432,7 @@
     menuPop?.addEventListener("click", (e) => e.stopPropagation());
     $("menu-units")?.addEventListener("click", () => {
       menuPop.classList.add("hidden");
+      placePopover(el.unitsPopover);
       el.unitsPopover.classList.remove("hidden");
       $("btn-units").setAttribute("aria-expanded", "true");
     });
