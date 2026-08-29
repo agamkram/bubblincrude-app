@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v68";
+  const APP_VERSION = "v80";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -196,8 +196,6 @@
     el.pickerModal = $("picker-modal");
     el.pickerList = $("picker-list");
     el.pickerSearch = $("picker-search");
-    el.cutDrawer = $("cut-drawer");
-    el.cutDrawerBody = $("cut-drawer-body");
     el.apiMin = $("api-min");
     el.apiMax = $("api-max");
     el.apiFill = $("api-fill");
@@ -369,11 +367,24 @@
     if (opts.streamId) state.streamId = opts.streamId;
     if (opts.compareIds) state.compareIds = opts.compareIds.slice(0, 3);
     state.route = route;
-    const url = buildUrl({ route, streamId: state.streamId });
+    let url = buildUrl({ route, streamId: state.streamId });
+    if (opts.hash) url += opts.hash.startsWith("#") ? opts.hash : "#" + opts.hash;
     if (opts.replace) history.replaceState(null, "", url);
     else history.pushState(null, "", url);
     saveStorage();
     render();
+  }
+
+  function scrollToCutHash() {
+    const hash = location.hash || "";
+    if (!hash.startsWith("#cut-")) return;
+    const node = document.getElementById(hash.slice(1));
+    if (!node) return;
+    requestAnimationFrame(() => {
+      node.scrollIntoView({ behavior: "smooth", block: "start" });
+      node.classList.add("is-target");
+      window.setTimeout(() => node.classList.remove("is-target"), 1600);
+    });
   }
 
   /* —— Filtering —— */
@@ -1130,11 +1141,13 @@
   }
 
   function yieldThermo(yields) {
+    /* Assay yields stay four coarse bins; each row opens the representative
+       teaching cut for that boiling window. */
     const rows = [
-      { id: "naphtha", label: "Naphtha", sub: "<150°C", key: "naphtha" },
-      { id: "middle", label: "Middle distillate", sub: "150–350°C", key: "middle" },
-      { id: "vgo", label: "Gas oil / VGO", sub: "350–550°C", key: "vgo" },
-      { id: "resid", label: "Resid", sub: ">550°C", key: "resid" },
+      { id: "heavy-naphtha", label: "Naphtha", sub: "<180°C", key: "naphtha" },
+      { id: "diesel", label: "Middle distillate", sub: "180–375°C", key: "middle" },
+      { id: "hvgo", label: "Gas oil / VGO", sub: "375–550°C", key: "vgo" },
+      { id: "vac-resid", label: "Resid", sub: ">550°C", key: "resid" },
     ];
     let html = '<div class="thermo">';
     for (const r of rows) {
@@ -1154,6 +1167,77 @@
         "</span></button>";
     }
     html += "</div>";
+    return html;
+  }
+
+  function cutTempSpan(c) {
+    const lo = tempLabel(c.boil_c[0]);
+    const hi = c.boil_c[1] >= 1000 ? "+" : tempLabel(c.boil_c[1]);
+    return lo + "–" + hi + " " + tempUnit();
+  }
+
+  function streamNameList(ids) {
+    return ids
+      .map((id) => escapeHtml((getStream(id) || {}).name || id))
+      .join(", ");
+  }
+
+  function cutStoryHtml(c) {
+    const compounds = DATA.compounds.filter((m) => m.found_in === c.id);
+    let html = "";
+    html += '<div class="cut-eyebrow">' + escapeHtml(c.tower) + "</div>";
+    html += "<h3>" + escapeHtml(c.name) + "</h3>";
+    html +=
+      '<div class="cut-meta">' +
+      cutTempSpan(c) +
+      " · " +
+      escapeHtml(c.carbon_range) +
+      "</div>";
+    html += '<p class="cut-blurb">' + escapeHtml(c.note) + "</p>";
+
+    html += '<div class="cut-section"><div class="cut-section-label">You\'ll recognize</div>';
+    html += '<ul class="cut-list">';
+    for (const p of c.products) html += "<li>" + escapeHtml(p) + "</li>";
+    html += "</ul></div>";
+
+    html += '<div class="cut-section"><div class="cut-section-label">Typical constituents</div>';
+    html += '<div class="cut-chips">';
+    for (const k of c.classes) html += '<span class="chip">' + escapeHtml(k) + "</span>";
+    html += "</div></div>";
+
+    html += '<div class="cut-section"><div class="cut-section-label">How refiners get there</div>';
+    html += '<ul class="cut-list">';
+    for (const p of c.processes) html += "<li>" + escapeHtml(p) + "</li>";
+    html += "</ul></div>";
+
+    html +=
+      '<div class="cut-section cut-hhv"><div class="cut-section-label">Higher heating value (HHV)</div>' +
+      '<p class="cut-hhv-note">Heat released when this cut burns completely, measured per kilogram.</p>' +
+      '<div class="cut-hhv-val">' +
+      hvLabel(c.typical_hhv_mj_kg) +
+      " " +
+      hvUnit() +
+      "</div></div>";
+
+    html += '<div class="cut-section"><div class="cut-section-label">Streams typically rich</div>';
+    html += '<p class="cut-rich">' + streamNameList(c.rich_in) + "</p></div>";
+    html += '<div class="cut-section"><div class="cut-section-label">Streams typically poor</div>';
+    html += '<p class="cut-poor">' + streamNameList(c.poor_in) + "</p></div>";
+
+    if (compounds.length) {
+      html += '<div class="cut-section"><div class="cut-section-label">Example molecules</div>';
+      html += '<div class="cut-chips">';
+      for (const m of compounds) {
+        html +=
+          '<span class="chip">' +
+          escapeHtml(m.name) +
+          " · " +
+          escapeHtml(m.formula) +
+          "</span>";
+      }
+      html += "</div></div>";
+    }
+
     return html;
   }
 
@@ -1234,7 +1318,10 @@
       });
     });
     root.querySelectorAll("[data-cut]").forEach((btn) => {
-      btn.addEventListener("click", () => openCutDrawer(btn.getAttribute("data-cut")));
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-cut");
+        if (id) navigate("cuts", { hash: "#cut-" + id });
+      });
     });
   }
 
@@ -2015,51 +2102,16 @@
 
   function renderCuts() {
     let html =
-      '<h2 class="page-title">Cuts</h2><p class="page-lead">Standard boiling-range fractions. Cuts are ranges, not molecules. Featured crudes show which streams are typically rich or poor in each cut.</p>';
+      '<h2 class="page-title">Cuts</h2><p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. Each card below is one of those slices: temperature, carbon size, what products come from it, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
     html += '<div class="cut-grid">';
     for (const c of DATA.cuts) {
-      const lo = tempLabel(c.boil_c[0]);
-      const hi = c.boil_c[1] >= 1000 ? "+" : tempLabel(c.boil_c[1]);
-      html += '<article class="cut-card">';
-      html += "<h3>" + escapeHtml(c.name) + "</h3>";
-      html +=
-        '<div class="cut-meta">' +
-        lo +
-        "–" +
-        hi +
-        " " +
-        tempUnit() +
-        " · " +
-        escapeHtml(c.carbon_range) +
-        "</div>";
-      html += "<p>" + escapeHtml(c.note) + "</p>";
-      html +=
-        "<p style=\"font-size:12px;color:var(--text-mute)\">Typical HHV " +
-        hvLabel(c.typical_hhv_mj_kg) +
-        " " +
-        hvUnit() +
-        " (for this cut only)</p>";
-      html +=
-        '<p style="font-size:12px;margin:0"><strong style="color:var(--teal)">Rich:</strong> ' +
-        c.rich_in.map((id) => escapeHtml((getStream(id) || {}).name || id)).join(", ") +
-        "</p>";
-      html +=
-        '<p style="font-size:12px;margin:6px 0 0"><strong style="color:var(--amber)">Poor:</strong> ' +
-        c.poor_in.map((id) => escapeHtml((getStream(id) || {}).name || id)).join(", ") +
-        "</p>";
-      html +=
-        '<button type="button" class="btn btn-ghost" style="margin-top:10px" data-cut="' +
-        escapeHtml(c.id) +
-        '">Open cut details</button>';
+      html += '<article class="cut-card" id="cut-' + escapeHtml(c.id) + '">';
+      html += cutStoryHtml(c);
       html += "</article>";
     }
     html += "</div>";
-    html +=
-      '<p class="page-lead" style="margin-top:24px">Bridge example: <a class="found-chip" href="/molecules">Benzene</a> → naphtha cut → Bakken naphtha yield. A crude is never a single molecule.</p>';
     el.viewCuts.innerHTML = html;
-    el.viewCuts.querySelectorAll("[data-cut]").forEach((btn) => {
-      btn.addEventListener("click", () => openCutDrawer(btn.getAttribute("data-cut")));
-    });
+    scrollToCutHash();
   }
 
   function renderMolecules() {
@@ -2087,7 +2139,11 @@
       html +=
         "<td>" +
         (cut
-          ? '<a class="found-chip" href="/cuts">' + escapeHtml(cut.name) + "</a>"
+          ? '<a class="found-chip" href="/cuts#cut-' +
+            escapeHtml(cut.id) +
+            '">' +
+            escapeHtml(cut.name) +
+            "</a>"
           : "—") +
         "</td>";
       html += "</tr>";
@@ -2102,6 +2158,7 @@
       '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
       '<div class="about-block"><h3>Glossary</h3><dl class="glossary">' +
       "<dt>API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Condensate ≥39°, light 31–39°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°.</dd>" +
+      "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons (≥39°API here), often from gas or gas-condensate fields. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit).</dd>" +
       "<dt>Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to refine. This app’s sweet cutoff is ≤0.5 wt% S.</dd>" +
       "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher sulfur. Independent of light/heavy (API).</dd>" +
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
@@ -2114,8 +2171,9 @@
       "<dt>Dilbit</dt><dd>Diluted bitumen — extra-heavy oil mixed with light diluent so it can flow in a pipeline.</dd>" +
       "<dt>SCO / synthetic</dt><dd>Synthetic crude oil from upgrading bitumen or heavy oil (e.g. Syncrude), usually lighter and sweeter than the feedstock.</dd>" +
       "<dt>SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil.</dd>" +
-      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises; shapes naphtha, distillate, VGO, and resid yields.</dd>" +
-      "<dt>Resid</dt><dd>The heavy bottom fraction left after distillation; high resid often means more coking or asphalt-oriented value.</dd>" +
+      "<dt>HHV</dt><dd>Higher heating value — heat released when a fuel burns completely, per kilogram. HHV also counts the heat you get if water vapor in the exhaust is cooled back to liquid; LHV leaves that out. More hydrogen per carbon means higher HHV, so light cuts run hotter per kg than heavy residue.</dd>" +
+      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises. The Cuts page walks the full CDU → VDU slate (fuel gas through vacuum resid).</dd>" +
+      "<dt>Resid</dt><dd>Heavy bottoms after distillation. Atmospheric resid is CDU bottoms; vacuum resid is what remains after LVGO/HVGO are taken — coking, asphalt, or resid conversion feed.</dd>" +
       "<dt>Metals (Ni, V)</dt><dd>Nickel and vanadium in the oil. They poison refining catalysts and rise with heavier, sourer crudes.</dd>" +
       "<dt>TAN</dt><dd>Total acid number — organic acidity. Higher TAN can mean corrosion risk in refining equipment.</dd>" +
       "</dl></div>" +
@@ -2142,51 +2200,6 @@
       '<div style="margin-bottom:12px"><a class="btn btn-ghost" href="/">← Map</a></div>' +
       inspectorHtml(s);
     bindInspectorEvents(el.viewStream);
-  }
-
-  function openCutDrawer(cutId) {
-    const cut = DATA.cuts.find((c) => c.id === cutId);
-    if (!cut) return;
-    const compounds = DATA.compounds.filter((m) => m.found_in === cut.id).slice(0, 8);
-    let html = '<button type="button" class="btn btn-text" data-close-drawer style="margin-bottom:12px">Close</button>';
-    html += "<h2 style=\"margin:0 0 6px\">" + escapeHtml(cut.name) + "</h2>";
-    html +=
-      '<p style="color:var(--text-dim);font-size:13px">' +
-      tempLabel(cut.boil_c[0]) +
-      "–" +
-      (cut.boil_c[1] >= 1000 ? "+" : tempLabel(cut.boil_c[1])) +
-      " " +
-      tempUnit() +
-      " · " +
-      escapeHtml(cut.carbon_range) +
-      "</p>";
-    html +=
-      '<div class="block"><div class="block-title">Typical classes</div><div class="note-box">' +
-      escapeHtml(cut.classes.join(", ")) +
-      "</div></div>";
-    html +=
-      '<div class="block"><div class="block-title">Example molecules</div><div class="related-list">';
-    for (const m of compounds) {
-      html += '<span class="chip">' + escapeHtml(m.name) + " · " + escapeHtml(m.formula) + "</span>";
-    }
-    html += "</div></div>";
-    html +=
-      '<div class="block"><div class="block-title">Typical heating value (this cut only)</div><div class="note-box" style="font-family:var(--mono)">' +
-      hvLabel(cut.typical_hhv_mj_kg) +
-      " " +
-      hvUnit() +
-      "</div></div>";
-    html +=
-      '<p class="note-box">' +
-      escapeHtml(cut.note) +
-      " Cuts are boiling ranges, not single compounds.</p>";
-    el.cutDrawerBody.innerHTML = html;
-    el.cutDrawer.classList.remove("hidden");
-    el.cutDrawerBody.querySelector("[data-close-drawer]")?.addEventListener("click", closeCutDrawer);
-  }
-
-  function closeCutDrawer() {
-    el.cutDrawer.classList.add("hidden");
   }
 
   function openInspectorSheet() {
@@ -2631,10 +2644,6 @@
     document.querySelectorAll("[data-close-modal]").forEach((n) => {
       n.addEventListener("click", () => el.pickerModal.classList.add("hidden"));
     });
-    document.querySelectorAll("[data-close-drawer]").forEach((n) => {
-      n.addEventListener("click", closeCutDrawer);
-    });
-    el.cutDrawer.querySelector(".drawer-backdrop")?.addEventListener("click", closeCutDrawer);
 
     el.pickerSearch?.addEventListener("input", () => renderPickerList(el.pickerSearch.value));
 
@@ -2648,7 +2657,10 @@
       else if (href.startsWith("/stream/"))
         navigate("stream", { streamId: decodeURIComponent(href.slice("/stream/".length).split("?")[0]) });
       else if (href.startsWith("/compare")) navigate("compare");
-      else if (href === "/cuts" || href.startsWith("/cuts?")) navigate("cuts");
+      else if (href === "/cuts" || href.startsWith("/cuts?") || href.startsWith("/cuts#")) {
+        const hashIdx = href.indexOf("#");
+        navigate("cuts", hashIdx >= 0 ? { hash: href.slice(hashIdx) } : {});
+      }
       else if (href === "/molecules" || href.startsWith("/molecules?")) navigate("molecules");
       else if (href === "/about" || href.startsWith("/about?")) navigate("about");
     });
@@ -2665,7 +2677,6 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closeSheets();
-        closeCutDrawer();
         el.pickerModal.classList.add("hidden");
         el.unitsPopover.classList.add("hidden");
       }
