@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v39";
+  const APP_VERSION = "v40";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -701,11 +701,13 @@
     state.markers.clear();
 
     const list = filteredStreams();
-    const hasSel = !!state.streamId;
+    /* Only dim when the selected stream is still on the map. Otherwise a
+       leftover selection (e.g. Merey + search “wti”) fades every match. */
+    const selInList = list.some((s) => s.id === state.streamId);
 
     for (const s of list) {
-      const selected = s.id === state.streamId;
-      const dimmed = hasSel && !selected;
+      const selected = selInList && s.id === state.streamId;
+      const dimmed = selInList && !selected;
       const marker = L.marker([s.lat, s.lon], {
         icon: makeIcon(s, selected, dimmed),
         title: s.name,
@@ -739,6 +741,34 @@
       marker.addTo(state.markerLayer);
       state.markers.set(s.id, marker);
     }
+  }
+
+  /* Search/filter hits are often a few 8px dots on a world map — unreadable
+     unless we frame them. Empty query returns to the full belt. */
+  function fitToFiltered(animate) {
+    if (!state.map) return;
+    const list = filteredStreams().filter((s) => s.lat != null && s.lon != null);
+    if (!list.length) return;
+    if (!state.query.trim()) {
+      fitMapFull(animate);
+      return;
+    }
+    const bounds = L.latLngBounds(list.map((s) => [s.lat, s.lon]));
+    const pad = list.length <= 2 ? 0.8 : 0.35;
+    state._fittingFull = true;
+    state.map.once("moveend", () => {
+      state._fittingFull = false;
+      applyDragLock();
+    });
+    state.map.fitBounds(bounds.pad(pad), {
+      animate: !!animate,
+      maxZoom: 6,
+      padding: [28, 28],
+    });
+    setTimeout(() => {
+      state._fittingFull = false;
+      applyDragLock();
+    }, 450);
   }
 
   function selectStream(id, fly) {
@@ -1373,6 +1403,7 @@
     history.replaceState(null, "", buildUrl());
     renderActiveChips();
     updateMarkers();
+    fitToFiltered(true);
     saveStorage();
   }
 
