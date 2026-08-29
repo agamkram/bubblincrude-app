@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v16";
+  const APP_VERSION = "v17";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -491,18 +491,17 @@
   function crudeBeltBounds() {
     let south = 90;
     let north = -90;
-    let west = 180;
-    let east = -180;
     for (const s of DATA.streams) {
-      if (s.lat == null || s.lon == null) continue;
+      if (s.lat == null) continue;
       if (s.lat < south) south = s.lat;
       if (s.lat > north) north = s.lat;
-      if (s.lon < west) west = s.lon;
-      if (s.lon > east) east = s.lon;
     }
+    /* Longitude runs the whole way round: cutting it to the pin span clipped
+       the Pacific rim. Latitude is what gets cut. Leaflet ignores a ±180
+       maxBounds, so stayInBelt() is what holds the top and bottom. */
     return L.latLngBounds(
-      [Math.min(south - 1.5, BELT_SOUTH_LIMIT), west - 6],
-      [Math.max(north + 1.5, BELT_NORTH_LIMIT), east + 6]
+      [Math.min(south - 1.5, BELT_SOUTH_LIMIT), -180],
+      [Math.max(north + 1.5, BELT_NORTH_LIMIT), 180]
     );
   }
   const WORLD_BOUNDS = crudeBeltBounds();
