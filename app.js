@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v66";
+  const APP_VERSION = "v67";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -204,6 +204,7 @@
     el.apiRange = $("api-range");
     el.apiReadout = $("api-readout");
     el.sulfurMax = $("sulfur-max");
+    el.sulfurFill = $("sulfur-fill");
     el.sulfurReadout = $("sulfur-readout");
   }
 
@@ -1463,6 +1464,13 @@
     el.apiFill.style.width = Math.max(0, b - a) * 100 + "%";
   }
 
+  function updateSulfurFill() {
+    if (!el.sulfurFill) return;
+    const t = Number(state.filters.sulfurMax) / S_CEIL;
+    el.sulfurFill.style.left = "0%";
+    el.sulfurFill.style.width = Math.max(0, Math.min(1, t)) * 100 + "%";
+  }
+
   function raiseApiThumb(which) {
     if (!el.apiMin || !el.apiMax) return;
     el.apiMin.style.zIndex = which === "min" ? "4" : "2";
@@ -1474,6 +1482,7 @@
       fmtApiBand(state.filters.apiMin) + " – " + fmtApiBand(state.filters.apiMax) + " °API";
     el.sulfurReadout.textContent = "≤ " + Number(state.filters.sulfurMax).toFixed(1) + " wt%";
     updateApiFill();
+    updateSulfurFill();
   }
 
   function syncSweetSeg() {
