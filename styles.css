@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css37";
+  content: "·css38";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -794,8 +794,8 @@ input[type="range"] {
   align-items: center;
 }
 .tip-pills .pill {
-  padding: 1px 6px;
-  font-size: 10px;
+  padding: 0 5px;
+  font-size: 9px;
 }
 
 /* —— Inspector —— */
@@ -847,9 +847,9 @@ input[type="range"] {
 .pill {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
+  padding: 1px 6px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.3;
