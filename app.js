@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v29";
+  const APP_VERSION = "v30";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -486,7 +486,7 @@
      would not stop a drag into Antarctica — use the real lon span. */
   /* Keep the whole of Patagonia below the last pin and open water above ANS,
      so neither end looks sliced. A taller belt is also a taller map. */
-  const BELT_SOUTH_LIMIT = -69.5; // 2° further south
+  const BELT_SOUTH_LIMIT = -70.5; // 1° further south
   const BELT_NORTH_LIMIT = 83; // 2° more headroom over ANS
   function crudeBeltBounds() {
     let south = 90;
