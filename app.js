@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v59";
+  const APP_VERSION = "v60";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -749,10 +749,7 @@
     const list = activePins().filter((s) => s.lat != null && s.lon != null);
     if (!list.length) return;
     const q = state.query.trim().toLowerCase();
-    if (!q) {
-      fitMapFull(animate);
-      return;
-    }
+    if (!q) return;
     const named = list.filter((s) => String(s.name).toLowerCase().startsWith(q));
     const focus = named.length ? named : list;
     const bounds = L.latLngBounds(focus.map((s) => [s.lat, s.lon]));
@@ -1557,8 +1554,12 @@
     updateMarkers();
     renderSearchResults();
     saveStorage();
+    /* Only reframe for an active search. Slider/filter tweaks must not yank
+       a zoomed-in view back to the full belt. */
     clearTimeout(state._fitFilterTimer);
-    state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
+    if (state.query.trim()) {
+      state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
+    }
   }
 
   function rankedSearchHits() {
