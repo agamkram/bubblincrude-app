@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v149";
+  const APP_VERSION = "v150";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -750,7 +750,9 @@
       });
       marker.bindTooltip(tipHtml(s), {
         className: "stream-tip",
-        direction: "top",
+        /* auto: Gippsland (and other belt-edge pins) used to open "top" and
+           hang half off the map pane. Leaflet picks the side with room. */
+        direction: "auto",
         offset: [0, -6],
         opacity: 1,
         sticky: false,
@@ -775,6 +777,7 @@
             marker.closeTooltip();
           };
         }
+        requestAnimationFrame(() => keepTooltipInMap(node));
       });
       marker.addTo(state.markerLayer);
       state.markers.set(s.id, marker);
@@ -811,6 +814,45 @@
     }, 450);
   }
 
+  /* Map pane is overflow:hidden — tips on belt-edge pins (Gippsland E,
+     Escalante S, ANS N) can sit partly off the pane even with direction:auto.
+     Nudge the map so the open tip fully lands inside. */
+  function keepTooltipInMap(node) {
+    if (!state.map || !node) return;
+    const mapR = state.map.getContainer().getBoundingClientRect();
+    const t = node.getBoundingClientRect();
+    const pad = 10;
+    let dx = 0;
+    let dy = 0;
+    if (t.right > mapR.right - pad) dx = t.right - (mapR.right - pad);
+    else if (t.left < mapR.left + pad) dx = t.left - (mapR.left + pad);
+    if (t.top < mapR.top + pad) dy = t.top - (mapR.top + pad);
+    else if (t.bottom > mapR.bottom - pad) dy = t.bottom - (mapR.bottom - pad);
+    if (dx || dy) state.map.panBy([dx, dy], { animate: true, duration: 0.2 });
+  }
+
+  /* After flyTo, keep the pin off the pane rim so the tip has room. */
+  function flyToPin(lat, lon) {
+    if (!state.map || lat == null || lon == null) return;
+    const z = Math.max(state.map.getZoom(), 5);
+    const target = L.latLng(lat, lon);
+    state.map.flyTo(target, z, { duration: 0.6 });
+    state.map.once("moveend", () => {
+      if (!state.map) return;
+      const pt = state.map.latLngToContainerPoint(target);
+      const size = state.map.getSize();
+      const padX = Math.min(140, size.x * 0.28);
+      const padY = Math.min(110, size.y * 0.28);
+      let dx = 0;
+      let dy = 0;
+      if (pt.x > size.x - padX) dx = pt.x - (size.x - padX);
+      else if (pt.x < padX) dx = pt.x - padX;
+      if (pt.y > size.y - padY) dy = pt.y - (size.y - padY);
+      else if (pt.y < padY) dy = pt.y - padY;
+      if (dx || dy) state.map.panBy([dx, dy], { animate: true, duration: 0.25 });
+    });
+  }
+
   function selectStream(id, fly) {
     state.streamId = id;
     state.siteId = null;
@@ -824,7 +866,7 @@
     renderTray();
     if (fly && state.map) {
       const s = getStream(id);
-      if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
+      if (s) flyToPin(s.lat, s.lon);
     }
     state._searchFocused = false;
     renderSearchResults();
@@ -843,7 +885,7 @@
     renderTray();
     if (fly && state.map) {
       const s = getSite(id);
-      if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
+      if (s) flyToPin(s.lat, s.lon);
     }
     state._searchFocused = false;
     renderSearchResults();
