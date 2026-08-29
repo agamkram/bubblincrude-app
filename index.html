@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=86" />
+  <link rel="stylesheet" href="styles.css?v=87" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,7 +106,7 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v86</span>
+          <span class="brand-ver" id="app-version">v87</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
@@ -293,7 +293,7 @@
     <div class="compare-tray" id="compare-tray" aria-label="Compare tray">
       <div class="tray-label">Compare</div>
       <div class="tray-chips" id="tray-chips"></div>
-      <button type="button" class="btn btn-ghost" id="btn-add-stream">+ Add Stream</button>
+      <button type="button" class="btn btn-ghost" id="btn-add-stream">+ Add</button>
       <button type="button" class="btn btn-primary" id="btn-open-compare" disabled>Compare</button>
     </div>
   </div>
@@ -307,12 +307,12 @@
     </div>
   </div>
 
-  <!-- Add stream picker -->
-  <div id="picker-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Add stream to compare">
+  <!-- Add to compare picker -->
+  <div id="picker-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Add to compare">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-panel">
       <div class="modal-head">
-        <h2>Add stream</h2>
+        <h2>Add to compare</h2>
         <button type="button" class="btn btn-text" data-close-modal>Close</button>
       </div>
       <input type="search" id="picker-search" placeholder="Filter current set…" autocomplete="off" />
@@ -321,9 +321,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=86"></script>
-  <script src="sites.js?v=86"></script>
-  <script src="app.js?v=86"></script>
+  <script src="data.js?v=87"></script>
+  <script src="sites.js?v=87"></script>
+  <script src="app.js?v=87"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -334,7 +334,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v86";
+    var EXPECTED = "v87";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

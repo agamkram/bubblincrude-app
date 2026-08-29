@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 86;
+  --bc-css: 87;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -1362,9 +1362,6 @@ button.pill {
   box-sizing: border-box;
 }
 .compare-tray[hidden] {
-  display: none !important;
-}
-.compare-tray.is-sites-layer {
   display: none !important;
 }
 .insp-blurb {

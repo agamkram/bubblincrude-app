@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v86";
+  const APP_VERSION = "v87";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -455,6 +455,25 @@
     return SITES.sites.find((s) => s.id === id) || null;
   }
 
+  /* Stream and site ids collide (kern-river, eagle-ford, …). Compare keys
+     are namespaced so a stream and its field can sit in the tray together. */
+  function pinKey(kind, id) {
+    return kind + ":" + id;
+  }
+  function parsePinKey(key) {
+    const raw = String(key || "");
+    const i = raw.indexOf(":");
+    if (i <= 0) return { kind: "stream", id: raw };
+    const kind = raw.slice(0, i);
+    const id = raw.slice(i + 1);
+    if (kind !== "stream" && kind !== "site") return { kind: "stream", id: raw };
+    return { kind, id };
+  }
+  function getComparePin(key) {
+    const p = parsePinKey(key);
+    return (p.kind === "site" ? getSite(p.id) : getStream(p.id)) || null;
+  }
+
   function activePins() {
     return state.layer === "sites" ? filteredSites() : filteredStreams();
   }
@@ -652,11 +671,12 @@
     const ac = apiClass(s.api);
     if (ac) pills.push(apiClassLabel(ac));
     pills.push(isSweet(s) ? "Sweet" : s.sulfur_wt != null ? "Sour" : "—");
-    const inTray = state.compareIds.includes(s.id);
+    const key = pinKey("stream", s.id);
+    const inTray = state.compareIds.includes(key);
     const action = inTray
       ? '<span class="pill pill-compare is-done">In tray</span>'
       : '<button type="button" class="pill pill-compare" data-add="' +
-        escapeHtml(s.id) +
+        escapeHtml(key) +
         '">Compare</button>';
     return (
       '<div class="tip-name">' +
@@ -689,6 +709,13 @@
     const metaBits = [s.country, s.basin].filter(Boolean);
     if (s.api != null) metaBits.push(densityLabel(s.api) + " " + densityUnit());
     if (s.sulfur_wt != null) metaBits.push(sulfurLabel(s.sulfur_wt) + " " + sulfurUnit());
+    const key = pinKey("site", s.id);
+    const inTray = state.compareIds.includes(key);
+    const action = inTray
+      ? '<span class="pill pill-compare is-done">In tray</span>'
+      : '<button type="button" class="pill pill-compare" data-add="' +
+        escapeHtml(key) +
+        '">Compare</button>';
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -698,6 +725,7 @@
       "</div>" +
       '<div class="tip-pills">' +
       pills.map((p) => '<span class="pill pill-kind">' + escapeHtml(p) + "</span>").join("") +
+      action +
       "</div>"
     );
   }
@@ -725,30 +753,28 @@
         offset: [0, -6],
         opacity: 1,
         sticky: false,
-        interactive: state.layer === "streams",
+        interactive: true,
       });
       marker.on("click", () => {
         if (state.layer === "sites") selectSite(s.id, true);
         else selectStream(s.id, true);
       });
-      if (state.layer === "streams") {
-        marker.on("tooltipopen", () => {
-          const tip = marker.getTooltip();
-          if (!tip) return;
-          const node = tip.getElement();
-          if (!node) return;
-          L.DomEvent.disableClickPropagation(node);
-          L.DomEvent.disableScrollPropagation(node);
-          const btn = node.querySelector("[data-add]");
-          if (btn) {
-            btn.onclick = (e) => {
-              L.DomEvent.stop(e);
-              addToCompare(s.id);
-              marker.closeTooltip();
-            };
-          }
-        });
-      }
+      marker.on("tooltipopen", () => {
+        const tip = marker.getTooltip();
+        if (!tip) return;
+        const node = tip.getElement();
+        if (!node) return;
+        L.DomEvent.disableClickPropagation(node);
+        L.DomEvent.disableScrollPropagation(node);
+        const btn = node.querySelector("[data-add]");
+        if (btn) {
+          btn.onclick = (e) => {
+            L.DomEvent.stop(e);
+            addToCompare(btn.getAttribute("data-add"));
+            marker.closeTooltip();
+          };
+        }
+      });
       marker.addTo(state.markerLayer);
       state.markers.set(s.id, marker);
     }
@@ -809,6 +835,7 @@
     state.streamId = null;
     updateMarkers();
     renderInspector();
+    renderTray();
     if (fly && state.map) {
       const s = getSite(id);
       if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
@@ -835,12 +862,11 @@
     else state.siteId = null;
     syncLayerSeg();
     syncInspectorEmptyCopy();
-    const tray = $("compare-tray");
-    if (tray) tray.classList.toggle("is-sites-layer", layer === "sites");
     renderSearchResults();
     renderActiveChips();
     updateMarkers();
     renderInspector();
+    renderTray();
     fitMapFull(true);
   }
 
@@ -982,12 +1008,13 @@
       escapeHtml(s.basin) +
       "</p>";
     html += '<div class="pill-row">' + pillsFor(s);
-    if (state.compareIds.includes(s.id)) {
+    const streamKey = pinKey("stream", s.id);
+    if (state.compareIds.includes(streamKey)) {
       html += '<span class="pill pill-compare is-done">In tray</span>';
     } else {
       html +=
         '<button type="button" class="pill pill-compare" data-compare-add="' +
-        escapeHtml(s.id) +
+        escapeHtml(streamKey) +
         '">Compare</button>';
     }
     html += "</div>";
@@ -1377,7 +1404,17 @@
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.basin, s.region].filter(Boolean).join(" · ")) +
       "</p>";
-    html += '<div class="insp-meta-row">' + pills.join("") + "</div></div>";
+    html += '<div class="pill-row">' + pills.join("");
+    const siteKey = pinKey("site", s.id);
+    if (state.compareIds.includes(siteKey)) {
+      html += '<span class="pill pill-compare is-done">In tray</span>';
+    } else {
+      html +=
+        '<button type="button" class="pill pill-compare" data-compare-add="' +
+        escapeHtml(siteKey) +
+        '">Compare</button>';
+    }
+    html += "</div></div>";
     if (s.notes) {
       html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
     }
@@ -1435,31 +1472,43 @@
         selectStream(id, true);
       });
     });
+    root.querySelectorAll("[data-compare-add]").forEach((btn) => {
+      btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
+    });
+  }
+
+  function sulfurWord(s) {
+    if (s.sulfur_wt == null) return "—";
+    return isSweet(s) ? "sweet" : "sour";
   }
 
   function renderTray() {
     const chips = state.compareIds
-      .map((id) => {
-        const s = getStream(id);
+      .map((key) => {
+        const s = getComparePin(key);
         if (!s) return "";
+        const kind = parsePinKey(key).kind;
         return (
           '<div class="tray-chip"><div><div class="name">' +
           escapeHtml(s.name) +
           '</div><div class="meta">' +
+          (kind === "site" ? "site · " : "") +
           densityLabel(s.api) +
           " " +
           densityUnit() +
           " · " +
-          (isSweet(s) ? "sweet" : "sour") +
+          sulfurWord(s) +
           '</div></div><button type="button" class="rm" data-rm="' +
-          escapeHtml(id) +
+          escapeHtml(key) +
           '" aria-label="Remove ' +
           escapeHtml(s.name) +
           '">×</button></div>'
         );
       })
       .join("");
-    el.trayChips.innerHTML = chips || '<span style="color:var(--text-mute);font-size:12px">Empty — add up to 3 streams</span>';
+    el.trayChips.innerHTML =
+      chips ||
+      '<span style="color:var(--text-mute);font-size:12px">Empty — add up to 3</span>';
     el.trayChips.querySelectorAll("[data-rm]").forEach((btn) => {
       btn.addEventListener("click", () => removeFromCompare(btn.getAttribute("data-rm")));
     });
@@ -1767,10 +1816,16 @@
   }
 
   function renderCompare() {
-    const streams = state.compareIds.map(getStream).filter(Boolean);
+    const pins = state.compareIds
+      .map((key) => {
+        const s = getComparePin(key);
+        return s ? { s, kind: parsePinKey(key).kind } : null;
+      })
+      .filter(Boolean);
+    const streams = pins.map((p) => p.s);
     if (streams.length < 2) {
       el.viewCompare.innerHTML =
-        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two streams from the map tray.</p>';
+        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, or both.</p>';
       return;
     }
 
@@ -1778,11 +1833,12 @@
     html += "<div><h2>Compare</h2><p style=\"margin:4px 0 0;color:var(--text-dim);font-size:13px\">";
     html += streams.map((s) => escapeHtml(s.name)).join(" · ");
     html += '</p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
-    html += '<button type="button" class="btn btn-ghost" id="cmp-add">+ Add Stream</button>';
+    html += '<button type="button" class="btn btn-ghost" id="cmp-add">+ Add</button>';
     html += '<a class="btn btn-ghost" href="/">Back to map</a></div></div>';
 
     html += '<div class="stream-cards-swipe">';
-    streams.forEach((s, i) => {
+    pins.forEach((p, i) => {
+      const s = p.s;
       html +=
         '<div class="swipe-card"><div class="swatch-item"><span class="swatch-dot" style="background:' +
         COMPARE_COLORS[i] +
@@ -1790,6 +1846,7 @@
         escapeHtml(s.name) +
         "</strong></div>" +
         '<div style="margin-top:8px;font-family:var(--mono);font-size:13px">' +
+        (p.kind === "site" ? "site · " : "") +
         densityLabel(s.api) +
         " " +
         densityUnit() +
@@ -1957,7 +2014,7 @@
     scored.sort((a, b) => b.score - a.score);
     const chosen = scored.slice(0, 2).map((x) => x.text);
     if (!chosen.length) {
-      return "Comparison uses only fields present on both streams; unknowns are omitted.";
+      return "Comparison uses only fields present on both; unknowns are omitted.";
     }
     let sentence = chosen.join(". ");
     if (!/[.!?]$/.test(sentence)) sentence += ".";
@@ -2013,7 +2070,7 @@
       .filter((x) => x.curve && x.curve.length);
     if (!withCurve.length) {
       svg.innerHTML =
-        '<text x="20" y="120" fill="#6b7382" font-size="13">No distillation curves available for the selected streams.</text>';
+        '<text x="20" y="120" fill="#6b7382" font-size="13">No distillation curves available for this set.</text>';
       if (legend) legend.innerHTML = "";
       return;
     }
@@ -2323,31 +2380,45 @@
 
   function renderPickerList(q) {
     const qq = (q || "").toLowerCase();
-    const list = filteredStreams().filter((s) => {
-      if (state.compareIds.includes(s.id)) return false;
-      if (!qq) return true;
-      return (
-        s.name.toLowerCase().includes(qq) ||
-        (s.aliases || []).some((a) => a.toLowerCase().includes(qq)) ||
-        s.country.toLowerCase().includes(qq)
-      );
-    });
-    el.pickerList.innerHTML = list
-      .map(
-        (s) =>
-          '<button type="button" class="picker-item" data-pick="' +
-          escapeHtml(s.id) +
-          '"><span><strong>' +
-          escapeHtml(s.name) +
-          '</strong><div class="sub">' +
-          escapeHtml(s.country) +
-          " · " +
-          densityLabel(s.api) +
-          " " +
-          densityUnit() +
-          "</div></span><span class=\"sub\">Add</span></button>"
-      )
-      .join("") || '<p style="color:var(--text-mute);padding:12px">No streams in the current filter set.</p>';
+    function hits(kind, list) {
+      return list.filter((s) => {
+        if (state.compareIds.includes(pinKey(kind, s.id))) return false;
+        if (!qq) return true;
+        return (
+          s.name.toLowerCase().includes(qq) ||
+          (s.aliases || []).some((a) => a.toLowerCase().includes(qq)) ||
+          (s.country || "").toLowerCase().includes(qq) ||
+          (s.basin || "").toLowerCase().includes(qq)
+        );
+      }).map((s) => ({ s, kind, key: pinKey(kind, s.id) }));
+    }
+    let items;
+    if (state.route === "compare") {
+      items = hits("stream", filteredStreams()).concat(hits("site", filteredSites()));
+    } else if (state.layer === "sites") {
+      items = hits("site", filteredSites());
+    } else {
+      items = hits("stream", filteredStreams());
+    }
+    el.pickerList.innerHTML =
+      items
+        .map(
+          (item) =>
+            '<button type="button" class="picker-item" data-pick="' +
+            escapeHtml(item.key) +
+            '"><span><strong>' +
+            escapeHtml(item.s.name) +
+            '</strong><div class="sub">' +
+            (item.kind === "site" ? "Site · " : "") +
+            escapeHtml(item.s.country) +
+            " · " +
+            densityLabel(item.s.api) +
+            " " +
+            densityUnit() +
+            "</div></span><span class=\"sub\">Add</span></button>"
+        )
+        .join("") ||
+      '<p style="color:var(--text-mute);padding:12px">No matches in the current filter set.</p>';
     el.pickerList.querySelectorAll("[data-pick]").forEach((btn) => {
       btn.addEventListener("click", () => {
         addToCompare(btn.getAttribute("data-pick"));
