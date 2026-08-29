@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v7";
+  const APP_VERSION = "v8";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -191,6 +191,8 @@
     el.cutDrawerBody = $("cut-drawer-body");
     el.apiMin = $("api-min");
     el.apiMax = $("api-max");
+    el.apiFill = $("api-fill");
+    el.apiRange = $("api-range");
     el.apiReadout = $("api-readout");
     el.sulfurMax = $("sulfur-max");
     el.sulfurReadout = $("sulfur-readout");
@@ -1174,10 +1176,31 @@
     updateFilterReadouts();
   }
 
+  function fmtApiBand(n) {
+    const x = Math.round(Number(n) * 10) / 10;
+    return Number.isInteger(x) ? String(x) : x.toFixed(1);
+  }
+
+  function updateApiFill() {
+    if (!el.apiFill) return;
+    const span = API_CEIL - API_FLOOR;
+    const a = (Number(state.filters.apiMin) - API_FLOOR) / span;
+    const b = (Number(state.filters.apiMax) - API_FLOOR) / span;
+    el.apiFill.style.left = a * 100 + "%";
+    el.apiFill.style.width = Math.max(0, b - a) * 100 + "%";
+  }
+
+  function raiseApiThumb(which) {
+    if (!el.apiMin || !el.apiMax) return;
+    el.apiMin.style.zIndex = which === "min" ? "4" : "2";
+    el.apiMax.style.zIndex = which === "max" ? "4" : "3";
+  }
+
   function updateFilterReadouts() {
     el.apiReadout.textContent =
-      state.filters.apiMin + " – " + state.filters.apiMax + " °API";
+      fmtApiBand(state.filters.apiMin) + " – " + fmtApiBand(state.filters.apiMax) + " °API";
     el.sulfurReadout.textContent = "≤ " + Number(state.filters.sulfurMax).toFixed(1) + " wt%";
+    updateApiFill();
   }
 
   function syncSweetSeg() {
@@ -1981,20 +2004,38 @@
 
   function wireFilterDom(root) {
     root = root || document;
-    root.querySelectorAll("#api-min, #api-max").forEach((inp) => {
-      inp.addEventListener("input", () => {
-        let a = Number($("api-min").value);
-        let b = Number($("api-max").value);
-        if (a > b) {
-          const t = a;
-          a = b;
-          b = t;
-        }
-        state.filters.apiMin = a;
-        state.filters.apiMax = b;
-        updateFilterReadouts();
-        onFiltersChanged();
-      });
+    function applyApiBand(which) {
+      let a = Number(el.apiMin.value);
+      let b = Number(el.apiMax.value);
+      if (which === "min" && a > b) a = b;
+      if (which === "max" && b < a) b = a;
+      el.apiMin.value = a;
+      el.apiMax.value = b;
+      state.filters.apiMin = a;
+      state.filters.apiMax = b;
+      updateFilterReadouts();
+      onFiltersChanged();
+    }
+    el.apiMin?.addEventListener("input", () => {
+      raiseApiThumb("min");
+      applyApiBand("min");
+    });
+    el.apiMax?.addEventListener("input", () => {
+      raiseApiThumb("max");
+      applyApiBand("max");
+    });
+    el.apiRange?.addEventListener("pointerdown", (e) => {
+      if (e.target.tagName === "INPUT") return;
+      const rect = el.apiRange.getBoundingClientRect();
+      const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const val = Math.round((API_FLOOR + t * (API_CEIL - API_FLOOR)) * 10) / 10;
+      const a = Number(el.apiMin.value);
+      const b = Number(el.apiMax.value);
+      const nearerMax = Math.abs(val - b) <= Math.abs(val - a);
+      const which = nearerMax ? "max" : "min";
+      raiseApiThumb(which);
+      (nearerMax ? el.apiMax : el.apiMin).value = val;
+      applyApiBand(which);
     });
     const smax = root.querySelector("#sulfur-max") || el.sulfurMax;
     smax?.addEventListener("input", () => {
