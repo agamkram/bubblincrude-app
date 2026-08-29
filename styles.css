@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 90;
+  --bc-css: 91;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -1408,8 +1408,8 @@ button.pill {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 3px 10px 4px 12px;
+  gap: 4px;
+  padding: 2px 6px 2px 8px;
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
   min-height: 0;
@@ -1441,7 +1441,7 @@ button.pill {
 .tray-chips {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -1449,7 +1449,7 @@ button.pill {
 .tray-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex: 0 0 auto;
   margin-left: auto;
 }
@@ -1474,14 +1474,13 @@ button.pill {
 .tray-chip {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px 2px 8px;
+  gap: 1px;
+  padding: 1px 1px 1px 5px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg);
   flex: 0 1 auto;
   min-width: 0;
-  max-width: 160px;
 }
 .tray-chip .name {
   font-weight: 600;
@@ -1502,10 +1501,10 @@ button.pill {
   background: transparent;
   color: var(--text-mute);
   cursor: pointer;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
-  min-width: 22px;
-  min-height: 22px;
+  min-width: 16px;
+  min-height: 18px;
   padding: 0;
   flex-shrink: 0;
 }
