@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v41";
+  const APP_VERSION = "v42";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -163,6 +163,7 @@
   function cacheEls() {
     el.app = $("app");
     el.search = $("search-input");
+    el.searchResults = $("search-results");
     el.filtersRail = $("filters-rail");
     el.activeChips = $("active-chips");
     el.regionFilters = $("region-filters");
@@ -1409,11 +1410,91 @@
     history.replaceState(null, "", buildUrl());
     renderActiveChips();
     updateMarkers();
+    renderSearchResults();
     saveStorage();
     /* Debounce the camera so iOS keyboard resizes and per-keystroke fits
-       don’t fight each other into a blank world view. */
+       don’t fight each other into a blank world view. On phone while the
+       field is focused, skip the camera — the results list is the UI. */
     clearTimeout(state._fitFilterTimer);
-    state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
+    state._fitFilterTimer = setTimeout(() => {
+      if (state._searchFocused && window.innerWidth <= 699) return;
+      fitToFiltered(true);
+    }, 180);
+  }
+
+  function rankedSearchHits() {
+    const q = state.query.trim().toLowerCase();
+    if (!q) return [];
+    const list = filteredStreams();
+    const prefix = [];
+    const rest = [];
+    for (const s of list) {
+      if (String(s.name).toLowerCase().startsWith(q)) prefix.push(s);
+      else rest.push(s);
+    }
+    return prefix.concat(rest);
+  }
+
+  function renderSearchResults() {
+    const box = el.searchResults;
+    if (!box) return;
+    const q = state.query.trim();
+    if (!q) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+    const hits = rankedSearchHits();
+    if (!hits.length) {
+      box.classList.remove("hidden");
+      box.innerHTML = '<div class="search-results-empty">No streams match “' + escapeHtml(q) + '”</div>';
+      return;
+    }
+    const shown = hits.slice(0, 8);
+    let html = "";
+    for (const s of shown) {
+      html +=
+        '<button type="button" class="search-hit" role="option" data-search-hit="' +
+        escapeHtml(s.id) +
+        '"><span class="search-hit-name">' +
+        escapeHtml(s.name) +
+        '</span><span class="search-hit-meta">' +
+        escapeHtml(s.country) +
+        " · " +
+        densityLabel(s.api) +
+        " " +
+        densityUnit() +
+        " · " +
+        (isSweet(s) ? "sweet" : s.sulfur_wt != null ? "sour" : "—") +
+        "</span></button>";
+    }
+    if (hits.length > shown.length) {
+      html +=
+        '<div class="search-results-empty">+' +
+        (hits.length - shown.length) +
+        " more on the map</div>";
+    }
+    box.innerHTML = html;
+    box.classList.remove("hidden");
+    box.querySelectorAll("[data-search-hit]").forEach((btn) => {
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", () => pickSearchHit(btn.getAttribute("data-search-hit")));
+    });
+  }
+
+  function pickSearchHit(id) {
+    state._searchFocused = false;
+    state.query = "";
+    if (el.search) {
+      el.search.value = "";
+      el.search.blur();
+    }
+    renderSearchResults();
+    history.replaceState(null, "", buildUrl());
+    renderActiveChips();
+    updateMarkers();
+    saveStorage();
+    selectStream(id, true);
   }
 
   function renderCompare() {
@@ -2272,6 +2353,25 @@
       state.query = el.search.value;
       onFiltersChanged();
     });
+    el.search.addEventListener("focus", () => {
+      state._searchFocused = true;
+      renderSearchResults();
+    });
+    el.search.addEventListener("blur", () => {
+      /* Delay so a result tap can fire before we hide the list. */
+      setTimeout(() => {
+        state._searchFocused = false;
+        if (!state.query.trim()) renderSearchResults();
+        else if (window.innerWidth <= 699) fitToFiltered(true);
+      }, 180);
+    });
+    el.search.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter") return;
+      const first = rankedSearchHits()[0];
+      if (!first) return;
+      e.preventDefault();
+      pickSearchHit(first.id);
+    });
 
     document.querySelectorAll("[data-color]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -2423,8 +2523,9 @@
           const key = sz.x + "x" + sz.y;
           if (key !== lastMapSize) {
             lastMapSize = key;
-            /* Keyboard open/close on phone resizes the map. Refitting the
-               full belt here was wiping search zooms (e.g. “wti” → empty look). */
+            /* Keyboard open/close on phone resizes the map. While search is
+               focused the results list is the UI — don’t yank the camera. */
+            if (state._searchFocused && window.innerWidth <= 699) return;
             if (state.query.trim()) fitToFiltered(false);
             else fitMapFull(false);
           }
