@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v56";
+  const APP_VERSION = "v57";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -486,20 +486,20 @@
   }
 
   function sizeMapToBelt() {
-    const el = document.getElementById("map");
+    const mapEl = document.getElementById("map");
+    const stage = document.querySelector(".map-stage") || document.getElementById("map-pane");
     const pane = document.getElementById("map-pane");
-    if (!el || !pane) return false;
+    if (!mapEl || !pane || !stage) return false;
     const wide = window.innerWidth > 699;
     if (wide) {
-      el.style.height = "";
+      mapEl.style.height = "";
       pane.classList.remove("is-belt-cut");
       return false;
     }
-    const w = pane.clientWidth || window.innerWidth;
-    const natural = Math.round(w / beltAspect());
-    const h = Math.min(natural, pane.clientHeight || natural);
+    const w = stage.clientWidth || pane.clientWidth || window.innerWidth;
+    const h = Math.round(w / beltAspect());
     pane.classList.add("is-belt-cut");
-    el.style.height = h + "px";
+    mapEl.style.height = h + "px";
     return true;
   }
 
@@ -2165,32 +2165,15 @@
   }
 
   function closeSheets() {
-    el.sheetFilters.classList.add("hidden");
-    el.sheetInspector.classList.add("hidden");
-    restoreFiltersRail();
+    el.sheetInspector?.classList.add("hidden");
   }
 
   function openFiltersSheet() {
-    // Move the live filters rail into the sheet to avoid duplicate IDs.
-    if (!el.sheetFiltersBody.contains(el.filtersRail)) {
-      el._filtersHome = el.filtersRail.parentNode;
-      el.sheetFiltersBody.appendChild(el.filtersRail);
-      el.filtersRail.style.display = "block";
-      el.filtersRail.style.border = "none";
-      el.filtersRail.style.padding = "0";
-      el.filtersRail.style.overflow = "visible";
-    }
-    el.sheetFilters.classList.remove("hidden");
+    /* Filters button removed — API/S sliders live under the map. */
   }
 
   function restoreFiltersRail() {
-    if (el._filtersHome && el.sheetFiltersBody.contains(el.filtersRail)) {
-      el.filtersRail.style.display = "";
-      el.filtersRail.style.border = "";
-      el.filtersRail.style.padding = "";
-      el.filtersRail.style.overflow = "";
-      el._filtersHome.insertBefore(el.filtersRail, el._filtersHome.firstChild);
-    }
+    /* no-op: filter sheet removed */
   }
 
   function openPicker() {
@@ -2578,7 +2561,6 @@
 
     $("btn-add-stream")?.addEventListener("click", openPicker);
     $("btn-open-compare")?.addEventListener("click", () => navigate("compare"));
-    $("btn-filters")?.addEventListener("click", openFiltersSheet);
 
     document.querySelectorAll("[data-close-sheet]").forEach((n) => {
       n.addEventListener("click", closeSheets);
@@ -2632,7 +2614,7 @@
         $("btn-units")?.setAttribute("aria-expanded", "false");
       }
       if (
-        !e.target.closest("#map-chrome") &&
+        !e.target.closest(".topbar-tools") &&
         el.legendScale &&
         !el.legendScale.classList.contains("hidden")
       ) {

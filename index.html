@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=56" />
+  <link rel="stylesheet" href="styles.css?v=57" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,7 +106,7 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v56</span>
+          <span class="brand-ver" id="app-version">v57</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
@@ -121,6 +121,29 @@
         </button>
       </nav>
 
+      <div class="topbar-tools" role="toolbar" aria-label="Map tools">
+        <div class="layer-toggle" role="group" aria-label="Map layer">
+          <button type="button" class="color-btn" data-layer="streams" aria-pressed="true">Streams</button>
+          <button type="button" class="color-btn" data-layer="sites" aria-pressed="false">Sites</button>
+        </div>
+        <div class="color-toggle" role="group" aria-label="Map color mode">
+          <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
+          <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
+          <button
+            type="button"
+            class="color-help"
+            id="btn-legend-help"
+            aria-expanded="false"
+            aria-controls="legend-scale"
+            title="Color scale"
+          >
+            ?
+          </button>
+        </div>
+        <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+        <div class="legend-pop hidden" id="legend-scale" role="status"></div>
+      </div>
+
       <div class="topbar-row">
         <div class="topbar-search">
           <label class="sr-only" for="search-input">Search streams</label>
@@ -134,12 +157,6 @@
             aria-controls="search-results"
           />
           <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
-        </div>
-
-        <div class="topbar-actions">
-          <button type="button" class="btn btn-icon mobile-only" id="btn-filters" aria-label="Open filters">
-            Filters
-          </button>
         </div>
       </div>
     </header>
@@ -178,31 +195,12 @@
           <div class="active-chips" id="active-chips" hidden></div>
 
           <div class="filter-block">
-            <div class="filter-label" id="api-label">API gravity</div>
-            <!-- Two native ranges overlaid on one track: HTML has no dual-thumb input. -->
-            <div class="dual-range" id="api-range" role="group" aria-labelledby="api-label">
-              <div class="dual-range-track" aria-hidden="true">
-                <div class="dual-range-fill" id="api-fill"></div>
-              </div>
-              <input type="range" id="api-min" min="5" max="60" step="0.1" value="5" aria-label="Minimum API gravity" />
-              <input type="range" id="api-max" min="5" max="60" step="0.1" value="60" aria-label="Maximum API gravity" />
-            </div>
-            <div class="range-readout" id="api-readout">5 – 60 °API</div>
-            <div class="tick-row" aria-hidden="true">
-              <span>&lt;10</span><span>22</span><span>31</span><span>39</span><span>&gt;39</span>
-            </div>
-          </div>
-
-          <div class="filter-block">
-            <div class="filter-label">Sulfur</div>
+            <div class="filter-label">Sulfur class</div>
             <div class="seg" role="group" aria-label="Sweet or sour">
               <button type="button" class="seg-btn" data-sweet="all" aria-pressed="true">All</button>
               <button type="button" class="seg-btn" data-sweet="sweet" aria-pressed="false">Sweet ≤0.5%</button>
               <button type="button" class="seg-btn" data-sweet="sour" aria-pressed="false">Sour</button>
             </div>
-            <label class="slider-label" for="sulfur-max">Max sulfur wt%</label>
-            <input type="range" id="sulfur-max" min="0.1" max="6" step="0.1" value="6" />
-            <div class="range-readout" id="sulfur-readout">≤ 6.0 wt%</div>
           </div>
 
           <div class="filter-block">
@@ -229,30 +227,26 @@
         </aside>
 
         <div class="map-pane" id="map-pane">
-          <div id="map" class="map" role="application" aria-label="World map of crude streams"></div>
-          <div class="map-chrome" id="map-chrome">
-            <div class="layer-toggle" role="group" aria-label="Map layer">
-              <button type="button" class="color-btn" data-layer="streams" aria-pressed="true">Streams</button>
-              <button type="button" class="color-btn" data-layer="sites" aria-pressed="false">Sites</button>
-            </div>
-            <div class="map-chrome-row">
-              <div class="color-toggle" role="group" aria-label="Map color mode">
-                <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
-                <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
-                <button
-                  type="button"
-                  class="color-help"
-                  id="btn-legend-help"
-                  aria-expanded="false"
-                  aria-controls="legend-scale"
-                  title="Color scale"
-                >
-                  ?
-                </button>
+          <div class="map-stage">
+            <div id="map" class="map" role="application" aria-label="World map of crude streams"></div>
+          </div>
+          <div class="map-sliders" id="map-sliders" aria-label="Gravity and sulfur filters">
+            <div class="map-slider-block">
+              <div class="filter-label" id="api-label">API</div>
+              <div class="dual-range" id="api-range" role="group" aria-labelledby="api-label">
+                <div class="dual-range-track" aria-hidden="true">
+                  <div class="dual-range-fill" id="api-fill"></div>
+                </div>
+                <input type="range" id="api-min" min="5" max="60" step="0.1" value="5" aria-label="Minimum API gravity" />
+                <input type="range" id="api-max" min="5" max="60" step="0.1" value="60" aria-label="Maximum API gravity" />
               </div>
-              <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+              <div class="range-readout" id="api-readout">5 – 60 °API</div>
             </div>
-            <div class="legend-pop hidden" id="legend-scale" role="status"></div>
+            <div class="map-slider-block">
+              <label class="filter-label" for="sulfur-max">S max</label>
+              <input type="range" id="sulfur-max" min="0.1" max="6" step="0.1" value="6" />
+              <div class="range-readout" id="sulfur-readout">≤ 6.0 wt%</div>
+            </div>
           </div>
         </div>
 
@@ -291,19 +285,6 @@
     </div>
   </div>
 
-  <!-- Mobile filter sheet -->
-  <div id="sheet-filters" class="sheet hidden" role="dialog" aria-modal="true" aria-label="Filters">
-    <div class="sheet-backdrop" data-close-sheet></div>
-    <div class="sheet-panel">
-      <div class="sheet-handle"></div>
-      <div class="sheet-head">
-        <h2>Filters</h2>
-        <button type="button" class="btn btn-text" data-close-sheet>Done</button>
-      </div>
-      <div class="sheet-body" id="sheet-filters-body"></div>
-    </div>
-  </div>
-
   <!-- Mobile inspector sheet -->
   <div id="sheet-inspector" class="sheet sheet-inspector hidden" role="dialog" aria-modal="true" aria-label="Stream details">
     <div class="sheet-backdrop" data-close-sheet></div>
@@ -333,9 +314,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=56"></script>
-  <script src="sites.js?v=56"></script>
-  <script src="app.js?v=56"></script>
+  <script src="data.js?v=57"></script>
+  <script src="sites.js?v=57"></script>
+  <script src="app.js?v=57"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -346,7 +327,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v56";
+    var EXPECTED = "v57";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

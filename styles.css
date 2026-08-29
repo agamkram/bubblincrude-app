@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 56;
+  --bc-css: 57;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -453,9 +453,50 @@ html.pwa-standalone .app {
 }
 .map-pane {
   grid-area: map;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+.map-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+.map-sliders {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px 14px;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+  z-index: 4;
+}
+.map-slider-block .filter-label {
+  margin-bottom: 4px;
+}
+.map-slider-block .range-readout {
+  margin-top: 2px;
+  font-size: 11px;
+}
+.map-slider-block input[type="range"] {
+  width: 100%;
+  accent-color: var(--teal);
 }
 .rail-inspector {
   grid-area: inspector;
+  border-right: none;
+  border-left: 1px solid var(--border);
 }
 
 .rail {
@@ -464,10 +505,6 @@ html.pwa-standalone .app {
   border-right: 1px solid var(--border);
   padding: 12px;
   -webkit-overflow-scrolling: touch;
-}
-.rail-inspector {
-  border-right: none;
-  border-left: 1px solid var(--border);
 }
 
 .rail-head {
@@ -681,20 +718,6 @@ input[type="range"] {
 }
 
 /* —— Map —— */
-.map-pane {
-  position: relative;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--bg-panel);
-}
-.map {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  background: var(--bg-panel);
-}
-
 .leaflet-container {
   background: var(--bg-panel);
   font: inherit;
@@ -710,22 +733,19 @@ input[type="range"] {
   line-height: 32px !important;
 }
 
-.map-chrome {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  max-width: calc(100% - 20px);
-}
 .map-chrome-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+}
+.topbar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
 }
 .layer-toggle,
 .color-toggle {
@@ -745,8 +765,8 @@ input[type="range"] {
 .color-btn,
 .color-help,
 .map-reset {
-  min-height: 36px;
-  min-width: 36px;
+  min-height: 32px;
+  min-width: 32px;
   padding: 0 12px;
   border: none;
   background: transparent;
@@ -781,6 +801,15 @@ input[type="range"] {
 .color-btn:hover,
 .color-help:hover {
   color: var(--text);
+}
+.topbar-tools .legend-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  flex: none;
+  width: min(280px, 92vw);
 }
 .legend-pop {
   flex: 1 1 100%;
@@ -1815,19 +1844,19 @@ html.pwa-standalone:not(.app-home) .view-page {
     flex-direction: column;
     min-height: 0;
   }
+  .is-belt-cut .map-stage {
+    flex: 0 0 auto;
+  }
   .is-belt-cut .map {
     position: relative;
     inset: auto;
     width: 100%;
     flex: 0 0 auto;
   }
-  .is-belt-cut .map-chrome {
-    position: static;
-    left: auto;
-    right: auto;
-    bottom: auto;
+  .map-sliders {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
     padding: 8px 10px;
-    max-width: none;
   }
   .rail-inspector {
     display: block;
