@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v54";
+  const APP_VERSION = "v55";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -606,13 +606,12 @@
     setTimeout(() => fitMapFull(false), 50);
   }
 
-  function makeIcon(s, selected, dimmed, few) {
+  function makeIcon(s, selected, few) {
     const color = markerColor(s);
     /* Even sizes keep Leaflet's -size/2 anchor on whole pixels (odd sizes
        gave -3.5px margins, which blurred the 1px ring on 2x displays). */
     const size = selected ? 8 : few ? 8 : 4;
-    const cls =
-      "stream-marker" + (selected ? " is-selected" : "") + (dimmed ? " is-dimmed" : "");
+    const cls = "stream-marker" + (selected ? " is-selected" : "");
     return L.divIcon({
       className: "",
       html:
@@ -693,15 +692,13 @@
 
     const list = activePins();
     const selId = selectedPinId();
-    const selInList = list.some((s) => s.id === selId);
     const few = list.length > 0 && list.length <= 8;
 
     for (const s of list) {
       if (s.lat == null || s.lon == null) continue;
-      const selected = selInList && s.id === selId;
-      const dimmed = selInList && !selected;
+      const selected = s.id === selId;
       const marker = L.marker([s.lat, s.lon], {
-        icon: makeIcon(s, selected, dimmed, few),
+        icon: makeIcon(s, selected, few),
         title: s.name,
         riseOnHover: true,
       });
