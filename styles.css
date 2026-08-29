@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 53;
+  --bc-css: 54;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -812,21 +812,21 @@ input[type="range"] {
 }
 
 /* Ring is drawn with box-shadow, not border: a border-box border would eat
-   1px of an 8px dot and leave a translucent rim that reads as hollow. */
+   into the dot and leave a translucent rim that reads as hollow. */
 .stream-marker {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   border: 0;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9);
   transition: opacity 0.15s ease;
 }
 .stream-marker.is-selected {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.9),
-    0 0 0 2.5px rgba(255, 255, 255, 0.95);
+    0 0 0 2px rgba(255, 255, 255, 0.95);
 }
 .stream-marker.is-dimmed {
   opacity: 0.22;

@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v53";
+  const APP_VERSION = "v54";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -610,7 +610,7 @@
     const color = markerColor(s);
     /* Even sizes keep Leaflet's -size/2 anchor on whole pixels (odd sizes
        gave -3.5px margins, which blurred the 1px ring on 2x displays). */
-    const size = selected ? 12 : few ? 12 : 8;
+    const size = selected ? 8 : few ? 8 : 4;
     const cls =
       "stream-marker" + (selected ? " is-selected" : "") + (dimmed ? " is-dimmed" : "");
     return L.divIcon({
