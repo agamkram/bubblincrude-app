@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=65" />
+  <link rel="stylesheet" href="styles.css?v=66" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,7 +106,7 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v65</span>
+          <span class="brand-ver" id="app-version">v66</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
@@ -243,7 +243,7 @@
               <div class="range-readout" id="api-readout">5 – 60 °API</div>
             </div>
             <div class="map-slider-block">
-              <label class="filter-label" for="sulfur-max">S</label>
+              <label class="filter-label" for="sulfur-max">Sulfur</label>
               <input type="range" id="sulfur-max" min="0.1" max="5.2" step="0.1" value="5.2" aria-label="Maximum sulfur" />
               <div class="range-readout" id="sulfur-readout">≤ 5.2 wt%</div>
             </div>
@@ -314,9 +314,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=65"></script>
-  <script src="sites.js?v=65"></script>
-  <script src="app.js?v=65"></script>
+  <script src="data.js?v=66"></script>
+  <script src="sites.js?v=66"></script>
+  <script src="app.js?v=66"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -327,7 +327,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v65";
+    var EXPECTED = "v66";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
