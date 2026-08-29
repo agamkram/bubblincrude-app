@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v32";
+  const APP_VERSION = "v33";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -667,6 +667,12 @@
     const ac = apiClass(s.api);
     if (ac) pills.push(apiClassLabel(ac));
     pills.push(isSweet(s) ? "Sweet" : s.sulfur_wt != null ? "Sour" : "—");
+    const inTray = state.compareIds.includes(s.id);
+    const action = inTray
+      ? '<button type="button" class="btn tip-add" disabled>In tray</button>'
+      : '<button type="button" class="btn btn-primary tip-add" data-add="' +
+        escapeHtml(s.id) +
+        '">Compare</button>';
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -685,9 +691,9 @@
       '<div class="tip-pills">' +
       pills.map((p) => '<span class="pill pill-kind">' + escapeHtml(p) + "</span>").join("") +
       "</div>" +
-      '<div class="tip-actions"><button type="button" class="btn btn-primary tip-add" data-add="' +
-      escapeHtml(s.id) +
-      '" style="min-height:32px;font-size:12px">Add to compare</button></div>'
+      '<div class="tip-actions">' +
+      action +
+      "</div>"
     );
   }
 
@@ -713,6 +719,7 @@
         offset: [0, -6],
         opacity: 1,
         sticky: false,
+        interactive: true,
       });
       marker.on("click", () => selectStream(s.id, true));
       marker.on("tooltipopen", () => {
@@ -720,12 +727,14 @@
         if (!tip) return;
         const node = tip.getElement();
         if (!node) return;
+        L.DomEvent.disableClickPropagation(node);
+        L.DomEvent.disableScrollPropagation(node);
         const btn = node.querySelector("[data-add]");
         if (btn) {
           btn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+            L.DomEvent.stop(e);
             addToCompare(s.id);
+            marker.closeTooltip();
           };
         }
       });
@@ -781,6 +790,8 @@
     saveStorage();
     if (state.route === "home") history.replaceState(null, "", buildUrl());
     renderTray();
+    renderInspector();
+    updateMarkers();
   }
 
   function removeFromCompare(id) {
@@ -871,10 +882,15 @@
     html += '<div class="insp-meta-row">';
     if (s.year) html += "<span>Sample year " + escapeHtml(String(s.year)) + "</span>";
     html += sourceChip(s.source || "Published assay");
-    html +=
-      '<button type="button" class="btn btn-primary" data-compare-add="' +
-      escapeHtml(s.id) +
-      '" style="margin-left:auto;min-height:36px">Compare</button>';
+    if (state.compareIds.includes(s.id)) {
+      html +=
+        '<button type="button" class="btn insp-compare" disabled>In tray</button>';
+    } else {
+      html +=
+        '<button type="button" class="btn btn-primary insp-compare" data-compare-add="' +
+        escapeHtml(s.id) +
+        '">Compare</button>';
+    }
     html += "</div></div>";
 
     html += '<div class="quality-strip">';

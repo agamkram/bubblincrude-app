@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css32";
+  content: "·css33";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -765,29 +765,45 @@ input[type="range"] {
   border: 1px solid var(--border-strong);
   color: var(--text);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 5px 8px;
   box-shadow: var(--shadow);
-  font-size: 12px;
+  font-size: 11px;
+  max-width: 200px;
+  line-height: 1.25;
+  /* Leaflet tooltips are pointer-events:none unless interactive; keep that
+     path honest so the Compare button can receive the click. */
+  pointer-events: auto;
 }
 .leaflet-tooltip.stream-tip::before {
   border-top-color: var(--bg-panel);
 }
 .tip-name {
   font-weight: 600;
-  margin-bottom: 2px;
+  font-size: 12px;
+  margin-bottom: 1px;
 }
 .tip-meta {
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: 10px;
 }
 .tip-pills {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin: 6px 0;
+  gap: 3px;
+  margin: 4px 0 0;
+}
+.tip-pills .pill {
+  padding: 1px 6px;
+  font-size: 10px;
 }
 .tip-actions {
-  margin-top: 6px;
+  margin-top: 4px;
+}
+.tip-add {
+  min-height: 26px;
+  padding: 2px 10px;
+  font-size: 11px;
+  width: 100%;
 }
 
 /* —— Inspector —— */
@@ -810,34 +826,35 @@ input[type="range"] {
 }
 
 .insp-header {
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 .insp-name {
   margin: 0;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 .insp-aliases {
-  margin: 2px 0 0;
-  font-size: 12px;
+  margin: 1px 0 0;
+  font-size: 11px;
   color: var(--text-mute);
 }
 .insp-loc {
-  margin: 6px 0 0;
-  font-size: 12px;
+  margin: 3px 0 0;
+  font-size: 11px;
   color: var(--text-dim);
 }
 .pill-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0;
+  gap: 4px;
+  margin: 6px 0;
 }
 .pill {
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid transparent;
@@ -881,11 +898,17 @@ input[type="range"] {
 .insp-meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   font-size: 11px;
   color: var(--text-mute);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+.insp-compare {
+  margin-left: auto;
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 11px;
 }
 .source-chip {
   display: inline-flex;
@@ -925,17 +948,17 @@ input[type="range"] {
 .quality-strip {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 .metric-tile {
-  padding: 10px;
+  padding: 7px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg);
 }
 .metric-tile .k {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-mute);
@@ -945,15 +968,15 @@ input[type="range"] {
 }
 .metric-tile .v {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
-  margin-top: 4px;
+  margin-top: 2px;
   line-height: 1.1;
 }
 .metric-tile .u {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-mute);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 .metric-tile.is-teal .v {
   color: var(--teal);
@@ -966,15 +989,15 @@ input[type="range"] {
 }
 
 .block {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 .block-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-mute);
-  margin: 0 0 8px;
+  margin: 0 0 5px;
 }
 
 .sara-bar {
@@ -1732,6 +1755,7 @@ html.pwa-standalone:not(.app-home) .view-page {
     border-left: none;
     border-top: 1px solid var(--border);
     min-height: 0;
+    padding: 8px 10px;
   }
   .leaflet-control-zoom {
     display: none !important;
