@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css14";
+  content: "·css15";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -1704,10 +1704,39 @@ html.pwa-standalone:not(.app-home) .view-page {
     flex: 1 1 100%;
     max-width: none;
   }
-  .map-chrome {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+  /* The belt is roughly 2:1, so a full-width world map cannot also be tall.
+     The map element is sized to the belt in JS; the inspector takes the rest
+     rather than leaving a dead slab where the poles used to be. */
+  .view-home {
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "map"
+      "inspector";
+  }
+  .map-pane.is-belt-cut {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .is-belt-cut .map {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    flex: 0 0 auto;
+  }
+  .is-belt-cut .map-chrome {
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    padding: 8px 10px;
+    max-width: none;
+  }
+  .rail-inspector {
+    display: block;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    min-height: 0;
   }
   .leaflet-control-zoom {
     display: none !important;

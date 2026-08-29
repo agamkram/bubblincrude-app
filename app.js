@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v14";
+  const APP_VERSION = "v15";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -503,12 +503,52 @@
   }
   const WORLD_BOUNDS = crudeBeltBounds();
 
+  /* Width-to-height ratio of the belt in Mercator pixels. The map element is
+     sized to this so the whole belt lands edge to edge with no slack — there
+     is nothing above or below the view to drag the poles in from. */
+  function beltAspect() {
+    const nw = L.CRS.EPSG3857.latLngToPoint(WORLD_BOUNDS.getNorthWest(), 8);
+    const se = L.CRS.EPSG3857.latLngToPoint(WORLD_BOUNDS.getSouthEast(), 8);
+    const w = Math.abs(se.x - nw.x);
+    const h = Math.abs(se.y - nw.y);
+    return h > 0 ? w / h : 2;
+  }
+
+  function sizeMapToBelt() {
+    const el = document.getElementById("map");
+    const pane = document.getElementById("map-pane");
+    if (!el || !pane) return false;
+    const wide = window.innerWidth > 699;
+    if (wide) {
+      el.style.height = "";
+      pane.classList.remove("is-belt-cut");
+      return false;
+    }
+    const w = pane.clientWidth || window.innerWidth;
+    const natural = Math.round(w / beltAspect());
+    const h = Math.min(natural, pane.clientHeight || natural);
+    pane.classList.add("is-belt-cut");
+    el.style.height = h + "px";
+    return true;
+  }
+
   function lockFullZoomFloor() {
     if (!state.map) return;
     const z = state.map.getZoom();
     state._fullZoom = z;
     state.map.setMinZoom(z);
     state._fittingFull = false;
+    applyDragLock();
+  }
+
+  /* At the floor the entire belt is on screen, so a drag can only reveal
+     emptiness or ice. Turn dragging off there and back on once pinched in. */
+  function applyDragLock() {
+    if (!state.map || !state.map.dragging) return;
+    const floor = state._fullZoom;
+    const atFloor = floor == null || state.map.getZoom() <= floor + 0.01;
+    if (atFloor) state.map.dragging.disable();
+    else state.map.dragging.enable();
   }
 
   function stayInBelt() {
@@ -517,7 +557,7 @@
     const view = state.map.getBounds();
     if (belt.contains(view)) return;
     state._clamping = true;
-    const need = state.map.getBoundsZoom(belt, true);
+    const need = state.map.getBoundsZoom(belt, false);
     if (state.map.getZoom() + 0.001 < need) {
       state.map.setZoom(need, { animate: false });
     }
@@ -528,10 +568,12 @@
   function fitMapFull(animate) {
     if (!state.map) return;
     state._fittingFull = true;
+    sizeMapToBelt();
     state.map.invalidateSize({ pan: false });
     state.map.setMinZoom(0);
     const belt = WORLD_BOUNDS;
-    const zoom = state.map.getBoundsZoom(belt, true);
+    /* inside=false — the whole belt fits, so the full world width shows. */
+    const zoom = state.map.getBoundsZoom(belt, false);
     const center = belt.getCenter();
     const finish = () => {
       lockFullZoomFloor();
@@ -584,6 +626,7 @@
     map.on("zoomend", () => {
       if (!state.map || state._fittingFull) return;
       stayInBelt();
+      applyDragLock();
       const floor = state._fullZoom;
       if (floor == null) return;
       if (state.map.getZoom() <= floor + 0.01) fitMapFull(true);
@@ -701,10 +744,10 @@
       const s = getStream(id);
       if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
     }
+    /* Phone shows the inspector inline under the cut map, so the overlay
+       sheet would only cover the pins. Tablet still uses the drawer. */
     const w = window.innerWidth;
-    if (w <= 699) {
-      openInspectorSheet();
-    } else if (w <= 1099) {
+    if (w > 699 && w <= 1099) {
       openInspectorDrawer();
     }
   }
@@ -2001,8 +2044,8 @@
       renderTray();
       if (state.streamId && !state._mobileInspected) {
         state._mobileInspected = state.streamId;
-        if (window.innerWidth <= 699) openInspectorSheet();
-        else if (window.innerWidth <= 1099) openInspectorDrawer();
+        const vw = window.innerWidth;
+        if (vw > 699 && vw <= 1099) openInspectorDrawer();
       }
     } else if (state.route === "compare") renderCompare();
     else if (state.route === "stream") renderStreamPage();
@@ -2316,6 +2359,7 @@
       if (state.map) {
         setTimeout(() => {
           if (!state.map) return;
+          sizeMapToBelt();
           state.map.invalidateSize({ pan: false });
           const sz = state.map.getSize();
           const key = sz.x + "x" + sz.y;
