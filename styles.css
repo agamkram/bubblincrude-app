@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 80;
+  --bc-css: 86;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -70,6 +70,9 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  /* Stop Safari from briefly inflating long Cuts/About copy on navigate. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /*
@@ -1160,6 +1163,14 @@ button.pill {
   gap: 6px;
   margin-bottom: 10px;
 }
+.q-flag {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
 .metric-tile {
   padding: 7px 8px;
   border: 1px solid var(--border);
@@ -1561,11 +1572,14 @@ html:not(.pwa-standalone).app-home .compare-tray {
 .page-title {
   margin: 0 0 8px;
   font-size: 24px;
+  line-height: 1.2;
 }
 .page-lead {
   margin: 0 0 24px;
   color: var(--text-dim);
   max-width: 62ch;
+  font-size: 14px;
+  line-height: 1.45;
 }
 .cut-grid {
   display: grid;
@@ -1659,38 +1673,87 @@ html:not(.pwa-standalone).app-home .compare-tray {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
 }
-.mol-table-wrap {
-  overflow: auto;
+.mol-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+.mol-filter {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.mol-filter.is-active {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.mol-section {
+  margin: 0 0 22px;
+}
+.mol-section-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.mol-section-lead {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.mol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.mol-card {
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-}
-.mol-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.mol-table th,
-.mol-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  text-align: left;
-  white-space: nowrap;
-}
-.mol-table th {
   background: var(--bg-panel);
-  color: var(--text-mute);
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  position: sticky;
-  top: 0;
+  min-width: 0;
 }
-.mol-table tr:hover td {
-  background: var(--bg-hover);
+.mol-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
 }
-.mol-table .num {
+.mol-card h4 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.25;
+  min-width: 0;
+}
+.mol-formula {
   font-family: var(--mono);
+  font-size: 12px;
+  color: var(--teal);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.mol-blurb {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.mol-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-mute);
 }
 .found-chip {
   display: inline-block;
@@ -1700,6 +1763,10 @@ html:not(.pwa-standalone).app-home .compare-tray {
   color: var(--teal);
   font-size: 11px;
   text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .about-block {
   max-width: 68ch;

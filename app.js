@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v80";
+  const APP_VERSION = "v86";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -66,6 +66,7 @@
     clusterLayer: null,
     originMap: null,
     sheetFull: false,
+    molGroup: "all",
   };
 
   let lastFillKey = "";
@@ -431,7 +432,8 @@
       if (!hay.includes(q)) return false;
     }
     if (f.regions.length && !f.regions.includes(s.region)) return false;
-    /* Historic pins without assays stay visible through gravity/sulfur filters. */
+    /* Sites without sulfur stay visible for sweet/sour=all; when filtering
+       sweet/sour they must have a value to match. */
     if (s.api != null) {
       if (s.api < f.apiMin || s.api > f.apiMax) return false;
     }
@@ -1381,13 +1383,21 @@
     }
     html += '<div class="quality-strip">';
     html +=
-      '<div class="q-cell"><div class="q-label">API</div><div class="q-val">' +
+      '<div class="q-cell"><div class="q-label">API' +
+      (s.flags && s.flags.api && s.flags.api !== "unknown"
+        ? ' <span class="q-flag">' + escapeHtml(s.flags.api) + "</span>"
+        : "") +
+      '</div><div class="q-val">' +
       escapeHtml(densityLabel(s.api)) +
       ' <span class="q-unit">' +
       escapeHtml(densityUnit()) +
       "</span></div></div>";
     html +=
-      '<div class="q-cell"><div class="q-label">Sulfur</div><div class="q-val">' +
+      '<div class="q-cell"><div class="q-label">Sulfur' +
+      (s.flags && s.flags.sulfur_wt && s.flags.sulfur_wt !== "unknown"
+        ? ' <span class="q-flag">' + escapeHtml(s.flags.sulfur_wt) + "</span>"
+        : "") +
+      '</div><div class="q-val">' +
       escapeHtml(sulfurLabel(s.sulfur_wt)) +
       ' <span class="q-unit">' +
       escapeHtml(sulfurUnit()) +
@@ -2102,7 +2112,7 @@
 
   function renderCuts() {
     let html =
-      '<h2 class="page-title">Cuts</h2><p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. Each card below is one of those slices: temperature, carbon size, what products come from it, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
+      '<h2 class="page-title">Cuts</h2><p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. Streams and Sites tell <em>where oil comes from</em>; Cuts teach <em>what a barrel becomes</em>. Each card is one slice: temperature, carbon size, products you’ll recognize, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
     html += '<div class="cut-grid">';
     for (const c of DATA.cuts) {
       html += '<article class="cut-card" id="cut-' + escapeHtml(c.id) + '">';
@@ -2115,41 +2125,108 @@
   }
 
   function renderMolecules() {
+    const groups = [
+      { id: "all", label: "All" },
+      { id: "gases", label: "Gases & LPG" },
+      { id: "chains", label: "Straight chains" },
+      { id: "branched", label: "Branched" },
+      { id: "rings", label: "Rings" },
+      { id: "aromatics", label: "Aromatics" },
+      { id: "hetero", label: "Sulfur & other" },
+    ];
+    const groupMeta = {
+      gases: { title: "Gases & LPG", lead: "Lightest molecules — fuels, plastics feeds, and sour-gas villains." },
+      chains: { title: "Straight chains", lead: "n-Paraffins from gasoline through wax — the simple carbon zipper." },
+      branched: { title: "Branched", lead: "Iso-structures that raise octane and feed alkylate chemistry." },
+      rings: { title: "Rings (naphthenes)", lead: "Saturated rings common in naphtha — reform toward aromatics." },
+      aromatics: { title: "Aromatics", lead: "Ring systems behind octane, polyester, polystyrene, dyes, and heavy PAHs." },
+      hetero: { title: "Sulfur, oxygen & residue class", lead: "The troublemakers and the giant asphaltene family — not just clean hydrocarbons." },
+    };
+    const active = state.molGroup || "all";
+    const list =
+      active === "all"
+        ? DATA.compounds.slice()
+        : DATA.compounds.filter((m) => m.group === active);
+
     let html =
-      '<h2 class="page-title">Molecules</h2><p class="page-lead">Reference compounds found in petroleum cuts. “Found in” points at a cut — never implying a crude stream is that molecule.</p>';
-    html += '<div class="mol-table-wrap"><table class="mol-table"><thead><tr>';
-    html +=
-      "<th>Name</th><th>Formula</th><th>MW</th><th>Boiling pt</th><th>Class</th><th>HHV</th><th>Found in</th>";
-    html += "</tr></thead><tbody>";
-    for (const m of DATA.compounds) {
-      const cut = m.found_in ? DATA.cuts.find((c) => c.id === m.found_in) : null;
-      html += "<tr>";
-      html += "<td>" + escapeHtml(m.name) + "</td>";
-      html += "<td class=\"num\">" + escapeHtml(m.formula) + "</td>";
-      html += "<td class=\"num\">" + fmtNum(m.mw, 2) + "</td>";
+      '<h2 class="page-title">Molecules</h2><p class="page-lead">Example molecules inside petroleum cuts — a teaching cast, not a complete catalog. Each one links to the cut where it usually shows up. A crude stream is never a single molecule.</p>';
+    html += '<div class="mol-filters" role="toolbar" aria-label="Molecule groups">';
+    for (const g of groups) {
       html +=
-        "<td class=\"num\">" +
-        (m.bp_c == null ? "—" : tempLabel(m.bp_c) + " " + tempUnit()) +
-        "</td>";
-      html += "<td>" + escapeHtml(m.klass) + "</td>";
-      html +=
-        "<td class=\"num\">" +
-        (m.hhv_mj_kg == null ? "—" : hvLabel(m.hhv_mj_kg) + " " + hvUnit()) +
-        "</td>";
-      html +=
-        "<td>" +
-        (cut
-          ? '<a class="found-chip" href="/cuts#cut-' +
+        '<button type="button" class="mol-filter' +
+        (g.id === active ? " is-active" : "") +
+        '" data-mol-group="' +
+        g.id +
+        '" aria-pressed="' +
+        (g.id === active ? "true" : "false") +
+        '">' +
+        escapeHtml(g.label) +
+        "</button>";
+    }
+    html += "</div>";
+
+    const order = ["gases", "chains", "branched", "rings", "aromatics", "hetero"];
+    const byGroup = {};
+    for (const m of list) {
+      const g = m.group || "hetero";
+      if (!byGroup[g]) byGroup[g] = [];
+      byGroup[g].push(m);
+    }
+
+    for (const gid of order) {
+      const rows = byGroup[gid];
+      if (!rows || !rows.length) continue;
+      const meta = groupMeta[gid];
+      html += '<section class="mol-section">';
+      html += "<h3 class=\"mol-section-title\">" + escapeHtml(meta.title) + "</h3>";
+      html += '<p class="mol-section-lead">' + escapeHtml(meta.lead) + "</p>";
+      html += '<div class="mol-grid">';
+      for (const m of rows) {
+        const cut = m.found_in ? DATA.cuts.find((c) => c.id === m.found_in) : null;
+        html += '<article class="mol-card">';
+        html += '<div class="mol-card-top">';
+        html += "<h4>" + escapeHtml(m.name) + "</h4>";
+        html += '<div class="mol-formula">' + escapeHtml(m.formula) + "</div>";
+        html += "</div>";
+        if (m.blurb) html += '<p class="mol-blurb">' + escapeHtml(m.blurb) + "</p>";
+        html += '<div class="mol-meta">';
+        html +=
+          "<span>MW " +
+          (m.mw == null ? "—" : fmtNum(m.mw, 2)) +
+          "</span>";
+        html +=
+          "<span>BP " +
+          (m.bp_c == null ? "—" : tempLabel(m.bp_c) + " " + tempUnit()) +
+          "</span>";
+        html +=
+          "<span>HHV " +
+          (m.hhv_mj_kg == null ? "—" : hvLabel(m.hhv_mj_kg) + " " + hvUnit()) +
+          "</span>";
+        html += "</div>";
+        if (cut) {
+          html +=
+            '<a class="found-chip" href="/cuts#cut-' +
             escapeHtml(cut.id) +
             '">' +
             escapeHtml(cut.name) +
-            "</a>"
-          : "—") +
-        "</td>";
-      html += "</tr>";
+            "</a>";
+        }
+        html += "</article>";
+      }
+      html += "</div></section>";
     }
-    html += "</tbody></table></div>";
+
+    if (!list.length) {
+      html += '<p class="page-lead">No molecules in this group.</p>';
+    }
+
     el.viewMolecules.innerHTML = html;
+    el.viewMolecules.querySelectorAll("[data-mol-group]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.molGroup = btn.getAttribute("data-mol-group") || "all";
+        renderMolecules();
+      });
+    });
   }
 
   function renderAbout() {
@@ -2166,14 +2243,19 @@
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>" +
       "<dt>Play</dt><dd>A repeatable exploration/development concept within a basin (Eagle Ford shale, Bakken, Vaca Muerta).</dd>" +
+      "<dt>Cut</dt><dd>A slice of crude by boiling range — not a single molecule. Light cuts leave the still first; heavy residue last. The Cuts page walks the full first-tower then vacuum-tower slate.</dd>" +
+      "<dt>CDU</dt><dd>Crude distillation unit — the first big tower after desalting. It splits the barrel at near-normal pressure into gases, naphthas, jet, diesel, gas oil, and atmospheric residue.</dd>" +
+      "<dt>VDU</dt><dd>Vacuum distillation unit — the second tower. It takes atmospheric residue and splits it under vacuum into light and heavy vacuum gas oil plus vacuum residue, without burning the bottoms.</dd>" +
+      "<dt>Naphtha</dt><dd>Gasoline-range liquids from the first tower (here: light and heavy naphtha). Feed for gasoline, reforming, chemicals, and sometimes diluent.</dd>" +
+      "<dt>VGO</dt><dd>Vacuum gas oil — LVGO and HVGO from the vacuum tower. Usually cracked into more gasoline and diesel, or used for lubricants on select crudes.</dd>" +
       "<dt>Assay</dt><dd>Lab characterization of a crude: gravity, sulfur, metals, yields, distillation, SARA, and related properties.</dd>" +
       "<dt>Blend</dt><dd>A commercial stream mixed from more than one field or grade to meet a quality or logistics specification.</dd>" +
       "<dt>Dilbit</dt><dd>Diluted bitumen — extra-heavy oil mixed with light diluent so it can flow in a pipeline.</dd>" +
       "<dt>SCO / synthetic</dt><dd>Synthetic crude oil from upgrading bitumen or heavy oil (e.g. Syncrude), usually lighter and sweeter than the feedstock.</dd>" +
       "<dt>SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil.</dd>" +
       "<dt>HHV</dt><dd>Higher heating value — heat released when a fuel burns completely, per kilogram. HHV also counts the heat you get if water vapor in the exhaust is cooled back to liquid; LHV leaves that out. More hydrogen per carbon means higher HHV, so light cuts run hotter per kg than heavy residue.</dd>" +
-      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises. The Cuts page walks the full CDU → VDU slate (fuel gas through vacuum resid).</dd>" +
-      "<dt>Resid</dt><dd>Heavy bottoms after distillation. Atmospheric resid is CDU bottoms; vacuum resid is what remains after LVGO/HVGO are taken — coking, asphalt, or resid conversion feed.</dd>" +
+      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises. That curve is what the Cuts page turns into named slices.</dd>" +
+      "<dt>Residue (resid)</dt><dd>The leftover bottoms after distillation — not a finished “product cut” by itself. Atmospheric residue is first-tower bottoms; vacuum residue is what’s left after light and heavy VGO are taken — asphalt, coke, heavy fuel, or further upgrading.</dd>" +
       "<dt>Metals (Ni, V)</dt><dd>Nickel and vanadium in the oil. They poison refining catalysts and rise with heavier, sourer crudes.</dd>" +
       "<dt>TAN</dt><dd>Total acid number — organic acidity. Higher TAN can mean corrosion risk in refining equipment.</dd>" +
       "</dl></div>" +
@@ -2183,7 +2265,7 @@
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>" +
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
-      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters and map color modes treat them separately. On Sites, API/S recolor pins that have representative assays; historic pins without assays stay mute gray.</p></div>' +
+      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters and map color modes treat them separately. On Sites, API/S color pins with assays or curated typical/estimated values — check the quality flag on the site card.</p></div>' +
       '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
