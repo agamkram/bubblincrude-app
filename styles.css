@@ -36,6 +36,8 @@
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  /* Hidden sync probe — badge shows only vN; heal script reads this. */
+  --bc-css: 46;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -167,6 +169,14 @@ html.pwa-standalone .app {
   min-width: 0;
 }
 
+.brand-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 /* Integer font metrics: fractional title height made the topbar 111.727px tall,
    which put the map — and every marker — on a subpixel row. */
 .brand-title {
@@ -180,14 +190,7 @@ html.pwa-standalone .app {
   text-transform: none;
 }
 
-/* Flex with a fixed height, not a text line box: inline children are
-   baseline-aligned and the badge's mono font would grow the topbar onto a
-   fractional pixel, knocking every map marker off the device grid. */
 .brand-sub {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   height: 14px;
   margin: 4px 0 0;
   font-size: 11px;
@@ -207,13 +210,6 @@ html.pwa-standalone .app {
   font-size: 10px;
   line-height: 14px;
 }
-/* A stale stylesheet will not carry this suffix, so the badge reading
-   "v3" without "css3" means the CSS is cached and the JS is not. */
-.brand-ver::after {
-  content: "·css45";
-  margin-left: 4px;
-  opacity: 0.75;
-}
 
 .topbar-row {
   display: flex;
@@ -224,7 +220,7 @@ html.pwa-standalone .app {
 
 .topbar-search {
   flex: 1 1 220px;
-  max-width: 420px;
+  max-width: none;
   position: relative;
 }
 
@@ -303,22 +299,32 @@ html.pwa-standalone .app {
 
 .topbar-nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 4px;
 }
 
 .nav-link {
   padding: 6px 10px;
+  border: none;
   border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--text-dim);
   text-decoration: none;
+  font: inherit;
   font-size: 13px;
   font-weight: 500;
+  cursor: pointer;
 }
 .nav-link:hover {
   color: var(--text);
   background: var(--bg-hover);
 }
 .nav-link.is-active {
+  color: var(--teal);
+  background: var(--teal-dim);
+}
+.nav-link[aria-expanded="true"] {
   color: var(--teal);
   background: var(--teal-dim);
 }
@@ -1547,39 +1553,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   cursor: pointer;
 }
 
-.menu-popover {
-  width: 200px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.menu-popover.hidden {
-  display: none !important;
-}
-.menu-link {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 12px;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-}
-.menu-link:hover,
-.menu-link:focus-visible {
-  background: var(--bg-hover);
-  color: var(--teal);
-}
-
 .modal,
 .sheet,
 .drawer {
@@ -1754,9 +1727,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   .mobile-only {
     display: inline-flex;
   }
-  .topbar-nav {
-    display: none;
-  }
   /* Hide the tagline, never the version badge — the badge is most needed on
      phones, which is exactly where this breakpoint applies. */
   .brand-sub-text {
@@ -1786,8 +1756,16 @@ html.pwa-standalone:not(.app-home) .view-page {
   .topbar-actions {
     margin-left: auto;
   }
+  .topbar-nav {
+    gap: 2px;
+  }
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
   .topbar-search {
-    flex: 1 1 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     max-width: none;
   }
   /* The belt is roughly 2:1, so a full-width world map cannot also be tall.

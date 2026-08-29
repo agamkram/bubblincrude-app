@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v45";
+  const APP_VERSION = "v46";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -2395,7 +2395,6 @@
       const open = !el.unitsPopover.classList.contains("hidden");
       if (!open) placePopover(el.unitsPopover);
       el.unitsPopover.classList.toggle("hidden", open);
-      $("menu-popover")?.classList.add("hidden");
       $("btn-units").setAttribute("aria-expanded", open ? "false" : "true");
     });
     el.unitsPopover.addEventListener("click", (e) => e.stopPropagation());
@@ -2420,25 +2419,6 @@
     $("btn-add-stream")?.addEventListener("click", openPicker);
     $("btn-open-compare")?.addEventListener("click", () => navigate("compare"));
     $("btn-filters")?.addEventListener("click", openFiltersSheet);
-    const menuPop = $("menu-popover");
-    $("btn-menu")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const open = !menuPop.classList.contains("hidden");
-      if (!open) placePopover(menuPop);
-      menuPop.classList.toggle("hidden", open);
-      el.unitsPopover.classList.add("hidden");
-      $("btn-menu").setAttribute("aria-expanded", open ? "false" : "true");
-    });
-    menuPop?.addEventListener("click", (e) => e.stopPropagation());
-    $("menu-units")?.addEventListener("click", () => {
-      menuPop.classList.add("hidden");
-      placePopover(el.unitsPopover);
-      el.unitsPopover.classList.remove("hidden");
-      $("btn-units").setAttribute("aria-expanded", "true");
-    });
-    menuPop?.querySelectorAll("a.menu-link").forEach((a) => {
-      a.addEventListener("click", () => menuPop.classList.add("hidden"));
-    });
 
     document.querySelectorAll("[data-close-sheet]").forEach((n) => {
       n.addEventListener("click", closeSheets);
@@ -2459,7 +2439,6 @@
       const href = t.getAttribute("href");
       if (!href || href.startsWith("http")) return;
       e.preventDefault();
-      $("menu-popover")?.classList.add("hidden");
       if (href === "/") navigate("home");
       else if (href.startsWith("/stream/"))
         navigate("stream", { streamId: decodeURIComponent(href.slice("/stream/".length).split("?")[0]) });
@@ -2484,22 +2463,13 @@
         closeCutDrawer();
         el.pickerModal.classList.add("hidden");
         el.unitsPopover.classList.add("hidden");
-        $("menu-popover")?.classList.add("hidden");
       }
     });
 
     document.addEventListener("click", (e) => {
-      if (
-        !e.target.closest("#units-popover") &&
-        !e.target.closest("#btn-units") &&
-        !e.target.closest("#menu-units")
-      ) {
+      if (!e.target.closest("#units-popover") && !e.target.closest("#btn-units")) {
         el.unitsPopover.classList.add("hidden");
         $("btn-units")?.setAttribute("aria-expanded", "false");
-      }
-      if (!e.target.closest("#menu-popover") && !e.target.closest("#btn-menu")) {
-        $("menu-popover")?.classList.add("hidden");
-        $("btn-menu")?.setAttribute("aria-expanded", "false");
       }
       if (
         !e.target.closest("#map-chrome") &&

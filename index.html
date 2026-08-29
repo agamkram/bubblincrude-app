@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=45" />
+  <link rel="stylesheet" href="styles.css?v=46" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -104,12 +104,22 @@
   <div id="app" class="app">
     <header class="topbar" role="banner">
       <div class="topbar-title">
-        <h1 class="brand-title">BubblinCrude</h1>
-        <p class="brand-sub">
-          <span class="brand-sub-text">Global crude streams — filter, analyze, compare</span>
-          <span class="brand-ver" id="app-version">v45</span>
-        </p>
+        <div class="brand-line">
+          <h1 class="brand-title">BubblinCrude</h1>
+          <span class="brand-ver" id="app-version">v46</span>
+        </div>
+        <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
+
+      <nav class="topbar-nav" aria-label="Primary">
+        <a href="/" data-nav="home" class="nav-link is-active">Crudes</a>
+        <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
+        <a href="/molecules" data-nav="molecules" class="nav-link">Molecules</a>
+        <a href="/about" data-nav="about" class="nav-link">About</a>
+        <button type="button" class="nav-link" id="btn-units" aria-haspopup="true" aria-expanded="false">
+          Units
+        </button>
+      </nav>
 
       <div class="topbar-row">
         <div class="topbar-search">
@@ -126,22 +136,9 @@
           <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
         </div>
 
-        <nav class="topbar-nav" aria-label="Primary">
-          <a href="/" data-nav="home" class="nav-link is-active">Crudes</a>
-          <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
-          <a href="/molecules" data-nav="molecules" class="nav-link">Molecules</a>
-          <a href="/about" data-nav="about" class="nav-link">About</a>
-        </nav>
-
         <div class="topbar-actions">
-          <button type="button" class="btn btn-ghost" id="btn-units" aria-haspopup="true" aria-expanded="false">
-            Units
-          </button>
           <button type="button" class="btn btn-icon mobile-only" id="btn-filters" aria-label="Open filters">
             Filters
-          </button>
-          <button type="button" class="btn btn-icon mobile-only" id="btn-menu" aria-label="Menu" aria-expanded="false">
-            Menu
           </button>
         </div>
       </div>
@@ -168,14 +165,6 @@
         <label><input type="radio" name="u-hv" value="mj" checked /> MJ/kg</label>
         <label><input type="radio" name="u-hv" value="btu" /> Btu/lb</label>
       </fieldset>
-    </div>
-
-    <div id="menu-popover" class="popover menu-popover hidden" role="dialog" aria-label="Menu">
-      <a href="/" data-nav="home" class="menu-link">Crudes</a>
-      <a href="/cuts" data-nav="cuts" class="menu-link">Cuts</a>
-      <a href="/molecules" data-nav="molecules" class="menu-link">Molecules</a>
-      <a href="/about" data-nav="about" class="menu-link">About</a>
-      <button type="button" class="menu-link" id="menu-units">Units</button>
     </div>
 
     <main id="main" class="main" tabindex="-1">
@@ -338,8 +327,8 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=45"></script>
-  <script src="app.js?v=45"></script>
+  <script src="data.js?v=46"></script>
+  <script src="app.js?v=46"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -350,14 +339,13 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v45";
+    var EXPECTED = "v46";
 
     function loadedVersions() {
-      var probe = document.getElementById("app-version");
-      var css = probe
-        ? getComputedStyle(probe, "::after").content.replace(/["'·]/g, "")
-        : "";
-      return { js: window.__APP_VERSION || "", css: css };
+      var css = getComputedStyle(document.documentElement)
+        .getPropertyValue("--bc-css")
+        .trim();
+      return { js: window.__APP_VERSION || "", css: css ? "css" + css : "" };
     }
 
     function purgeCaches() {

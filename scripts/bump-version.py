@@ -28,7 +28,7 @@ SPOTS = {
     "app APP_VERSION": (APP, r'const APP_VERSION = "v(\d+)"', 'const APP_VERSION = "v{n}"'),
     "sw CACHE": (SW, r'const CACHE = "bubblincrude-v(\d+)"', 'const CACHE = "bubblincrude-v{n}"'),
     "sw precache ?v=": (SW, r"\?v=(\d+)", "?v={n}"),
-    "css marker": (CSS, r'content: "·css(\d+)"', 'content: "·css{n}"'),
+    "css --bc-css": (CSS, r"--bc-css:\s*(\d+)", "--bc-css: {n}"),
 }
 
 
@@ -118,8 +118,8 @@ def main():
         for p in problems2:
             print("  - " + p)
         sys.exit(1)
-    print("\nOK — all in sync at v%d. Reload; badge should read v%d·css%d."
-          % (new, new, new))
+    print("\nOK — all in sync at v%d. Reload; badge should read v%d."
+          % (new, new))
 
 
 if __name__ == "__main__":
