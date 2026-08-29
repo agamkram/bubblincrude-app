@@ -28,7 +28,6 @@
   --font: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
   --topbar-h: 96px;
-  --tray-h: 56px;
   --filters-w: 260px;
   --inspector-w: 340px;
   --radius: 8px;
@@ -37,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 89;
+  --bc-css: 90;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -1404,19 +1403,19 @@ button.pill {
   font-family: var(--mono);
 }
 
-/* —— Compare tray —— */
+/* —— Compare tray (under map sliders) —— */
 .compare-tray {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px calc(12px + env(safe-area-inset-right, 0px)) 6px
-    calc(12px + env(safe-area-inset-left, 0px));
+  gap: 8px;
+  padding: 3px 10px 4px 12px;
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
-  min-height: var(--tray-h);
-  overflow-x: auto;
+  min-height: 0;
+  overflow: hidden;
   box-sizing: border-box;
+  z-index: 4;
 }
 .compare-tray[hidden] {
   display: none !important;
@@ -1439,61 +1438,76 @@ button.pill {
   font-weight: 600;
 }
 
-/* Home: tray paints into home indicator + bottom corners (Bug B step 5). */
-html.pwa-standalone.app-home .compare-tray {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  min-height: calc(var(--tray-h) + env(safe-area-inset-bottom, 0px));
-}
-
-/* Non-home / Safari: still clear the home indicator when the tray is showing. */
-html:not(.pwa-standalone).app-home .compare-tray {
-  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
-  min-height: calc(var(--tray-h) + env(safe-area-inset-bottom, 0px));
-}
-.tray-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-mute);
-  flex-shrink: 0;
-}
 .tray-chips {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: auto;
+  overflow: hidden;
+}
+.tray-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+.btn-tray {
+  min-height: 22px;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+.btn-tray-go {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #041016;
+}
+.btn-tray-go:hover:not(:disabled) {
+  background: var(--teal-deep);
+  border-color: var(--teal-deep);
+  color: #041016;
 }
 .tray-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px 4px 10px;
+  gap: 4px;
+  padding: 2px 4px 2px 8px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--bg);
-  flex-shrink: 0;
-  max-width: 220px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 160px;
 }
 .tray-chip .name {
   font-weight: 600;
   font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .tray-chip .meta {
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 500;
   color: var(--text-mute);
-  font-family: var(--mono);
 }
 .tray-chip .rm {
   border: none;
   background: transparent;
   color: var(--text-mute);
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
-  min-width: 28px;
-  min-height: 28px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 /* —— Compare board —— */
@@ -2165,18 +2179,13 @@ html.pwa-standalone:not(.app-home) .view-page {
     border-top: 1px solid var(--border);
     min-height: 0;
     padding: 8px 10px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
   .leaflet-control-zoom {
     display: none !important;
   }
   .legend-pop {
     max-width: none;
-  }
-  html.pwa-standalone.app-home .compare-tray {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .tray-label {
-    display: none;
   }
   .view-compare,
   .view-stream,
@@ -2215,10 +2224,13 @@ html.pwa-standalone:not(.app-home) .view-page {
     position: fixed;
     top: calc(var(--topbar-h) + var(--safe-t));
     right: 0;
-    bottom: calc(var(--tray-h) + var(--safe-b));
+    bottom: 0;
     width: min(360px, 90vw);
     z-index: 50;
     box-shadow: var(--shadow);
+  }
+  .compare-tray {
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -2228,9 +2240,6 @@ html.pwa-standalone:not(.app-home) .view-page {
     display: none;
   }
   .topbar {
-    min-height: 48px;
-  }
-  .compare-tray {
     min-height: 48px;
   }
   .sheet-snap {

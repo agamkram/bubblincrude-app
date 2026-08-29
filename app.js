@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v89";
+  const APP_VERSION = "v90";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -1516,11 +1516,6 @@
     if (state.route === "home") history.replaceState(null, "", buildUrl());
   }
 
-  function sulfurWord(s) {
-    if (s.sulfur_wt == null) return "—";
-    return isSweet(s) ? "sweet" : "sour";
-  }
-
   function renderTray() {
     const chips = state.compareIds
       .map((key) => {
@@ -1528,16 +1523,10 @@
         if (!s) return "";
         const kind = parsePinKey(key).kind;
         return (
-          '<div class="tray-chip"><div><div class="name">' +
+          '<div class="tray-chip"><span class="name">' +
           escapeHtml(s.name) +
-          '</div><div class="meta">' +
-          (kind === "site" ? "site · " : "") +
-          densityLabel(s.api) +
-          " " +
-          densityUnit() +
-          " · " +
-          sulfurWord(s) +
-          '</div></div><button type="button" class="rm" data-rm="' +
+          (kind === "site" ? '<span class="meta"> site</span>' : "") +
+          '</span><button type="button" class="rm" data-rm="' +
           escapeHtml(key) +
           '" aria-label="Remove ' +
           escapeHtml(s.name) +
@@ -1545,9 +1534,7 @@
         );
       })
       .join("");
-    el.trayChips.innerHTML =
-      chips ||
-      '<span style="color:var(--text-mute);font-size:12px">Empty — add up to 3</span>';
+    el.trayChips.innerHTML = chips;
     el.trayChips.querySelectorAll("[data-rm]").forEach((btn) => {
       btn.addEventListener("click", () => removeFromCompare(btn.getAttribute("data-rm")));
     });
