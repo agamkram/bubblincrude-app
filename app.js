@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v49";
+  const APP_VERSION = "v50";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -388,7 +388,7 @@
     else if (path === "/about") state.route = "about";
     else {
       state.route = "home";
-      if (params.has("id")) state.streamId = params.get("id");
+      /* Do not restore ?id= — home selection must not survive refresh. */
       if (params.has("ids")) {
         state.compareIds = params.get("ids").split(",").filter(Boolean).slice(0, 3);
       }
@@ -410,7 +410,8 @@
     else if (route === "about") path = "/about";
     else {
       path = "/";
-      if (state.streamId) params.set("id", state.streamId);
+      /* Selection stays in memory for the session only — never in the URL,
+         or a refresh would resurrect the last tap. */
       if (state.compareIds.length) params.set("ids", state.compareIds.join(","));
     }
 
