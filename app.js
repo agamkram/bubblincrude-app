@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v61";
+  const APP_VERSION = "v62";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -1549,17 +1549,30 @@
   }
 
   function onFiltersChanged() {
-    history.replaceState(null, "", buildUrl());
     renderActiveChips();
-    updateMarkers();
     renderSearchResults();
-    saveStorage();
-    /* Only reframe for an active search. Slider/filter tweaks must not yank
-       a zoomed-in view back to the full belt. */
+    /* Slider input fires many times per swipe. Rebuilding every pin on each
+       event queued a backlog — the map looked short pins until the queue
+       drained (“healed after a moment”). One refresh per frame is enough. */
+    scheduleMarkerRefresh();
+    clearTimeout(state._filterUrlTimer);
+    state._filterUrlTimer = setTimeout(() => {
+      history.replaceState(null, "", buildUrl());
+      saveStorage();
+    }, 120);
     clearTimeout(state._fitFilterTimer);
     if (state.query.trim()) {
       state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
     }
+  }
+
+  function scheduleMarkerRefresh() {
+    if (state._markerRefreshQueued) return;
+    state._markerRefreshQueued = true;
+    requestAnimationFrame(() => {
+      state._markerRefreshQueued = false;
+      updateMarkers();
+    });
   }
 
   function rankedSearchHits() {
