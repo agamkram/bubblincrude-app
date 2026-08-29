@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 64;
+  --bc-css: 65;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -510,23 +510,28 @@ html.pwa-standalone .app {
   accent-color: var(--teal);
 }
 .map-sliders .dual-range {
-  height: 18px;
+  height: 20px;
   margin: 0;
 }
 .map-sliders .dual-range-track {
-  top: 7px;
+  top: 50%;
   height: 3px;
+  margin-top: -1.5px;
 }
 .map-sliders .dual-range input[type="range"] {
-  height: 18px;
+  height: 20px;
 }
 .map-sliders .dual-range input[type="range"]::-webkit-slider-runnable-track {
-  height: 18px;
+  height: 20px;
 }
 .map-sliders .dual-range input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
-  margin-top: 2px;
+  /* (track box 20 − thumb 14) / 2 — same centering math as the full-size dual-range */
+  margin-top: 3px;
+}
+.map-sliders .dual-range input[type="range"]::-moz-range-track {
+  height: 3px;
 }
 .map-sliders .dual-range input[type="range"]::-moz-range-thumb {
   width: 14px;
