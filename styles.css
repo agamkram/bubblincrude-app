@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 51;
+  --bc-css: 53;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -716,11 +716,18 @@ input[type="range"] {
   bottom: 10px;
   z-index: 5;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
   max-width: calc(100% - 20px);
 }
+.map-chrome-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.layer-toggle,
 .color-toggle {
   display: inline-flex;
   align-items: stretch;
@@ -729,6 +736,11 @@ input[type="range"] {
   background: rgba(14, 17, 22, 0.92);
   backdrop-filter: blur(8px);
   overflow: hidden;
+}
+.layer-toggle .color-btn + .color-btn,
+.color-btn + .color-btn,
+.color-help {
+  border-left: 1px solid var(--border);
 }
 .color-btn,
 .color-help,
@@ -744,18 +756,14 @@ input[type="range"] {
   font-weight: 600;
   cursor: pointer;
 }
-.color-btn + .color-btn,
-.color-help {
-  border-left: 1px solid var(--border);
-}
-.color-btn[aria-pressed="true"] {
-  background: var(--teal-dim);
-  color: var(--teal);
-}
 .color-help {
   min-width: 32px;
   padding: 0 10px;
   color: var(--text-mute);
+}
+.color-btn[aria-pressed="true"] {
+  background: var(--teal-dim);
+  color: var(--teal);
 }
 .color-help[aria-expanded="true"] {
   color: var(--teal);
@@ -1217,6 +1225,26 @@ button.pill {
 }
 .compare-tray[hidden] {
   display: none !important;
+}
+.compare-tray.is-sites-layer {
+  display: none !important;
+}
+.insp-blurb {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.insp-block {
+  margin-top: 12px;
+}
+.insp-block h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-mute);
+  font-weight: 600;
 }
 
 /* Home: tray paints into home indicator + bottom corners (Bug B step 5). */
@@ -1808,10 +1836,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .legend-pop {
     max-width: none;
-  }
-  .compare-tray {
-    gap: 6px;
-    padding: 6px 8px;
   }
   html.pwa-standalone.app-home .compare-tray {
     padding-bottom: env(safe-area-inset-bottom, 0px);

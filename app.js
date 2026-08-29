@@ -3,8 +3,13 @@
   "use strict";
 
   const DATA = window.CRUDE_DATA;
+  const SITES = window.SITES_DATA;
   if (!DATA) {
     console.error("CRUDE_DATA missing");
+    return;
+  }
+  if (!SITES || !Array.isArray(SITES.sites)) {
+    console.error("SITES_DATA missing");
     return;
   }
 
@@ -23,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v51";
+  const APP_VERSION = "v53";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -42,7 +47,9 @@
 
   const state = {
     route: "home",
+    layer: "streams", // streams | sites
     streamId: null,
+    siteId: null,
     compareIds: [],
     query: "",
     filters: defaultFilters(),
@@ -401,6 +408,46 @@
     return DATA.streams.find((s) => s.id === id) || null;
   }
 
+  function siteMatches(s) {
+    const f = state.filters;
+    const q = state.query.trim().toLowerCase();
+    if (q) {
+      const hay = [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes]
+        .join(" ")
+        .toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (f.regions.length && !f.regions.includes(s.region)) return false;
+    /* Historic pins without assays stay visible through gravity/sulfur filters. */
+    if (s.api != null) {
+      if (s.api < f.apiMin || s.api > f.apiMax) return false;
+    }
+    if (f.sweetSour === "sweet") {
+      if (s.sulfur_wt == null || s.sulfur_wt > DATA.SWEET_S_MAX) return false;
+    }
+    if (f.sweetSour === "sour") {
+      if (s.sulfur_wt == null || s.sulfur_wt <= DATA.SWEET_S_MAX) return false;
+    }
+    if (s.sulfur_wt != null && s.sulfur_wt > f.sulfurMax) return false;
+    return true;
+  }
+
+  function filteredSites() {
+    return SITES.sites.filter(siteMatches);
+  }
+
+  function getSite(id) {
+    return SITES.sites.find((s) => s.id === id) || null;
+  }
+
+  function activePins() {
+    return state.layer === "sites" ? filteredSites() : filteredStreams();
+  }
+
+  function selectedPinId() {
+    return state.layer === "sites" ? state.siteId : state.streamId;
+  }
+
   /* —— Map —— */
   /* Cut to the pin belt. ANS 70.3°N / Escalante 45.8°S / Gippsland 148°E.
      A ±180 box is treated as “the whole world” by Leaflet, so maxBounds
@@ -412,7 +459,7 @@
   function crudeBeltBounds() {
     let south = 90;
     let north = -90;
-    for (const s of DATA.streams) {
+    for (const s of DATA.streams.concat(SITES.sites)) {
       if (s.lat == null) continue;
       if (s.lat < south) south = s.lat;
       if (s.lat > north) north = s.lat;
@@ -584,6 +631,7 @@
   }
 
   function tipHtml(s) {
+    if (state.layer === "sites") return tipHtmlSite(s);
     const pills = [];
     const ac = apiClass(s.api);
     if (ac) pills.push(apiClassLabel(ac));
@@ -616,19 +664,41 @@
     );
   }
 
+  function tipHtmlSite(s) {
+    const pills = [s.kind, s.status];
+    if (s.year) pills.push(String(s.year));
+    const ac = apiClass(s.api);
+    if (ac) pills.push(apiClassLabel(ac));
+    else if (s.sulfur_wt != null) pills.push(isSweet(s) ? "Sweet" : "Sour");
+    const metaBits = [s.country, s.basin].filter(Boolean);
+    if (s.api != null) metaBits.push(densityLabel(s.api) + " " + densityUnit());
+    if (s.sulfur_wt != null) metaBits.push(sulfurLabel(s.sulfur_wt) + " " + sulfurUnit());
+    return (
+      '<div class="tip-name">' +
+      escapeHtml(s.name) +
+      "</div>" +
+      '<div class="tip-meta">' +
+      escapeHtml(metaBits.join(" · ")) +
+      "</div>" +
+      '<div class="tip-pills">' +
+      pills.map((p) => '<span class="pill pill-kind">' + escapeHtml(p) + "</span>").join("") +
+      "</div>"
+    );
+  }
+
   function updateMarkers() {
     if (!state.map || !state.markerLayer) return;
     state.markerLayer.clearLayers();
     state.markers.clear();
 
-    const list = filteredStreams();
-    /* Only dim when the selected stream is still on the map. Otherwise a
-       leftover selection (e.g. Merey + search “wti”) fades every match. */
-    const selInList = list.some((s) => s.id === state.streamId);
+    const list = activePins();
+    const selId = selectedPinId();
+    const selInList = list.some((s) => s.id === selId);
     const few = list.length > 0 && list.length <= 8;
 
     for (const s of list) {
-      const selected = selInList && s.id === state.streamId;
+      if (s.lat == null || s.lon == null) continue;
+      const selected = selInList && s.id === selId;
       const dimmed = selInList && !selected;
       const marker = L.marker([s.lat, s.lon], {
         icon: makeIcon(s, selected, dimmed, few),
@@ -641,25 +711,30 @@
         offset: [0, -6],
         opacity: 1,
         sticky: false,
-        interactive: true,
+        interactive: state.layer === "streams",
       });
-      marker.on("click", () => selectStream(s.id, true));
-      marker.on("tooltipopen", () => {
-        const tip = marker.getTooltip();
-        if (!tip) return;
-        const node = tip.getElement();
-        if (!node) return;
-        L.DomEvent.disableClickPropagation(node);
-        L.DomEvent.disableScrollPropagation(node);
-        const btn = node.querySelector("[data-add]");
-        if (btn) {
-          btn.onclick = (e) => {
-            L.DomEvent.stop(e);
-            addToCompare(s.id);
-            marker.closeTooltip();
-          };
-        }
+      marker.on("click", () => {
+        if (state.layer === "sites") selectSite(s.id, true);
+        else selectStream(s.id, true);
       });
+      if (state.layer === "streams") {
+        marker.on("tooltipopen", () => {
+          const tip = marker.getTooltip();
+          if (!tip) return;
+          const node = tip.getElement();
+          if (!node) return;
+          L.DomEvent.disableClickPropagation(node);
+          L.DomEvent.disableScrollPropagation(node);
+          const btn = node.querySelector("[data-add]");
+          if (btn) {
+            btn.onclick = (e) => {
+              L.DomEvent.stop(e);
+              addToCompare(s.id);
+              marker.closeTooltip();
+            };
+          }
+        });
+      }
       marker.addTo(state.markerLayer);
       state.markers.set(s.id, marker);
     }
@@ -671,7 +746,7 @@
      instead of lingering on a denser “wt” cluster (WTS/WTL). */
   function fitToFiltered(animate) {
     if (!state.map) return;
-    const list = filteredStreams().filter((s) => s.lat != null && s.lon != null);
+    const list = activePins().filter((s) => s.lat != null && s.lon != null);
     if (!list.length) return;
     const q = state.query.trim().toLowerCase();
     if (!q) {
@@ -700,6 +775,7 @@
 
   function selectStream(id, fly) {
     state.streamId = id;
+    state.siteId = null;
     saveStorage();
     if (state.route === "home") {
       history.replaceState(null, "", buildUrl());
@@ -711,11 +787,72 @@
       const s = getStream(id);
       if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
     }
-    /* Phone shows the inspector inline under the cut map, so the overlay
-       sheet would only cover the pins. Tablet still uses the drawer. */
     const w = window.innerWidth;
     if (w > 699 && w <= 1099) {
       openInspectorDrawer();
+    }
+  }
+
+  function selectSite(id, fly) {
+    state.siteId = id;
+    state.streamId = null;
+    updateMarkers();
+    renderInspector();
+    if (fly && state.map) {
+      const s = getSite(id);
+      if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
+    }
+    const w = window.innerWidth;
+    if (w > 699 && w <= 1099) {
+      openInspectorDrawer();
+    }
+  }
+
+  function setLayer(layer) {
+    if (layer !== "streams" && layer !== "sites") return;
+    if (state.layer === layer) return;
+    state.layer = layer;
+    state.query = "";
+    if (el.search) {
+      el.search.value = "";
+      el.search.placeholder =
+        layer === "sites"
+          ? "Search fields, basins, historic sites…"
+          : "Search name, alias, country, basin…";
+    }
+    if (layer === "sites") state.streamId = null;
+    else state.siteId = null;
+    syncLayerSeg();
+    syncInspectorEmptyCopy();
+    const tray = $("compare-tray");
+    if (tray) tray.classList.toggle("is-sites-layer", layer === "sites");
+    renderSearchResults();
+    renderActiveChips();
+    updateMarkers();
+    renderInspector();
+    fitMapFull(true);
+  }
+
+  function syncLayerSeg() {
+    document.querySelectorAll("[data-layer]").forEach((btn) => {
+      btn.setAttribute(
+        "aria-pressed",
+        btn.getAttribute("data-layer") === state.layer ? "true" : "false"
+      );
+    });
+  }
+
+  function syncInspectorEmptyCopy() {
+    const title = el.inspectorEmpty?.querySelector(".empty-title");
+    const body = el.inspectorEmpty?.querySelector(".empty-body");
+    if (!title || !body) return;
+    if (state.layer === "sites") {
+      title.textContent = "Select a site";
+      body.textContent =
+        "Tap a field, basin, or historic find — or search Spindletop, Ghawar, Bakken…";
+    } else {
+      title.textContent = "Select a stream";
+      body.textContent = "Tap a marker on the map, or search for WTI, Merey-16, Boscan…";
     }
   }
 
@@ -1104,6 +1241,20 @@
   }
 
   function renderInspector() {
+    if (state.layer === "sites") {
+      const site = getSite(state.siteId);
+      if (!site) {
+        el.inspectorEmpty.classList.remove("hidden");
+        el.inspectorBody.classList.add("hidden");
+        el.inspectorBody.innerHTML = "";
+        return;
+      }
+      el.inspectorEmpty.classList.add("hidden");
+      el.inspectorBody.classList.remove("hidden");
+      el.inspectorBody.innerHTML = siteInspectorHtml(site);
+      bindSiteInspectorEvents(el.inspectorBody);
+      return;
+    }
     const s = getStream(state.streamId);
     if (!s) {
       el.inspectorEmpty.classList.remove("hidden");
@@ -1115,6 +1266,80 @@
     el.inspectorBody.classList.remove("hidden");
     el.inspectorBody.innerHTML = inspectorHtml(s);
     bindInspectorEvents(el.inspectorBody);
+  }
+
+  function siteInspectorHtml(s) {
+    const pills = [];
+    pills.push('<span class="pill pill-kind">' + escapeHtml(s.kind) + "</span>");
+    pills.push('<span class="pill pill-kind">' + escapeHtml(s.status) + "</span>");
+    if (s.year) pills.push('<span class="pill pill-kind">' + escapeHtml(String(s.year)) + "</span>");
+    const ac = apiClass(s.api);
+    if (ac) pills.push('<span class="pill pill-kind">' + escapeHtml(apiClassLabel(ac)) + "</span>");
+    if (s.sulfur_wt != null) {
+      pills.push(
+        '<span class="pill ' +
+          (isSweet(s) ? "pill-sweet" : "pill-sour") +
+          '">' +
+          (isSweet(s) ? "Sweet" : "Sour") +
+          "</span>"
+      );
+    }
+    let html = '<div class="insp-header">';
+    html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
+    html +=
+      '<p class="insp-loc">' +
+      escapeHtml([s.country, s.basin, s.region].filter(Boolean).join(" · ")) +
+      "</p>";
+    html += '<div class="insp-meta-row">' + pills.join("") + "</div></div>";
+    if (s.notes) {
+      html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
+    }
+    html += '<div class="quality-strip">';
+    html +=
+      '<div class="q-cell"><div class="q-label">API</div><div class="q-val">' +
+      escapeHtml(densityLabel(s.api)) +
+      ' <span class="q-unit">' +
+      escapeHtml(densityUnit()) +
+      "</span></div></div>";
+    html +=
+      '<div class="q-cell"><div class="q-label">Sulfur</div><div class="q-val">' +
+      escapeHtml(sulfurLabel(s.sulfur_wt)) +
+      ' <span class="q-unit">' +
+      escapeHtml(sulfurUnit()) +
+      "</span></div></div>";
+    html +=
+      '<div class="q-cell"><div class="q-label">Year</div><div class="q-val">' +
+      (s.year != null ? escapeHtml(String(s.year)) : "—") +
+      "</div></div>";
+    html +=
+      '<div class="q-cell"><div class="q-label">Type</div><div class="q-val">' +
+      escapeHtml(s.kind) +
+      "</div></div>";
+    html += "</div>";
+    const related = (s.related_ids || []).map(getStream).filter(Boolean);
+    if (related.length) {
+      html += '<div class="insp-block"><h3>Related streams</h3><div class="insp-meta-row">';
+      for (const r of related) {
+        html +=
+          '<button type="button" class="pill pill-kind" data-goto-stream="' +
+          escapeHtml(r.id) +
+          '">' +
+          escapeHtml(r.name) +
+          "</button>";
+      }
+      html += "</div></div>";
+    }
+    return html;
+  }
+
+  function bindSiteInspectorEvents(root) {
+    root.querySelectorAll("[data-goto-stream]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-goto-stream");
+        setLayer("streams");
+        selectStream(id, true);
+      });
+    });
   }
 
   function renderTray() {
@@ -1339,7 +1564,7 @@
   function rankedSearchHits() {
     const q = state.query.trim().toLowerCase();
     if (!q) return [];
-    const list = filteredStreams();
+    const list = activePins();
     const prefix = [];
     const rest = [];
     for (const s of list) {
@@ -1359,27 +1584,36 @@
       return;
     }
     const hits = rankedSearchHits();
+    const noun = state.layer === "sites" ? "sites" : "streams";
     if (!hits.length) {
       box.classList.remove("hidden");
-      box.innerHTML = '<div class="search-results-empty">No streams match “' + escapeHtml(q) + '”</div>';
+      box.innerHTML =
+        '<div class="search-results-empty">No ' + noun + " match “" + escapeHtml(q) + '”</div>';
       return;
     }
     const shown = hits.slice(0, 8);
     let html = "";
     for (const s of shown) {
+      let meta;
+      if (state.layer === "sites") {
+        meta = [s.country, s.kind, s.year != null ? String(s.year) : ""].filter(Boolean).join(" · ");
+      } else {
+        meta =
+          s.country +
+          " · " +
+          densityLabel(s.api) +
+          " " +
+          densityUnit() +
+          " · " +
+          (isSweet(s) ? "sweet" : s.sulfur_wt != null ? "sour" : "—");
+      }
       html +=
         '<button type="button" class="search-hit" role="option" data-search-hit="' +
         escapeHtml(s.id) +
         '"><span class="search-hit-name">' +
         escapeHtml(s.name) +
         '</span><span class="search-hit-meta">' +
-        escapeHtml(s.country) +
-        " · " +
-        densityLabel(s.api) +
-        " " +
-        densityUnit() +
-        " · " +
-        (isSweet(s) ? "sweet" : s.sulfur_wt != null ? "sour" : "—") +
+        escapeHtml(meta) +
         "</span></button>";
     }
     if (hits.length > shown.length) {
@@ -1408,7 +1642,8 @@
     renderActiveChips();
     updateMarkers();
     saveStorage();
-    selectStream(id, true);
+    if (state.layer === "sites") selectSite(id, true);
+    else selectStream(id, true);
   }
 
   function renderCompare() {
@@ -1841,15 +2076,15 @@
   function renderAbout() {
     el.viewAbout.innerHTML =
       '<h2 class="page-title">About</h2>' +
-      '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) — not countries and not molecules. Values are typical published assay ranges, not live well samples. Subject to year and field variability.</p></div>' +
+      '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
       '<div class="about-block"><h3>Quality flags</h3><ul class="flag-list">' +
       "<li><strong>measured</strong> — from a cited assay sample or lab report for that stream.</li>" +
       "<li><strong>typical</strong> — widely published representative value for the commercial grade.</li>" +
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>" +
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
-      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters and map color modes treat them separately.</p></div>' +
-      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip.</p></div>' +
+      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters and map color modes treat them separately. On Sites, API/S recolor pins that have representative assays; historic pins without assays stay mute gray.</p></div>' +
+      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
   }
@@ -2111,6 +2346,8 @@
     renderActiveChips();
     renderLegend();
     syncColorSeg();
+    syncLayerSeg();
+    syncInspectorEmptyCopy();
     syncUnitsUi();
     showView();
   }
@@ -2284,6 +2521,10 @@
       if (!first) return;
       e.preventDefault();
       pickSearchHit(first.id);
+    });
+
+    document.querySelectorAll("[data-layer]").forEach((btn) => {
+      btn.addEventListener("click", () => setLayer(btn.getAttribute("data-layer")));
     });
 
     document.querySelectorAll("[data-color]").forEach((btn) => {

@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=51" />
+  <link rel="stylesheet" href="styles.css?v=53" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,7 +106,7 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v51</span>
+          <span class="brand-ver" id="app-version">v53</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
@@ -231,21 +231,27 @@
         <div class="map-pane" id="map-pane">
           <div id="map" class="map" role="application" aria-label="World map of crude streams"></div>
           <div class="map-chrome" id="map-chrome">
-            <div class="color-toggle" role="group" aria-label="Map color mode">
-              <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
-              <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
-              <button
-                type="button"
-                class="color-help"
-                id="btn-legend-help"
-                aria-expanded="false"
-                aria-controls="legend-scale"
-                title="Color scale"
-              >
-                ?
-              </button>
+            <div class="layer-toggle" role="group" aria-label="Map layer">
+              <button type="button" class="color-btn" data-layer="streams" aria-pressed="true">Streams</button>
+              <button type="button" class="color-btn" data-layer="sites" aria-pressed="false">Sites</button>
             </div>
-            <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+            <div class="map-chrome-row">
+              <div class="color-toggle" role="group" aria-label="Map color mode">
+                <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
+                <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
+                <button
+                  type="button"
+                  class="color-help"
+                  id="btn-legend-help"
+                  aria-expanded="false"
+                  aria-controls="legend-scale"
+                  title="Color scale"
+                >
+                  ?
+                </button>
+              </div>
+              <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+            </div>
             <div class="legend-pop hidden" id="legend-scale" role="status"></div>
           </div>
         </div>
@@ -327,8 +333,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=51"></script>
-  <script src="app.js?v=51"></script>
+  <script src="data.js?v=53"></script>
+  <script src="sites.js?v=53"></script>
+  <script src="app.js?v=53"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -339,7 +346,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v51";
+    var EXPECTED = "v53";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
