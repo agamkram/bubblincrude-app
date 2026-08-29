@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v87";
+  const APP_VERSION = "v88";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -1880,9 +1880,12 @@
     html += metricBarsBlock(streams, "v", "Vanadium", (s) => s.v_ppm, (v) => fmtNum(v, 0), "ppm");
     html += "</div></div>";
 
-    html += '<div class="compare-card" style="grid-column:1/-1"><h3>True boiling point (cumulative)</h3>';
-    html += '<svg class="tbp-chart" id="tbp-chart" viewBox="0 0 640 240" role="img" aria-label="Distillation curves"></svg>';
-    html += '<div class="tbp-legend" id="tbp-legend"></div></div>';
+    const withTbp = streams.filter((s) => s.distillation_curve && s.distillation_curve.length);
+    if (withTbp.length) {
+      html += '<div class="compare-card" style="grid-column:1/-1"><h3>True boiling point (cumulative)</h3>';
+      html += '<svg class="tbp-chart" id="tbp-chart" viewBox="0 0 640 240" role="img" aria-label="Distillation curves"></svg>';
+      html += '<div class="tbp-legend" id="tbp-legend"></div></div>';
+    }
 
     const withSara = streams.filter((s) => s.sara);
     if (withSara.length >= 2) {
@@ -2068,12 +2071,7 @@
     const withCurve = streams
       .map((s, i) => ({ s, i, curve: s.distillation_curve }))
       .filter((x) => x.curve && x.curve.length);
-    if (!withCurve.length) {
-      svg.innerHTML =
-        '<text x="20" y="120" fill="#6b7382" font-size="13">No distillation curves available for this set.</text>';
-      if (legend) legend.innerHTML = "";
-      return;
-    }
+    if (!withCurve.length) return;
     const W = 640;
     const H = 240;
     const pad = { l: 44, r: 16, t: 16, b: 36 };
