@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v50";
+  const APP_VERSION = "v51";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -317,123 +317,42 @@
   }
 
   /* —— Persistence / URL —— */
-  function loadStorage() {
+  /* Nothing survives refresh, close, or reopen — not selection, tray,
+     filters, units, or search. Wipe any older localStorage and never write. */
+  function forgetStorage() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const o = JSON.parse(raw);
-      if (o.units) Object.assign(state.units, o.units);
-      if (o.colorMode) state.colorMode = o.colorMode;
-      if (Array.isArray(o.compareIds)) state.compareIds = o.compareIds.slice(0, 3);
-      /* Map selection is session-only — never restore streamId. Refresh,
-         close, and reopen should open a clean map. /stream/:id still
-         selects, because parseUrl() runs after this. */
+      localStorage.removeItem(STORAGE_KEY);
     } catch (_) {}
   }
   function saveStorage() {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          units: state.units,
-          colorMode: state.colorMode,
-          compareIds: state.compareIds,
-          route: state.route,
-        })
-      );
-    } catch (_) {}
+    /* intentionally empty */
   }
 
   function parseUrl() {
     const path = location.pathname.replace(/\/+$/, "") || "/";
-    const params = new URLSearchParams(location.search);
-    if (params.has("q")) state.query = params.get("q") || "";
-    if (params.has("color")) state.colorMode = params.get("color") === "sulfur" ? "sulfur" : "api";
-    if (params.has("units")) {
-      const u = params.get("units").split(",");
-      if (u[0]) state.units.density = u[0] === "sg" ? "sg" : "api";
-      if (u[1]) state.units.temp = u[1] === "F" ? "F" : "C";
-      if (u[2]) state.units.conc = u[2] === "ppm-s" ? "ppm-s" : "wt";
-      if (u[3]) state.units.hv = u[3] === "btu" ? "btu" : "mj";
-    }
-    if (params.has("api")) {
-      const [a, b] = params.get("api").split("-").map(Number);
-      if (!Number.isNaN(a)) state.filters.apiMin = a;
-      if (!Number.isNaN(b)) state.filters.apiMax = b;
-    }
-    if (params.has("smax")) {
-      const n = Number(params.get("smax"));
-      if (!Number.isNaN(n)) state.filters.sulfurMax = n;
-    }
-    if (params.has("ss")) state.filters.sweetSour = params.get("ss") || "all";
-    if (params.has("region")) {
-      state.filters.regions = params.get("region").split("|").filter(Boolean);
-    }
-    if (params.has("kind")) {
-      state.filters.kinds = params.get("kind").split("|").filter(Boolean);
-    }
-    if (params.get("dist") === "1") state.filters.hasDistill = true;
-    if (params.get("sara") === "1") state.filters.hasSara = true;
-    if (params.get("metals") === "1") state.filters.hasMetals = true;
-
     if (path === "/compare") {
       state.route = "compare";
-      const ids = (params.get("ids") || "").split(",").filter(Boolean);
-      if (ids.length) state.compareIds = ids.slice(0, 3);
     } else if (path.startsWith("/stream/")) {
       state.route = "stream";
-      state.streamId = path.slice("/stream/".length);
+      state.streamId = decodeURIComponent(path.slice("/stream/".length));
     } else if (path === "/cuts") state.route = "cuts";
     else if (path === "/molecules") state.route = "molecules";
     else if (path === "/about") state.route = "about";
     else {
       state.route = "home";
-      /* Do not restore ?id= — home selection must not survive refresh. */
-      if (params.has("ids")) {
-        state.compareIds = params.get("ids").split(",").filter(Boolean).slice(0, 3);
-      }
     }
   }
 
   function buildUrl(opts) {
     opts = opts || {};
     const route = opts.route != null ? opts.route : state.route;
-    const params = new URLSearchParams();
-    let path = "/";
-    if (route === "compare") {
-      path = "/compare";
-      if (state.compareIds.length) params.set("ids", state.compareIds.join(","));
-    } else if (route === "stream") {
-      path = "/stream/" + encodeURIComponent(opts.streamId || state.streamId || "");
-    } else if (route === "cuts") path = "/cuts";
-    else if (route === "molecules") path = "/molecules";
-    else if (route === "about") path = "/about";
-    else {
-      path = "/";
-      /* Selection stays in memory for the session only — never in the URL,
-         or a refresh would resurrect the last tap. */
-      if (state.compareIds.length) params.set("ids", state.compareIds.join(","));
-    }
-
-    if (state.query) params.set("q", state.query);
-    if (state.colorMode !== "api") params.set("color", state.colorMode);
-    const u = state.units;
-    if (u.density !== "api" || u.temp !== "C" || u.conc !== "wt" || u.hv !== "mj") {
-      params.set("units", [u.density, u.temp, u.conc, u.hv].join(","));
-    }
-    const f = state.filters;
-    if (f.apiMin !== API_FLOOR || f.apiMax !== API_CEIL)
-      params.set("api", f.apiMin + "-" + f.apiMax);
-    if (f.sulfurMax !== 6) params.set("smax", String(f.sulfurMax));
-    if (f.sweetSour !== "all") params.set("ss", f.sweetSour);
-    if (f.regions.length) params.set("region", f.regions.join("|"));
-    if (f.kinds.length) params.set("kind", f.kinds.join("|"));
-    if (f.hasDistill) params.set("dist", "1");
-    if (f.hasSara) params.set("sara", "1");
-    if (f.hasMetals) params.set("metals", "1");
-
-    const qs = params.toString();
-    return path + (qs ? "?" + qs : "");
+    if (route === "compare") return "/compare";
+    if (route === "stream")
+      return "/stream/" + encodeURIComponent(opts.streamId || state.streamId || "");
+    if (route === "cuts") return "/cuts";
+    if (route === "molecules") return "/molecules";
+    if (route === "about") return "/about";
+    return "/";
   }
 
   function navigate(route, opts) {
@@ -2520,7 +2439,7 @@
     const ver = $("app-version");
     if (ver) ver.textContent = APP_VERSION;
     pinShellViewport();
-    loadStorage();
+    forgetStorage();
     parseUrl();
     buildStaticFilters();
     wireFilterDom(document);
