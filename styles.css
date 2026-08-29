@@ -37,7 +37,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 63;
+  --bc-css: 64;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -476,17 +476,17 @@ html.pwa-standalone .app {
   flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1.5fr 1fr;
-  gap: 4px 12px;
+  gap: 4px 14px;
   align-items: center;
-  padding: 4px 10px 5px;
+  padding: 4px 14px 5px;
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
   z-index: 4;
 }
 .map-slider-block {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 6px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
   align-items: center;
   min-width: 0;
 }
@@ -1895,11 +1895,11 @@ html.pwa-standalone:not(.app-home) .view-page {
   .map-sliders {
     grid-template-columns: 1fr;
     gap: 2px 0;
-    padding: 4px 8px 5px;
+    padding: 4px 14px 5px;
   }
   .map-slider-block {
-    grid-template-columns: 24px minmax(0, 1fr) auto;
-    gap: 5px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
   }
   .rail-inspector {
     display: block;
