@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v60";
+  const APP_VERSION = "v61";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -2355,11 +2355,27 @@
 
   function wireFilterDom(root) {
     root = root || document;
+    function snapApi(n) {
+      const x = Math.round(Number(n) * 10) / 10;
+      if (x <= API_FLOOR + 0.05) return API_FLOOR;
+      if (x >= API_CEIL - 0.05) return API_CEIL;
+      return Math.max(API_FLOOR, Math.min(API_CEIL, x));
+    }
     function applyApiBand(which) {
-      let a = Number(el.apiMin.value);
-      let b = Number(el.apiMax.value);
-      if (which === "min" && a > b) a = b;
-      if (which === "max" && b < a) b = a;
+      /* Keep a real band — clamping crossed thumbs to equality used to
+         pinch the range shut after a few drags, so pins only vanished. */
+      const GAP = 1;
+      let a = snapApi(el.apiMin.value);
+      let b = snapApi(el.apiMax.value);
+      if (which === "min") {
+        if (a > b - GAP) a = snapApi(b - GAP);
+      } else {
+        if (b < a + GAP) b = snapApi(a + GAP);
+      }
+      if (a > b - GAP) {
+        a = snapApi(Math.max(API_FLOOR, b - GAP));
+        b = snapApi(Math.min(API_CEIL, a + GAP));
+      }
       el.apiMin.value = a;
       el.apiMax.value = b;
       state.filters.apiMin = a;
@@ -2379,7 +2395,7 @@
       if (e.target.tagName === "INPUT") return;
       const rect = el.apiRange.getBoundingClientRect();
       const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      const val = Math.round((API_FLOOR + t * (API_CEIL - API_FLOOR)) * 10) / 10;
+      const val = snapApi(API_FLOOR + t * (API_CEIL - API_FLOOR));
       const a = Number(el.apiMin.value);
       const b = Number(el.apiMax.value);
       const nearerMax = Math.abs(val - b) <= Math.abs(val - a);
@@ -2390,7 +2406,11 @@
     });
     const smax = root.querySelector("#sulfur-max") || el.sulfurMax;
     smax?.addEventListener("input", () => {
-      state.filters.sulfurMax = Number(el.sulfurMax.value);
+      let v = Math.round(Number(el.sulfurMax.value) * 10) / 10;
+      if (v >= S_CEIL - 0.05) v = S_CEIL;
+      if (v <= 0.15) v = 0.1;
+      el.sulfurMax.value = v;
+      state.filters.sulfurMax = v;
       updateFilterReadouts();
       onFiltersChanged();
     });
