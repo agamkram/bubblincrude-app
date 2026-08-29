@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css8";
+  content: "·css12";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -1704,10 +1704,40 @@ html.pwa-standalone:not(.app-home) .view-page {
     flex: 1 1 100%;
     max-width: none;
   }
+  /* Cropped crude-belt map is ~2:1 mercator. Size the pane to that so
+     Antarctica isn't a tall empty slab, and the inspector gets the rest. */
+  .view-home {
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "map"
+      "inspector";
+  }
+  .map-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .map {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: var(--map-aspect, 2.06) / 1;
+    flex: 0 0 auto;
+  }
   .map-chrome {
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    position: static;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    padding: 8px 10px;
+    max-width: none;
+  }
+  .rail-inspector {
+    display: block;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    min-height: 0;
   }
   .legend-pop {
     max-width: none;

@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v8";
+  const APP_VERSION = "v12";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -481,17 +481,40 @@
   }
 
   /* —— Map —— */
-  /* Mercator-safe world box — keeps pan inside the map (no empty gray). */
-  const WORLD_BOUNDS = [
-    [-85, -180],
-    [85, 180],
-  ];
+  /* Pin-to-pin belt: Escalante 45.8°S to ANS 70.3°N. Polar ice has no
+     streams, and Mercator stretches it into a huge empty slab. Crop so
+     the crude world fills the pane; on a phone that also frees height
+     below the map. Lon stays full-world (ANS to Gippsland already spans it). */
+  function crudeBeltBounds() {
+    let south = 90;
+    let north = -90;
+    for (const s of DATA.streams) {
+      if (s.lat == null) continue;
+      if (s.lat < south) south = s.lat;
+      if (s.lat > north) north = s.lat;
+    }
+    south = Math.max(south - 8, -85);
+    north = Math.min(north + 6, 85);
+    return [
+      [south, -180],
+      [north, 180],
+    ];
+  }
+  function mercatorAspect(bounds) {
+    const y = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 180 / 2));
+    return (2 * Math.PI) / (y(bounds[1][0]) - y(bounds[0][0]));
+  }
+  const WORLD_BOUNDS = crudeBeltBounds();
+  document.documentElement.style.setProperty(
+    "--map-aspect",
+    String(mercatorAspect(WORLD_BOUNDS).toFixed(4))
+  );
 
   function lockFullZoomFloor() {
     if (!state.map) return;
     const z = state.map.getZoom();
     state._fullZoom = z;
-    /* Floor = full-world framing so zooming out bottoms out there (same as Reset). */
+    /* Floor = crude-belt framing so zooming out bottoms out there (same as Reset). */
     state.map.setMinZoom(z);
     state._fittingFull = false;
   }
@@ -501,9 +524,8 @@
     state._fittingFull = true;
     state.map.invalidateSize({ pan: false });
     /* Temporarily unlock so the full fit can settle, then lock that zoom as the floor. */
-    state.map.setMinZoom(1);
-    /* Whole world visible in the pane (not a cropped mid-ocean zoom). */
-    /* No padding — padding would zoom past maxBounds and fight the edge clamp. */
+    state.map.setMinZoom(0);
+    /* Crude belt fills the pane. No padding — it would zoom past maxBounds. */
     state.map.fitBounds(WORLD_BOUNDS, {
       animate: !!animate,
       padding: [0, 0],
@@ -531,7 +553,7 @@
       worldCopyJump: false,
       zoomControl: true,
       attributionControl: true,
-      minZoom: 1,
+      minZoom: 0,
       maxZoom: 10,
       maxBounds: worldBounds,
       maxBoundsViscosity: 1.0,
@@ -667,10 +689,8 @@
       const s = getStream(id);
       if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
     }
-    const w = window.innerWidth;
-    if (w <= 699) {
-      openInspectorSheet();
-    } else if (w <= 1099) {
+    /* Phone keeps the inspector under the map; tablet uses the drawer. */
+    if (window.innerWidth > 699 && window.innerWidth <= 1099) {
       openInspectorDrawer();
     }
   }
@@ -1967,8 +1987,9 @@
       renderTray();
       if (state.streamId && !state._mobileInspected) {
         state._mobileInspected = state.streamId;
-        if (window.innerWidth <= 699) openInspectorSheet();
-        else if (window.innerWidth <= 1099) openInspectorDrawer();
+        if (window.innerWidth > 699 && window.innerWidth <= 1099) {
+          openInspectorDrawer();
+        }
       }
     } else if (state.route === "compare") renderCompare();
     else if (state.route === "stream") renderStreamPage();
@@ -2271,6 +2292,7 @@
       }
     });
 
+    let lastMapSize = "";
     function onViewportChange() {
       pinShellViewport();
       if (window.innerWidth >= 1100) {
@@ -2279,7 +2301,16 @@
         closeSheets();
       }
       if (state.map) {
-        setTimeout(() => state.map.invalidateSize({ pan: false }), 100);
+        setTimeout(() => {
+          if (!state.map) return;
+          state.map.invalidateSize({ pan: false });
+          const sz = state.map.getSize();
+          const key = sz.x + "x" + sz.y;
+          if (key !== lastMapSize) {
+            lastMapSize = key;
+            fitMapFull(false);
+          }
+        }, 100);
       }
       if (state.originMap) {
         setTimeout(() => state.originMap.invalidateSize({ pan: false }), 100);
