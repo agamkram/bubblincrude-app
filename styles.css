@@ -151,7 +151,7 @@ html.pwa-standalone .app {
   align-items: stretch;
   gap: 8px;
   min-height: var(--topbar-h);
-  padding: calc(10px + env(safe-area-inset-top, 0px))
+  padding: calc(2px + env(safe-area-inset-top, 0px))
     calc(16px + env(safe-area-inset-right, 0px)) 8px
     calc(16px + env(safe-area-inset-left, 0px));
   border-bottom: 1px solid var(--border);
@@ -172,10 +172,10 @@ html.pwa-standalone .app {
 .brand-title {
   margin: 0;
   font-family: Michroma, "IBM Plex Sans", system-ui, sans-serif;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.02em;
-  line-height: 24px;
+  line-height: 28px;
   white-space: nowrap;
   text-transform: none;
 }
@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css28";
+  content: "·css29";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -1680,10 +1680,13 @@ html.pwa-standalone:not(.app-home) .view-page {
 @media (max-width: 699px) {
   .topbar {
     gap: 6px;
-    padding: 8px 10px;
+    padding: calc(2px + env(safe-area-inset-top, 0px))
+      calc(10px + env(safe-area-inset-right, 0px)) 6px
+      calc(10px + env(safe-area-inset-left, 0px));
   }
   .brand-title {
-    font-size: 1.15rem;
+    font-size: 24px;
+    line-height: 26px;
   }
   .topbar-row {
     flex-wrap: wrap;
