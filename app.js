@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v40";
+  const APP_VERSION = "v41";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -638,11 +638,11 @@
     setTimeout(() => fitMapFull(false), 50);
   }
 
-  function makeIcon(s, selected, dimmed) {
+  function makeIcon(s, selected, dimmed, few) {
     const color = markerColor(s);
     /* Even sizes keep Leaflet's -size/2 anchor on whole pixels (odd sizes
        gave -3.5px margins, which blurred the 1px ring on 2x displays). */
-    const size = selected ? 10 : 8;
+    const size = selected ? 12 : few ? 12 : 8;
     const cls =
       "stream-marker" + (selected ? " is-selected" : "") + (dimmed ? " is-dimmed" : "");
     return L.divIcon({
@@ -704,12 +704,13 @@
     /* Only dim when the selected stream is still on the map. Otherwise a
        leftover selection (e.g. Merey + search “wti”) fades every match. */
     const selInList = list.some((s) => s.id === state.streamId);
+    const few = list.length > 0 && list.length <= 8;
 
     for (const s of list) {
       const selected = selInList && s.id === state.streamId;
       const dimmed = selInList && !selected;
       const marker = L.marker([s.lat, s.lon], {
-        icon: makeIcon(s, selected, dimmed),
+        icon: makeIcon(s, selected, dimmed, few),
         title: s.name,
         riseOnHover: true,
       });
@@ -743,18 +744,23 @@
     }
   }
 
-  /* Search/filter hits are often a few 8px dots on a world map — unreadable
-     unless we frame them. Empty query returns to the full belt. */
+  /* Search/filter hits are often a few dots on a world map — unreadable
+     unless we frame them. Empty query returns to the full belt.
+     Prefer streams whose name starts with the query so “wti” frames WTI*
+     instead of lingering on a denser “wt” cluster (WTS/WTL). */
   function fitToFiltered(animate) {
     if (!state.map) return;
     const list = filteredStreams().filter((s) => s.lat != null && s.lon != null);
     if (!list.length) return;
-    if (!state.query.trim()) {
+    const q = state.query.trim().toLowerCase();
+    if (!q) {
       fitMapFull(animate);
       return;
     }
-    const bounds = L.latLngBounds(list.map((s) => [s.lat, s.lon]));
-    const pad = list.length <= 2 ? 0.8 : 0.35;
+    const named = list.filter((s) => String(s.name).toLowerCase().startsWith(q));
+    const focus = named.length ? named : list;
+    const bounds = L.latLngBounds(focus.map((s) => [s.lat, s.lon]));
+    const pad = focus.length <= 2 ? 0.8 : 0.35;
     state._fittingFull = true;
     state.map.once("moveend", () => {
       state._fittingFull = false;
@@ -1403,8 +1409,11 @@
     history.replaceState(null, "", buildUrl());
     renderActiveChips();
     updateMarkers();
-    fitToFiltered(true);
     saveStorage();
+    /* Debounce the camera so iOS keyboard resizes and per-keystroke fits
+       don’t fight each other into a blank world view. */
+    clearTimeout(state._fitFilterTimer);
+    state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
   }
 
   function renderCompare() {
@@ -2414,7 +2423,10 @@
           const key = sz.x + "x" + sz.y;
           if (key !== lastMapSize) {
             lastMapSize = key;
-            fitMapFull(false);
+            /* Keyboard open/close on phone resizes the map. Refitting the
+               full belt here was wiping search zooms (e.g. “wti” → empty look). */
+            if (state.query.trim()) fitToFiltered(false);
+            else fitMapFull(false);
           }
         }, 100);
       }
