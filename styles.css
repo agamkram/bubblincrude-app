@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css23";
+  content: "·css24";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -636,14 +636,6 @@ input[type="range"] {
   font: inherit;
   /* Keep tile layers from widening the layout viewport on iOS Safari. */
   max-width: 100%;
-}
-.leaflet-control-attribution {
-  background: rgba(10, 12, 16, 0.75) !important;
-  color: var(--text-mute) !important;
-  font-size: 10px !important;
-}
-.leaflet-control-attribution a {
-  color: var(--text-dim) !important;
 }
 .leaflet-control-zoom a {
   background: var(--bg-panel) !important;
