@@ -1,0 +1,30 @@
+{
+  "framework": null,
+  "rewrites": [
+    { "source": "/stream/(.*)", "destination": "/index.html" },
+    { "source": "/compare", "destination": "/index.html" },
+    { "source": "/cuts", "destination": "/index.html" },
+    { "source": "/molecules", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)\\.(png|svg|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|mjs|css|webmanifest|json|html)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!--
+    BubblinCrude — static PWA deploy notes
+    - Deploy as a static site on Vercel (no server). Root = this folder.
+    - vercel.json includes SPA rewrites so /compare, /stream/:id, /cuts, etc. serve index.html.
+    - After first visit, sw.js caches the app shell + data.js for offline use.
+    - Leaflet + Carto Dark Matter tiles need network for map tiles; assay data works offline.
+  -->
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#0e1116" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BubblinCrude" />
+  <!--
+    iOS-full-bleed.txt Bug B: PWA uses fillH. Safari tab must NOT use VV
+    offsetTop/Left (Leaflet overflow + VV offsets → black corner boxes).
+    Safari: shell inset 0. Do not use max-height:100dvh on PWA.
+  -->
+  <script>
+    (function () {
+      try {
+        var r = document.documentElement;
+        var n = window.navigator;
+        var standalone =
+          n.standalone === true ||
+          (window.matchMedia &&
+            (window.matchMedia("(display-mode: standalone)").matches ||
+              window.matchMedia("(display-mode: fullscreen)").matches));
+        var iw = window.innerWidth || 0;
+        var ih = window.innerHeight || 0;
+        var sw = (window.screen && window.screen.width) || 0;
+        var sh = (window.screen && window.screen.height) || 0;
+        var screenMax = Math.max(sw, sh);
+        var screenMin = Math.min(sw, sh);
+        r.style.setProperty("--vv-top", "0px");
+        r.style.setProperty("--vv-left", "0px");
+        if (standalone) {
+          r.classList.add("pwa-standalone");
+          var fillH = ih >= iw ? Math.max(ih, screenMax) : Math.max(ih, screenMin);
+          var extra = 0;
+          if (Math.min(iw, ih) >= 600 && screenMax < ih - 10) extra = 20;
+          var total = fillH + extra;
+          r.style.setProperty("--pwa-fill-h", fillH + "px");
+          r.style.setProperty("--pwa-extra-b", extra + "px");
+          r.style.setProperty("--vv-w", iw + "px");
+          r.style.setProperty("--vv-h", total + "px");
+          r.style.height = total + "px";
+          r.style.minHeight = total + "px";
+        } else {
+          r.style.setProperty("--vv-w", "100%");
+          r.style.setProperty("--vv-h", "100%");
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <meta
+    name="description"
+    content="Explore commercial crude oil streams on a world map — filter, assay, and compare WTI, Merey-16, Boscan, and more."
+  />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Mark Maga" />
+  <meta property="og:title" content="BubblinCrude — crude oil explorer" />
+  <meta
+    property="og:description"
+    content="Global crude streams — filter, analyze, compare. Assay-style quality with source chips and quality flags."
+  />
+  <meta property="og:url" content="https://bubblincrude.markmaga.com/" />
+  <link rel="canonical" href="https://bubblincrude.markmaga.com/" />
+  <meta property="og:image" content="https://bubblincrude.markmaga.com/icon-512.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="BubblinCrude — crude oil explorer" />
+  <meta
+    name="twitter:description"
+    content="Global crude streams — filter, analyze, compare."
+  />
+  <meta name="twitter:image" content="https://bubblincrude.markmaga.com/icon-512.png" />
+  <title>BubblinCrude — crude oil explorer | Mark Maga</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Michroma&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
+  <link rel="stylesheet" href="styles.css?v=7" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div id="app" class="app">
+    <header class="topbar" role="banner">
+      <div class="topbar-title">
+        <h1 class="brand-title">BubblinCrude</h1>
+        <p class="brand-sub">
+          <span class="brand-sub-text">Global crude streams — filter, analyze, compare</span>
+          <span class="brand-ver" id="app-version">v7</span>
+        </p>
+      </div>
+
+      <div class="topbar-row">
+        <div class="topbar-search">
+          <label class="sr-only" for="search-input">Search streams</label>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search name, alias, country, basin…"
+            autocomplete="off"
+            enterkeyhint="search"
+          />
+        </div>
+
+        <nav class="topbar-nav" aria-label="Primary">
+          <a href="/" data-nav="home" class="nav-link is-active">Crudes</a>
+          <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
+          <a href="/molecules" data-nav="molecules" class="nav-link">Molecules</a>
+          <a href="/about" data-nav="about" class="nav-link">About</a>
+        </nav>
+
+        <div class="topbar-actions">
+          <button type="button" class="btn btn-ghost" id="btn-units" aria-haspopup="true" aria-expanded="false">
+            Units
+          </button>
+          <button type="button" class="btn btn-icon mobile-only" id="btn-filters" aria-label="Open filters">
+            Filters
+          </button>
+          <button type="button" class="btn btn-icon mobile-only" id="btn-menu" aria-label="Menu" aria-expanded="false">
+            Menu
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div id="units-popover" class="popover hidden" role="dialog" aria-label="Units">
+      <fieldset>
+        <legend>Density</legend>
+        <label><input type="radio" name="u-density" value="api" checked /> API</label>
+        <label><input type="radio" name="u-density" value="sg" /> Specific gravity</label>
+      </fieldset>
+      <fieldset>
+        <legend>Temperature</legend>
+        <label><input type="radio" name="u-temp" value="C" checked /> °C</label>
+        <label><input type="radio" name="u-temp" value="F" /> °F</label>
+      </fieldset>
+      <fieldset>
+        <legend>Sulfur / metals</legend>
+        <label><input type="radio" name="u-conc" value="wt" checked /> wt% / ppm</label>
+        <label><input type="radio" name="u-conc" value="ppm-s" /> S as ppm</label>
+      </fieldset>
+      <fieldset>
+        <legend>Heating value</legend>
+        <label><input type="radio" name="u-hv" value="mj" checked /> MJ/kg</label>
+        <label><input type="radio" name="u-hv" value="btu" /> Btu/lb</label>
+      </fieldset>
+    </div>
+
+    <div id="menu-popover" class="popover menu-popover hidden" role="dialog" aria-label="Menu">
+      <a href="/" data-nav="home" class="menu-link">Crudes</a>
+      <a href="/cuts" data-nav="cuts" class="menu-link">Cuts</a>
+      <a href="/molecules" data-nav="molecules" class="menu-link">Molecules</a>
+      <a href="/about" data-nav="about" class="menu-link">About</a>
+      <button type="button" class="menu-link" id="menu-units">Units</button>
+    </div>
+
+    <main id="main" class="main" tabindex="-1">
+      <!-- Map workspace -->
+      <section id="view-home" class="view view-home" aria-label="Map workspace">
+        <aside class="rail rail-filters" id="filters-rail" aria-label="Filters">
+          <div class="rail-head">
+            <h2>Filters</h2>
+            <button type="button" class="btn btn-text" id="btn-reset-filters">Reset</button>
+          </div>
+          <div class="active-chips" id="active-chips" hidden></div>
+
+          <div class="filter-block">
+            <div class="filter-label">API gravity</div>
+            <!-- Two inputs, not a duplicate: HTML has no dual-handle range. -->
+            <div class="range-pair">
+              <label class="range-row">
+                <span class="range-tag">min</span>
+                <input type="range" id="api-min" min="5" max="60" step="0.1" value="5" />
+              </label>
+              <label class="range-row">
+                <span class="range-tag">max</span>
+                <input type="range" id="api-max" min="5" max="60" step="0.1" value="60" />
+              </label>
+            </div>
+            <div class="range-readout" id="api-readout">5 – 60 °API</div>
+            <div class="tick-row" aria-hidden="true">
+              <span>&lt;10</span><span>22</span><span>31</span><span>39</span><span>&gt;39</span>
+            </div>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Sulfur</div>
+            <div class="seg" role="group" aria-label="Sweet or sour">
+              <button type="button" class="seg-btn" data-sweet="all" aria-pressed="true">All</button>
+              <button type="button" class="seg-btn" data-sweet="sweet" aria-pressed="false">Sweet ≤0.5%</button>
+              <button type="button" class="seg-btn" data-sweet="sour" aria-pressed="false">Sour</button>
+            </div>
+            <label class="slider-label" for="sulfur-max">Max sulfur wt%</label>
+            <input type="range" id="sulfur-max" min="0.1" max="6" step="0.1" value="6" />
+            <div class="range-readout" id="sulfur-readout">≤ 6.0 wt%</div>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Region</div>
+            <div class="check-grid" id="region-filters"></div>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Kind</div>
+            <div class="check-grid" id="kind-filters"></div>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Completeness</div>
+            <label class="check"><input type="checkbox" id="has-distill" /> Has distillation</label>
+            <label class="check"><input type="checkbox" id="has-sara" /> Has SARA</label>
+            <label class="check"><input type="checkbox" id="has-metals" /> Has metals</label>
+          </div>
+
+          <div class="filter-block">
+            <div class="filter-label">Saved views</div>
+            <div class="saved-views" id="saved-views"></div>
+          </div>
+        </aside>
+
+        <div class="map-pane" id="map-pane">
+          <div id="map" class="map" role="application" aria-label="World map of crude streams"></div>
+          <div class="map-chrome" id="map-chrome">
+            <div class="color-toggle" role="group" aria-label="Map color mode">
+              <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
+              <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
+              <button
+                type="button"
+                class="color-help"
+                id="btn-legend-help"
+                aria-expanded="false"
+                aria-controls="legend-scale"
+                title="Color scale"
+              >
+                ?
+              </button>
+            </div>
+            <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+            <div class="legend-pop hidden" id="legend-scale" role="status"></div>
+          </div>
+        </div>
+
+        <aside class="rail rail-inspector" id="inspector-rail" aria-label="Stream inspector">
+          <div id="inspector" class="inspector">
+            <div class="inspector-empty" id="inspector-empty">
+              <p class="empty-title">Select a stream</p>
+              <p class="empty-body">Tap a marker on the map, or search for WTI, Merey-16, Boscan…</p>
+            </div>
+            <div class="inspector-body hidden" id="inspector-body"></div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- Compare board -->
+      <section id="view-compare" class="view view-compare hidden" aria-label="Compare board"></section>
+
+      <!-- Deep stream -->
+      <section id="view-stream" class="view view-stream hidden" aria-label="Stream assay"></section>
+
+      <!-- Cuts -->
+      <section id="view-cuts" class="view view-page hidden" aria-label="Cuts reference"></section>
+
+      <!-- Molecules -->
+      <section id="view-molecules" class="view view-page hidden" aria-label="Molecules"></section>
+
+      <!-- About -->
+      <section id="view-about" class="view view-page hidden" aria-label="About"></section>
+    </main>
+
+    <div class="compare-tray" id="compare-tray" aria-label="Compare tray">
+      <div class="tray-label">Compare</div>
+      <div class="tray-chips" id="tray-chips"></div>
+      <button type="button" class="btn btn-ghost" id="btn-add-stream">+ Add Stream</button>
+      <button type="button" class="btn btn-primary" id="btn-open-compare" disabled>Compare</button>
+    </div>
+  </div>
+
+  <!-- Mobile filter sheet -->
+  <div id="sheet-filters" class="sheet hidden" role="dialog" aria-modal="true" aria-label="Filters">
+    <div class="sheet-backdrop" data-close-sheet></div>
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head">
+        <h2>Filters</h2>
+        <button type="button" class="btn btn-text" data-close-sheet>Done</button>
+      </div>
+      <div class="sheet-body" id="sheet-filters-body"></div>
+    </div>
+  </div>
+
+  <!-- Mobile inspector sheet -->
+  <div id="sheet-inspector" class="sheet sheet-inspector hidden" role="dialog" aria-modal="true" aria-label="Stream details">
+    <div class="sheet-backdrop" data-close-sheet></div>
+    <div class="sheet-panel sheet-snap">
+      <div class="sheet-handle"></div>
+      <div class="sheet-body" id="sheet-inspector-body"></div>
+    </div>
+  </div>
+
+  <!-- Add stream picker -->
+  <div id="picker-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Add stream to compare">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2>Add stream</h2>
+        <button type="button" class="btn btn-text" data-close-modal>Close</button>
+      </div>
+      <input type="search" id="picker-search" placeholder="Filter current set…" autocomplete="off" />
+      <div class="picker-list" id="picker-list"></div>
+    </div>
+  </div>
+
+  <!-- Cut drawer -->
+  <div id="cut-drawer" class="drawer hidden" role="dialog" aria-modal="true" aria-label="Cut details">
+    <div class="drawer-backdrop" data-close-drawer></div>
+    <div class="drawer-panel" id="cut-drawer-body"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="data.js?v=7"></script>
+  <script src="app.js?v=7"></script>
+  <script>
+    // Local previews must never be cached. Offline support is a production
+    // feature; on a dev box it only serves you files you already changed.
+    var IS_LOCAL = /^(localhost|127\.|0\.0\.0\.0|\[?::1\]?|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(
+      location.hostname
+    );
+
+    // This file is served no-store, so EXPECTED is always current. If the
+    // JS or CSS the browser actually loaded is older, a stale service worker
+    // is in the way: purge it and reload once (guarded so it cannot loop).
+    var EXPECTED = "v7";
+
+    function loadedVersions() {
+      var probe = document.getElementById("app-version");
+      var css = probe
+        ? getComputedStyle(probe, "::after").content.replace(/["'·]/g, "")
+        : "";
+      return { js: window.__APP_VERSION || "", css: css };
+    }
+
+    function purgeCaches() {
+      var jobs = [];
+      if ("serviceWorker" in navigator) {
+        jobs.push(
+          navigator.serviceWorker.getRegistrations().then(function (rs) {
+            return Promise.all(rs.map(function (r) { return r.unregister(); }));
+          })
+        );
+      }
+      if (window.caches) {
+        jobs.push(
+          caches.keys().then(function (ks) {
+            return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+          })
+        );
+      }
+      return Promise.all(jobs).catch(function () {});
+    }
+
+    window.addEventListener("load", function () {
+      var got = loadedVersions();
+      var stale = got.js !== EXPECTED || got.css !== "css" + EXPECTED.slice(1);
+
+      if (IS_LOCAL) {
+        // Never register locally, and evict any worker installed earlier so a
+        // previous session cannot keep serving old files.
+        navigator.serviceWorker &&
+          navigator.serviceWorker.getRegistrations().then(function (rs) {
+            if (rs.length || stale) {
+              purgeCaches().then(function () {
+                if (rs.length) location.reload();
+              });
+            }
+          });
+        return;
+      }
+
+      if (stale && !sessionStorage.getItem("bc-healed")) {
+        sessionStorage.setItem("bc-healed", "1");
+        purgeCaches().then(function () {
+          location.replace(
+            location.pathname + "?r=" + Date.now() + location.hash
+          );
+        });
+        return;
+      }
+
+      if (!stale) sessionStorage.removeItem("bc-healed");
+
+      if ("serviceWorker" in navigator) {
+        // updateViaCache:"none" stops Safari serving sw.js itself from cache,
+        // which is what pinned browsers to a stale build.
+        navigator.serviceWorker
+          .register("./sw.js", { updateViaCache: "none" })
+          .then(function (reg) {
+            reg.update();
+          })
+          .catch(function () {});
+      }
+    });
+  </script>
+</body>
+</html>
