@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v58";
+  const APP_VERSION = "v59";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -44,6 +44,7 @@
      Declared before `state`, which calls defaultFilters() during init. */
   const API_FLOOR = 5;
   const API_CEIL = 60;
+  const S_CEIL = 5.2;
 
   const state = {
     route: "home",
@@ -152,7 +153,7 @@
       apiMin: API_FLOOR,
       apiMax: API_CEIL,
       sweetSour: "all",
-      sulfurMax: 6,
+      sulfurMax: S_CEIL,
       regions: [],
       kinds: [],
       hasDistill: false,
@@ -1379,7 +1380,7 @@
     if (f.sweetSour !== "all") {
       chips.push(chipDismiss(f.sweetSour === "sweet" ? "Sweet" : "Sour", "ss"));
     }
-    if (f.sulfurMax !== 6) {
+    if (f.sulfurMax !== S_CEIL) {
       chips.push(chipDismiss("S ≤ " + f.sulfurMax + "%", "smax"));
     }
     for (const r of f.regions) chips.push(chipDismiss(r, "region:" + r));
@@ -1421,7 +1422,7 @@
       f.sweetSour = "all";
       syncSweetSeg();
     } else if (key === "smax") {
-      f.sulfurMax = 6;
+      f.sulfurMax = S_CEIL;
       syncFilterControls();
     } else if (key.startsWith("region:")) {
       const r = key.slice(7);
@@ -2226,7 +2227,7 @@
       apiMin: src.apiMin != null ? src.apiMin : API_FLOOR,
       apiMax: src.apiMax != null ? src.apiMax : API_CEIL,
       sweetSour: src.sweetSour || "all",
-      sulfurMax: src.sulfurMax != null ? src.sulfurMax : 6,
+      sulfurMax: src.sulfurMax != null ? src.sulfurMax : S_CEIL,
       regions: src.region ? src.region.slice() : [],
       kinds: src.kinds ? src.kinds.slice() : [],
       hasDistill: !!src.hasDistill,
