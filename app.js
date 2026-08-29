@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v35";
+  const APP_VERSION = "v36";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -669,8 +669,8 @@
     pills.push(isSweet(s) ? "Sweet" : s.sulfur_wt != null ? "Sour" : "—");
     const inTray = state.compareIds.includes(s.id);
     const action = inTray
-      ? '<button type="button" class="btn tip-add" disabled>In tray</button>'
-      : '<button type="button" class="btn btn-primary tip-add" data-add="' +
+      ? '<span class="pill pill-compare is-done">In tray</span>'
+      : '<button type="button" class="pill pill-compare" data-add="' +
         escapeHtml(s.id) +
         '">Compare</button>';
     return (
@@ -878,11 +878,10 @@
       "</p>";
     html += '<div class="pill-row">' + pillsFor(s);
     if (state.compareIds.includes(s.id)) {
-      html +=
-        '<button type="button" class="btn insp-compare" disabled>In tray</button>';
+      html += '<span class="pill pill-compare is-done">In tray</span>';
     } else {
       html +=
-        '<button type="button" class="btn btn-primary insp-compare" data-compare-add="' +
+        '<button type="button" class="pill pill-compare" data-compare-add="' +
         escapeHtml(s.id) +
         '">Compare</button>';
     }

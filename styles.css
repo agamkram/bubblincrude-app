@@ -210,7 +210,7 @@ html.pwa-standalone .app {
 /* A stale stylesheet will not carry this suffix, so the badge reading
    "v3" without "css3" means the CSS is cached and the JS is not. */
 .brand-ver::after {
-  content: "·css35";
+  content: "·css36";
   margin-left: 4px;
   opacity: 0.75;
 }
@@ -768,7 +768,7 @@ input[type="range"] {
   padding: 5px 8px;
   box-shadow: var(--shadow);
   font-size: 11px;
-  max-width: 200px;
+  max-width: none;
   line-height: 1.25;
   /* Leaflet tooltips are pointer-events:none unless interactive; keep that
      path honest so the Compare button can receive the click. */
@@ -788,7 +788,7 @@ input[type="range"] {
 }
 .tip-pills {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 3px;
   margin: 4px 0 0;
   align-items: center;
@@ -796,18 +796,6 @@ input[type="range"] {
 .tip-pills .pill {
   padding: 1px 6px;
   font-size: 10px;
-}
-.tip-add {
-  min-height: 0;
-  height: auto;
-  padding: 1px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
-  border-radius: 999px;
-  width: auto;
-  flex: 0 0 auto;
 }
 
 /* —— Inspector —— */
@@ -854,6 +842,7 @@ input[type="range"] {
   flex-wrap: wrap;
   gap: 4px;
   margin: 6px 0;
+  align-items: center;
 }
 .pill {
   padding: 2px 7px;
@@ -862,6 +851,11 @@ input[type="range"] {
   font-weight: 600;
   letter-spacing: 0.02em;
   border: 1px solid transparent;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: default;
 }
 .pill-condensate {
   background: rgba(155, 240, 232, 0.16);
@@ -899,6 +893,17 @@ input[type="range"] {
   color: var(--text-dim);
   border-color: var(--border);
 }
+.pill-compare {
+  background: var(--teal);
+  color: #041016;
+  border-color: var(--teal);
+}
+.pill-compare.is-done {
+  background: var(--bg-elev);
+  color: var(--text-mute);
+  border-color: var(--border);
+  opacity: 0.75;
+}
 .insp-meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -907,17 +912,6 @@ input[type="range"] {
   font-size: 11px;
   color: var(--text-mute);
   margin-bottom: 8px;
-}
-.insp-compare {
-  min-height: 0;
-  height: auto;
-  padding: 2px 7px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  line-height: 1.3;
-  border-radius: 999px;
-  flex: 0 0 auto;
 }
 .source-chip {
   display: inline-flex;
