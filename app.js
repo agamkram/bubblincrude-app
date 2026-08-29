@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v88";
+  const APP_VERSION = "v89";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -172,6 +172,7 @@
   function cacheEls() {
     el.app = $("app");
     el.search = $("search-input");
+    el.searchClear = $("search-clear");
     el.searchResults = $("search-results");
     el.filtersRail = $("filters-rail");
     el.activeChips = $("active-chips");
@@ -813,6 +814,7 @@
   function selectStream(id, fly) {
     state.streamId = id;
     state.siteId = null;
+    dismissSearchQuery();
     saveStorage();
     if (state.route === "home") {
       history.replaceState(null, "", buildUrl());
@@ -824,6 +826,8 @@
       const s = getStream(id);
       if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
     }
+    state._searchFocused = false;
+    renderSearchResults();
     const w = window.innerWidth;
     if (w > 699 && w <= 1099) {
       openInspectorDrawer();
@@ -833,6 +837,7 @@
   function selectSite(id, fly) {
     state.siteId = id;
     state.streamId = null;
+    dismissSearchQuery();
     updateMarkers();
     renderInspector();
     renderTray();
@@ -840,6 +845,8 @@
       const s = getSite(id);
       if (s) state.map.flyTo([s.lat, s.lon], Math.max(state.map.getZoom(), 5), { duration: 0.6 });
     }
+    state._searchFocused = false;
+    renderSearchResults();
     const w = window.innerWidth;
     if (w > 699 && w <= 1099) {
       openInspectorDrawer();
@@ -858,6 +865,7 @@
           ? "Search fields, basins, historic sites…"
           : "Search name, alias, country, basin…";
     }
+    syncSearchClear();
     if (layer === "sites") state.streamId = null;
     else state.siteId = null;
     syncLayerSeg();
@@ -904,7 +912,7 @@
       btn.className = "btn btn-text drawer-close";
       btn.textContent = "Close";
       btn.style.marginBottom = "8px";
-      btn.addEventListener("click", () => rail.classList.remove("is-drawer-open"));
+      btn.addEventListener("click", clearSelection);
       rail.insertBefore(btn, rail.firstChild);
     }
   }
@@ -996,7 +1004,11 @@
 
     let html = "";
     html += '<div class="insp-header">';
+    html += '<div class="insp-title-row">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
+    html +=
+      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += "</div>";
     if (s.aliases && s.aliases.length) {
       html +=
         '<p class="insp-aliases">' + escapeHtml(s.aliases.join(" · ")) + "</p>";
@@ -1352,6 +1364,7 @@
         if (id) navigate("cuts", { hash: "#cut-" + id });
       });
     });
+    bindClearSelection(root);
   }
 
   function renderInspector() {
@@ -1399,7 +1412,11 @@
       );
     }
     let html = '<div class="insp-header">';
+    html += '<div class="insp-title-row">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
+    html +=
+      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += "</div>";
     html +=
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.basin, s.region].filter(Boolean).join(" · ")) +
@@ -1475,6 +1492,28 @@
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
     });
+    bindClearSelection(root);
+  }
+
+  function bindClearSelection(root) {
+    root.querySelectorAll("[data-clear-selection]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (state.route === "stream") navigate("home");
+        else clearSelection();
+      });
+    });
+  }
+
+  function clearSelection() {
+    state.streamId = null;
+    state.siteId = null;
+    $("inspector-rail")?.classList.remove("is-drawer-open");
+    closeSheets();
+    updateMarkers();
+    renderInspector();
+    renderTray();
+    if (state.route === "home") history.replaceState(null, "", buildUrl());
   }
 
   function sulfurWord(s) {
@@ -1582,6 +1621,7 @@
     else if (key === "q") {
       state.query = "";
       el.search.value = "";
+      syncSearchClear();
     }
     $("has-distill").checked = f.hasDistill;
     $("has-sara").checked = f.hasSara;
@@ -1747,7 +1787,7 @@
     const box = el.searchResults;
     if (!box) return;
     const q = state.query.trim();
-    if (!q) {
+    if (!q || !state._searchFocused) {
       box.classList.add("hidden");
       box.innerHTML = "";
       return;
@@ -1799,6 +1839,31 @@
     });
   }
 
+  function syncSearchClear() {
+    if (!el.searchClear) return;
+    el.searchClear.classList.toggle("hidden", !String(el.search && el.search.value).trim());
+  }
+
+  function dismissSearchQuery() {
+    const had = !!(state.query || (el.search && el.search.value));
+    state._searchFocused = false;
+    state.query = "";
+    if (el.search) el.search.value = "";
+    syncSearchClear();
+    renderSearchResults();
+    if (had) renderActiveChips();
+    return had;
+  }
+
+  function clearSearch() {
+    dismissSearchQuery();
+    if (el.search) el.search.blur();
+    updateMarkers();
+    fitMapFull(true);
+    saveStorage();
+    if (state.route === "home") history.replaceState(null, "", buildUrl());
+  }
+
   function pickSearchHit(id) {
     state._searchFocused = false;
     state.query = "";
@@ -1806,6 +1871,7 @@
       el.search.value = "";
       el.search.blur();
     }
+    syncSearchClear();
     renderSearchResults();
     history.replaceState(null, "", buildUrl());
     renderActiveChips();
@@ -2476,6 +2542,7 @@
     $("has-distill").checked = f.hasDistill;
     $("has-sara").checked = f.hasSara;
     $("has-metals").checked = f.hasMetals;
+    syncSearchClear();
     onFiltersChanged();
   }
 
@@ -2642,6 +2709,7 @@
       state.filters = defaultFilters();
       state.query = "";
       el.search.value = "";
+      syncSearchClear();
       syncFilterControls();
       syncSweetSeg();
       syncCheckboxes();
@@ -2711,6 +2779,7 @@
   function wireGlobal() {
     el.search.addEventListener("input", () => {
       state.query = el.search.value;
+      syncSearchClear();
       onFiltersChanged();
     });
     el.search.addEventListener("focus", () => {
@@ -2721,15 +2790,26 @@
       /* Delay so a result tap can fire before we hide the list. */
       setTimeout(() => {
         state._searchFocused = false;
-        if (!state.query.trim()) renderSearchResults();
+        renderSearchResults();
       }, 180);
     });
     el.search.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        clearSearch();
+        return;
+      }
       if (e.key !== "Enter") return;
       const first = rankedSearchHits()[0];
       if (!first) return;
       e.preventDefault();
       pickSearchHit(first.id);
+    });
+    el.searchClear?.addEventListener("mousedown", (e) => e.preventDefault());
+    el.searchClear?.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearSearch();
     });
 
     document.querySelectorAll("[data-layer]").forEach((btn) => {
@@ -2822,6 +2902,7 @@
       syncSweetSeg();
       syncCheckboxes();
       el.search.value = state.query;
+      syncSearchClear();
       render();
     });
 
@@ -2895,6 +2976,7 @@
     syncSweetSeg();
     syncCheckboxes();
     el.search.value = state.query;
+    syncSearchClear();
     $("has-distill").checked = state.filters.hasDistill;
     $("has-sara").checked = state.filters.hasSara;
     $("has-metals").checked = state.filters.hasMetals;
