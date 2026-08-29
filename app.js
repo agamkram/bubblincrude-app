@@ -23,7 +23,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v34";
+  const APP_VERSION = "v35";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -690,8 +690,6 @@
       "</div>" +
       '<div class="tip-pills">' +
       pills.map((p) => '<span class="pill pill-kind">' + escapeHtml(p) + "</span>").join("") +
-      "</div>" +
-      '<div class="tip-actions">' +
       action +
       "</div>"
     );
@@ -878,10 +876,7 @@
       " / " +
       escapeHtml(s.basin) +
       "</p>";
-    html += '<div class="pill-row">' + pillsFor(s) + "</div>";
-    html += '<div class="insp-meta-row">';
-    if (s.year) html += "<span>Sample year " + escapeHtml(String(s.year)) + "</span>";
-    html += sourceChip(s.source || "Published assay");
+    html += '<div class="pill-row">' + pillsFor(s);
     if (state.compareIds.includes(s.id)) {
       html +=
         '<button type="button" class="btn insp-compare" disabled>In tray</button>';
@@ -891,6 +886,10 @@
         escapeHtml(s.id) +
         '">Compare</button>';
     }
+    html += "</div>";
+    html += '<div class="insp-meta-row">';
+    if (s.year) html += "<span>Sample year " + escapeHtml(String(s.year)) + "</span>";
+    html += sourceChip(s.source || "Published assay");
     html += "</div></div>";
 
     html += '<div class="quality-strip">';
