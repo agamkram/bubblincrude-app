@@ -762,17 +762,38 @@
     S({
       id: "eagle-ford",
       name: "Eagle Ford",
-      aliases: ["Eagle Ford Light"],
+      aliases: ["Eagle Ford Light", "Eagle Ford Gen Grade"],
       country: "United States",
       basin: "Eagle Ford / South Texas",
       region: "North America",
       lat: 28.5,
       lon: -98.5,
-      api: 45.0,
-      sulfur_wt: 0.1,
-      tan: 0.1,
-      notes: "US tight-oil light sweet; condensate-leaning grades common.",
+      api: 48.0,
+      sulfur_wt: 0.09,
+      tan: 0.22,
+      resid_wt: 27,
+      yields: { naphtha: 31, middle: 42, resid: 27 },
+      distillation_curve: [
+        { t_c: 65, yield_wt: 8 },
+        { t_c: 150, yield_wt: 31 },
+        { t_c: 250, yield_wt: 52 },
+        { t_c: 350, yield_wt: 71 },
+        { t_c: 370, yield_wt: 73 },
+        { t_c: 650, yield_wt: 100 },
+      ],
+      notes:
+        "US tight-oil light sweet (Equinor Gen Grade, marketed API 45–50). VGO vs resid not split in the published cut table — 370°C+ kept as resid.",
       related_ids: ["bakken", "wti", "midland"],
+      source:
+        "Equinor/Statoil Eagle Ford Gen Grade assay (issue 14 Jul 2017; sample 1 Sep 2016)",
+      year: 2017,
+      flags: {
+        api: T,
+        sulfur_wt: T,
+        tan: T,
+        resid_wt: T,
+        yields: T,
+      },
     }),
     S({
       id: "wts",
@@ -788,6 +809,7 @@
       tan: 0.2,
       notes: "Permian sour counterpart to Midland/WTI sweet grades.",
       related_ids: ["wti", "midland"],
+      source: "US published / typical WTS assay",
     }),
     S({
       id: "midland",
@@ -803,6 +825,7 @@
       tan: 0.1,
       notes: "Permian light sweet; Midland pricing hub grade.",
       related_ids: ["wti", "wts", "eagle-ford", "wti-houston", "wtl", "delaware"],
+      source: "US published / typical WTI Midland assay",
     }),
     S({
       id: "thunder-horse",
@@ -951,6 +974,7 @@
       tan: 2.0,
       notes: "California heavy; high TAN thermal/asphalt crude.",
       related_ids: ["wcs", "maya", "midway-sunset"],
+      source: "US published / typical Kern River assay",
     }),
     S({
       id: "syncrude",
@@ -1064,6 +1088,7 @@
       tan: 0.2,
       notes: "Newfoundland offshore light-medium crude.",
       related_ids: ["hibernia"],
+      source: "Canadian published / typical Terra Nova assay",
     }),
     S({
       id: "albian",
@@ -1146,6 +1171,7 @@
       tan: 0.15,
       notes: "USGC light sweet pricing marker.",
       related_ids: ["wti", "mars", "hls"],
+      source: "US published / typical LLS assay",
     }),
     S({
       id: "hls",
@@ -1194,6 +1220,7 @@
       tan: 0.6,
       notes: "Heavier GoM sour blend relative to Mars.",
       related_ids: ["mars", "southern-green-canyon", "bonito", "shenzi"],
+      source: "US published / typical Southern Peninsula assay",
     }),
     S({
       id: "wti-houston",
@@ -1209,6 +1236,7 @@
       tan: 0.1,
       notes: "Permian-quality light sweet at Magellan East Houston; USGC export pricing hub.",
       related_ids: ["midland", "wti", "lls", "wtl"],
+      source: "US published / typical WTI Houston assay",
     }),
     S({
       id: "wtl",
@@ -1224,6 +1252,7 @@
       tan: 0.05,
       notes: "Ultra-light Permian grade (condensate-leaning) vs Midland WTI.",
       related_ids: ["midland", "wti-houston", "eagle-ford"],
+      source: "US published / typical WTL assay",
     }),
     S({
       id: "delaware",
@@ -1239,6 +1268,7 @@
       tan: 0.1,
       notes: "Delaware Basin light sweet; Waha-area gathering/pricing.",
       related_ids: ["midland", "wtl", "wts"],
+      source: "US published / typical Delaware Light assay",
     }),
     S({
       id: "niobrara",
@@ -1254,6 +1284,7 @@
       tan: 0.1,
       notes: "Rockies tight-oil light sweet from the Denver-Julesburg Basin.",
       related_ids: ["bakken", "powder-river", "wti"],
+      source: "US published / typical Niobrara assay",
     }),
     S({
       id: "scoop-stack",
@@ -1269,6 +1300,7 @@
       tan: 0.1,
       notes: "Oklahoma Anadarko tight-oil light sweet.",
       related_ids: ["wti", "bakken", "eagle-ford"],
+      source: "US published / typical SCOOP/STACK assay",
     }),
     S({
       id: "powder-river",
@@ -1284,6 +1316,7 @@
       tan: 0.15,
       notes: "Wyoming Powder River light-medium sweet.",
       related_ids: ["niobrara", "bakken", "wti"],
+      source: "US published / typical Powder River assay",
     }),
     S({
       id: "uinta-waxy",
@@ -1300,6 +1333,7 @@
       notes: "Utah paraffinic waxy crude; high pour point, often trucked or heated.",
       transport_note: "Waxy/high-pour — limited common-carrier pipeline fit.",
       related_ids: ["niobrara", "powder-river", "wti"],
+      source: "US published / typical Uinta Waxy assay",
     }),
     S({
       id: "bonito",
@@ -1316,6 +1350,7 @@
       tan: 0.4,
       notes: "Shelf/slope GoM medium-sour pipeline blend.",
       related_ids: ["mars", "poseidon", "hls"],
+      source: "US published / typical Bonito assay",
     }),
     S({
       id: "shenzi",
@@ -1331,6 +1366,7 @@
       tan: 0.5,
       notes: "Deepwater Green Canyon medium crude (BHP/Woodside area).",
       related_ids: ["mars", "southern-green-canyon", "thunder-horse"],
+      source: "US published / typical Shenzi assay",
     }),
     S({
       id: "hoover-diana",
@@ -1347,6 +1383,7 @@
       tan: 0.45,
       notes: "Alaminos Canyon deepwater pair; medium GoM sour.",
       related_ids: ["mars", "thunder-horse", "shenzi"],
+      source: "US published / typical Hoover/Diana assay",
     }),
     S({
       id: "midway-sunset",
@@ -1362,6 +1399,7 @@
       tan: 1.8,
       notes: "California heavy thermal crude; asphalt/resid-oriented.",
       related_ids: ["kern-river", "maya", "wcs"],
+      source: "US published / typical Midway-Sunset assay",
     }),
     S({
       id: "pennsylvania-grade",
@@ -1399,6 +1437,7 @@
       tan: 0.15,
       notes: "Mexican light export grade launched alongside Maya/Isthmus slate.",
       related_ids: ["maya", "isthmus"],
+      source: "Pemex / typical Olmeca assay",
     }),
     S({
       id: "isthmus",
@@ -1414,6 +1453,7 @@
       tan: 0.2,
       notes: "Mexican medium-light sour export.",
       related_ids: ["maya", "olmeca"],
+      source: "Pemex / typical Isthmus assay",
     }),
     S({
       id: "vasconia",
@@ -1430,6 +1470,7 @@
       tan: 0.4,
       notes: "Colombian medium export blend.",
       related_ids: ["castilla", "cusiana"],
+      source: "Ecopetrol / typical Vasconia assay",
     }),
     S({
       id: "oriente",
@@ -1446,6 +1487,7 @@
       tan: 0.5,
       notes: "Ecuador medium sour Oriente export.",
       related_ids: ["napo", "castilla"],
+      source: "Petroecuador / typical Oriente assay",
     }),
     S({
       id: "napo",
@@ -1462,6 +1504,7 @@
       tan: 0.7,
       notes: "Heavier Ecuador export relative to Oriente.",
       related_ids: ["oriente", "castilla"],
+      source: "Petroecuador / typical Napo assay",
     }),
     S({
       id: "marlim",
@@ -1477,6 +1520,7 @@
       tan: 0.8,
       notes: "Brazilian Campos Basin medium-heavy; relatively low sulfur.",
       related_ids: ["roncador", "peregrino", "lula"],
+      source: "Petrobras / typical Marlim assay",
     }),
     S({
       id: "roncador",
@@ -1524,6 +1568,7 @@
       tan: 0.3,
       notes: "Santos pre-salt light-medium low-sulfur crude (Tupi/Lula complex).",
       related_ids: ["marlim", "roncador", "peregrino"],
+      source: "Petrobras / typical Lula assay",
     }),
     S({
       id: "peregrino",
@@ -1571,6 +1616,7 @@
       tan: 0.2,
       notes: "Eastern Venezuela light sweet conventional.",
       related_ids: ["mesa-30", "merey-16"],
+      source: "PDVSA / typical Santa Barbara assay",
     }),
     S({
       id: "escalante",
@@ -1586,6 +1632,7 @@
       tan: 0.5,
       notes: "Argentine medium sweet export grade.",
       related_ids: ["medanito"],
+      source: "YPF / typical Escalante assay",
     }),
     S({
       id: "medanito",
@@ -1633,6 +1680,7 @@
       tan: 0.15,
       notes: "Colombian light sweet Llanos grade.",
       related_ids: ["castilla", "vasconia"],
+      source: "Ecopetrol / typical Cusiana assay",
     }),
     S({
       id: "cano-limon",
@@ -1648,6 +1696,7 @@
       tan: 0.3,
       notes: "Colombian medium export via Caño Limón pipeline.",
       related_ids: ["cusiana", "vasconia", "castilla"],
+      source: "Ecopetrol / typical Caño Limón assay",
     }),
     S({
       id: "zuata",
@@ -1664,6 +1713,7 @@
       notes: "Orinoco extra-heavy; typically diluted or upgraded for export.",
       transport_note: "Requires diluent or upgrading for commercial movement.",
       related_ids: ["cerro-negro", "merey-16", "hamaca"],
+      source: "PDVSA / typical Zuata assay",
     }),
 
     // ——— Europe / North Sea ———
@@ -2051,6 +2101,7 @@
 
       notes: "Russian medium sour export blend (Baltic/Black Sea loadings).",
       related_ids: ["espo", "brent"],
+      source: "Russian export / typical Urals assay",
     }),
     S({
       id: "azeri-light",
@@ -2147,6 +2198,7 @@
 
       notes: "Saudi heavy sour export grade.",
       related_ids: ["arab-light", "arab-medium", "basrah-heavy"],
+      source: "Saudi Aramco / typical Arab Heavy assay",
     }),
     S({
       id: "arab-medium",
@@ -2177,6 +2229,7 @@
       notes: "Saudi medium sour between Arab Light and Heavy.",
       related_ids: ["arab-light", "arab-heavy"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Saudi Aramco / typical Arab Medium assay",
     }),
     S({
       id: "arab-extra-light",
@@ -2206,6 +2259,7 @@
 
       notes: "Saudi light sour premium grade.",
       related_ids: ["arab-light", "murban"],
+      source: "Saudi Aramco / typical Arab Extra Light assay",
     }),
     S({
       id: "upper-zakum",
@@ -2397,6 +2451,7 @@
 
       notes: "Iraqi southern medium sour export.",
       related_ids: ["basrah-heavy", "kirkuk", "arab-medium"],
+      source: "Iraqi MoO / typical Basrah Light assay",
     }),
     S({
       id: "basrah-heavy",
@@ -2459,6 +2514,7 @@
       notes: "Iranian medium-light sour export.",
       related_ids: ["iranian-heavy", "arab-light"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "NIOC / typical Iranian Light assay",
     }),
     S({
       id: "iranian-heavy",
@@ -2489,6 +2545,7 @@
       notes: "Iranian medium sour heavy export.",
       related_ids: ["iranian-light", "arab-medium"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "NIOC / typical Iranian Heavy assay",
     }),
     S({
       id: "dubai",
@@ -2518,6 +2575,7 @@
 
       notes: "Middle East medium sour marker historically used with Oman.",
       related_ids: ["oman", "upper-zakum", "murban"],
+      source: "ADNOC / typical Dubai assay",
     }),
     S({
       id: "kirkuk",
@@ -2581,6 +2639,7 @@
 
       notes: "Kuwait medium sour export crude.",
       related_ids: ["arab-medium", "basrah-light"],
+      source: "KPC / typical Kuwait Export assay",
     }),
 
     // ——— Africa ———
@@ -2662,6 +2721,7 @@
       tan: 0.3,
       notes: "Nigerian light sweet from Escravos terminal.",
       related_ids: ["forcados", "bonny-light"],
+      source: "Nigerian published / typical Escravos assay",
     }),
     S({
       id: "agbami",
@@ -2677,6 +2737,7 @@
       tan: 0.1,
       notes: "Deepwater Nigerian ultra-light sweet.",
       related_ids: ["qua-iboe", "bonny-light", "akpo"],
+      source: "Nigerian published / typical Agbami assay",
     }),
     S({
       id: "dalia",
@@ -2853,6 +2914,7 @@
       tan: 0.3,
       notes: "Ghanaian light sweet deepwater crude.",
       related_ids: ["zafiro", "bonny-light"],
+      source: "Ghana published / typical Jubilee assay",
     }),
     S({
       id: "saharan-blend",
@@ -2869,6 +2931,7 @@
       tan: 0.1,
       notes: "Algerian extra-light sweet export blend.",
       related_ids: ["es-sider", "brent"],
+      source: "Algerian published / typical Saharan Blend assay",
     }),
     S({
       id: "es-sider",
@@ -2950,6 +3013,7 @@
       tan: 0.3,
       notes: "Gabonese light sweet crude.",
       related_ids: ["djeno", "cabinda"],
+      source: "Gabon published / typical Rabi assay",
     }),
     S({
       id: "akpo",
@@ -2999,6 +3063,7 @@
       tan: 0.2,
       notes: "Angolan light sweet Palanca grade.",
       related_ids: ["nemba", "cabinda", "girassol"],
+      source: "Angolan published / typical Palanca assay",
     }),
 
     // ——— Asia Pacific ———
@@ -3016,6 +3081,7 @@
       tan: 0.2,
       notes: "Indonesian light sweet waxy crude.",
       related_ids: ["duri", "attaka", "tapis"],
+      source: "Indonesian published / typical Minas assay",
     }),
     S({
       id: "duri",
@@ -3031,6 +3097,7 @@
       tan: 0.5,
       notes: "Indonesian heavy low-sulfur waxy crude (steamflood).",
       related_ids: ["minas", "attaka"],
+      source: "Indonesian published / typical Duri assay",
     }),
     S({
       id: "attaka",
@@ -3046,6 +3113,7 @@
       tan: 0.1,
       notes: "Indonesian ultra-light sweet offshore crude.",
       related_ids: ["minas", "tapis", "labuan"],
+      source: "Indonesian published / typical Attaka assay",
     }),
     S({
       id: "cossack",
@@ -3090,11 +3158,13 @@
       kind: "Blend",
       lat: -38.5,
       lon: 148.0,
-      api: 45.0,
-      sulfur_wt: 0.1,
+      api: 68.4,
+      sulfur_wt: 0.01,
       tan: 0.1,
       notes: "Bass Strait light sweet Australian crude.",
       related_ids: ["cossack", "northwest-shelf"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
     }),
     S({
       id: "espo",
@@ -3126,6 +3196,7 @@
       notes: "Russian Far East pipeline export blend to Kozmino.",
       related_ids: ["sokol", "urals", "cpc"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Russian export / typical ESPO assay",
     }),
     S({
       id: "sokol",
@@ -3156,6 +3227,7 @@
       notes: "Sakhalin light sweet export crude.",
       related_ids: ["espo", "cpc"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Russian export / typical Sokol assay",
     }),
     S({
       id: "bach-ho",
@@ -3171,6 +3243,7 @@
       tan: 0.1,
       notes: "Vietnamese light sweet; waxy fractured-basement crude.",
       related_ids: ["tapis", "minas"],
+      source: "Vietnam published / typical Bach Ho assay",
     }),
     S({
       id: "champion",
@@ -3186,6 +3259,7 @@
       tan: 0.3,
       notes: "Brunei medium low-sulfur crude.",
       related_ids: ["labuan", "tapis"],
+      source: "Brunei published / typical Champion assay",
     }),
     S({
       id: "kutubu",
@@ -3233,6 +3307,7 @@
       tan: 0.2,
       notes: "Malaysian light-medium sweet Sabah grade.",
       related_ids: ["tapis", "champion"],
+      source: "Petronas / typical Labuan assay",
     }),
     S({
       id: "northwest-shelf",
@@ -3312,6 +3387,7 @@
       tan: 0.1,
       notes: "Chinese paraffinic medium-light low-sulfur crude.",
       related_ids: ["minas", "espo"],
+      source: "Chinese published / typical Daqing assay",
     }),
     S({
       id: "mangala",
@@ -3327,6 +3403,7 @@
       tan: 0.4,
       notes: "Indian Rajasthan medium low-sulfur waxy crude.",
       related_ids: ["minas", "duri"],
+      source: "Indian published / typical Mangala assay",
     }),
     S({
       id: "murban-condensate",
@@ -3342,6 +3419,7 @@
       tan: 0.05,
       notes: "UAE condensate stream; ultra-light sweet.",
       related_ids: ["murban", "northwest-shelf"],
+      source: "ADNOC / typical ADNOC Condensate assay",
     }),
     S({
       id: "arab-super-light",
@@ -3372,6 +3450,7 @@
       notes: "Saudi ultra-light low-sulfur grade (Shaybah-class).",
       related_ids: ["arab-extra-light", "arab-light", "murban"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Saudi Aramco / typical Arab Super Light assay",
     }),
     S({
       id: "bree",
@@ -3388,6 +3467,7 @@
       tan: 0.1,
       notes: "Australian NW Shelf light sweet commercial blend.",
       related_ids: ["cossack", "northwest-shelf", "vincent", "enfield"],
+      source: "Australian published / typical Bree assay",
     }),
 
     // ——— Global traded-grade fill (Argus/Platts-active streams) ———
@@ -3471,6 +3551,7 @@
       tan: 0.3,
       notes: "Brazil Santos pre-salt; one of the largest deepwater export streams.",
       related_ids: ["tupi", "lula", "sapinhoa", "atapu"],
+      source: "Petrobras / typical Búzios assay",
     }),
     S({
       id: "tupi",
@@ -3486,6 +3567,7 @@
       tan: 0.3,
       notes: "Santos pre-salt pioneer grade; often grouped with Lula family exports.",
       related_ids: ["lula", "buzios", "sapinhoa"],
+      source: "Petrobras / typical Tupi assay",
     }),
     S({
       id: "sapinhoa",
@@ -3501,6 +3583,7 @@
       tan: 0.3,
       notes: "Santos pre-salt medium low-sulfur export crude.",
       related_ids: ["tupi", "buzios", "lula"],
+      source: "Petrobras / typical Sapinhoá assay",
     }),
     S({
       id: "atapu",
@@ -3676,6 +3759,7 @@
       tan: 1.2,
       notes: "Maracaibo heavy sour; classic Venezuelan export family.",
       related_ids: ["laguna", "merey-16", "boscan"],
+      source: "PDVSA / typical Bachaquero assay",
     }),
     S({
       id: "laguna",
@@ -3691,6 +3775,7 @@
       tan: 1.0,
       notes: "Maracaibo heavy-medium sour stream.",
       related_ids: ["bachaquero", "mesa-30", "merey-16"],
+      source: "PDVSA / typical Laguna assay",
     }),
     S({
       id: "mayna",
@@ -3706,6 +3791,7 @@
       tan: 0.8,
       notes: "Peruvian Amazon heavy; pipeline to Bayóvar for export.",
       related_ids: ["oriente", "napo", "vasconia"],
+      source: "Peru published / typical Mayna assay",
     }),
     S({
       id: "galeota",
@@ -4240,6 +4326,7 @@
       tan: 0.15,
       notes: "Libyan light sweet; Mediterranean export grade.",
       related_ids: ["es-sider", "brega", "sirtica", "brent"],
+      source: "Libyan published / typical Amna assay",
     }),
     S({
       id: "brega",
@@ -4255,6 +4342,7 @@
       tan: 0.1,
       notes: "Libyan light sweet from Brega terminal system.",
       related_ids: ["amna", "es-sider", "el-sharara"],
+      source: "Libyan published / typical Brega assay",
     }),
     S({
       id: "sirtica",
@@ -4270,6 +4358,7 @@
       tan: 0.15,
       notes: "Libyan light; slightly higher sulfur than Amna/Brega.",
       related_ids: ["amna", "es-sider", "brega"],
+      source: "Libyan published / typical Sirtica assay",
     }),
     S({
       id: "el-sharara",
@@ -4350,6 +4439,7 @@
       tan: 0.2,
       notes: "NW Libya coastal export blend via Mellitah complex.",
       related_ids: ["el-sharara", "brega", "es-sider"],
+      source: "Libyan published / typical Mellitah assay",
     }),
     S({
       id: "zarzaitine",
@@ -4365,6 +4455,7 @@
       tan: 0.1,
       notes: "Algerian Sahara light sweet; Med/Atlantic priced off Dated.",
       related_ids: ["saharan-blend", "el-sharara", "brent"],
+      source: "Algerian published / typical Zarzaitine assay",
     }),
     S({
       id: "kole",
@@ -4380,6 +4471,7 @@
       tan: 0.4,
       notes: "Cameroon light-medium sweet coastal export.",
       related_ids: ["rabi", "djeno", "bonny-light"],
+      source: "Cameroon published / typical Kole assay",
     }),
     S({
       id: "suez-blend",
@@ -4396,6 +4488,7 @@
       tan: 0.3,
       notes: "Egyptian medium sour blend; Med refining feedstock.",
       related_ids: ["belayim", "es-sider", "kirkuk"],
+      source: "Egyptian published / typical Suez Blend assay",
     }),
     S({
       id: "belayim",
@@ -4411,6 +4504,7 @@
       tan: 0.4,
       notes: "Egyptian medium-sour Suez field grade.",
       related_ids: ["suez-blend", "iranian-light"],
+      source: "Egyptian published / typical Belayim assay",
     }),
     S({
       id: "doba",
@@ -4427,6 +4521,7 @@
       tan: 0.1,
       notes: "Chadian heavy sweet (low S); pipeline to Cameroon coast.",
       related_ids: ["kole", "castilla", "vasconia"],
+      source: "Chad published / typical Doba assay",
     }),
     S({
       id: "dar-blend",
@@ -4443,6 +4538,7 @@
       tan: 0.15,
       notes: "South Sudanese heavy-medium sweet; high TAN/acid caution in some cuts.",
       related_ids: ["nile-blend", "doba"],
+      source: "South Sudan / typical Dar Blend assay",
     }),
     S({
       id: "nile-blend",
@@ -4459,6 +4555,7 @@
       tan: 0.2,
       notes: "Sudanese light-medium sweet export blend.",
       related_ids: ["dar-blend", "saharan-blend"],
+      source: "Sudan / typical Nile Blend assay",
     }),
     S({
       id: "sangomar",
@@ -4474,6 +4571,7 @@
       tan: 0.3,
       notes: "Senegal deepwater export grade (Woodside); newer WAF stream.",
       related_ids: ["jubilee", "bonga", "brent"],
+      source: "Senegal published / typical Sangomar assay",
     }),
     S({
       id: "baobab",
@@ -4489,6 +4587,7 @@
       tan: 0.5,
       notes: "Ivorian medium-heavy offshore crude.",
       related_ids: ["espoir", "jubilee", "dalia"],
+      source: "Côte d'Ivoire / typical Baobab assay",
     }),
     S({
       id: "espoir",
@@ -4504,6 +4603,7 @@
       tan: 0.3,
       notes: "Ivorian light-medium offshore grade.",
       related_ids: ["baobab", "jubilee", "kole"],
+      source: "Côte d'Ivoire / typical Espoir assay",
     }),
     S({
       id: "n-kossa",
@@ -4552,6 +4652,7 @@
       tan: 0.4,
       notes: "EG medium sweet; alongside Zafiro in EG export slate.",
       related_ids: ["zafiro", "bonga", "jubilee"],
+      source: "EG published / typical Ceiba assay",
     }),
 
     // Middle East
@@ -4602,6 +4703,7 @@
       tan: 0.15,
       notes: "Qatari onshore light sour (Dukhan); complements Qatar Marine.",
       related_ids: ["qatar-marine", "al-shaheen", "murban"],
+      source: "QatarEnergy / typical Qatar Land assay",
     }),
     S({
       id: "lower-zakum",
@@ -4617,6 +4719,7 @@
       tan: 0.15,
       notes: "ADNOC light sour offshore; distinct from Upper Zakum.",
       related_ids: ["upper-zakum", "murban", "das"],
+      source: "ADNOC / typical Lower Zakum assay",
     }),
     S({
       id: "banoco",
@@ -4632,6 +4735,7 @@
       tan: 0.25,
       notes: "Bahrain medium sour; Banoco OSP-linked grade.",
       related_ids: ["arab-medium", "qatar-marine", "arab-light"],
+      source: "Bahrain / typical Banoco Arab Medium assay",
     }),
     S({
       id: "forozan",
@@ -4648,6 +4752,7 @@
       tan: 0.3,
       notes: "Iranian medium sour offshore blend; Asia-facing when marketed.",
       related_ids: ["iranian-light", "iranian-heavy", "arab-medium"],
+      source: "NIOC / typical Forozan assay",
     }),
     S({
       id: "khafji",
@@ -4663,6 +4768,7 @@
       tan: 0.3,
       notes: "PNZ offshore medium-heavy sour (Kuwait/Saudi shared zone).",
       related_ids: ["kuwait-export", "arab-medium", "arab-heavy"],
+      source: "KPC / typical Khafji assay",
     }),
 
     // Russia / Caspian / Europe
@@ -4695,6 +4801,7 @@
       notes: "Russian light low-sour vs Urals; pipeline/export stream.",
       related_ids: ["urals", "espo", "brent"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Russian export / typical Siberian Light assay",
     }),
     S({
       id: "btc",
@@ -4706,8 +4813,8 @@
       kind: "Blend",
       lat: 36.8,
       lon: 35.9,
-      api: 36.0,
-      sulfur_wt: 0.15,
+      api: 39.0,
+      sulfur_wt: 0.16,
       tan: 0.2,
       ni_ppm: 4,
       v_ppm: 6,
@@ -4725,6 +4832,8 @@
 
       notes: "Caspian light sweet delivered Ceyhan via BTC; Azeri family.",
       related_ids: ["azeri-light", "cpc", "tengiz", "brent"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
     }),
     S({
       id: "tengiz",
@@ -4755,6 +4864,7 @@
       notes: "Kazakh ultra-light; CPC Blend component / direct exports.",
       related_ids: ["cpc", "kashagan", "btc", "azeri-light"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Kazakh export / typical Tengiz assay",
     }),
     S({
       id: "kashagan",
@@ -4785,6 +4895,7 @@
       notes: "Giant North Caspian light sour; CPC / specialty marketing.",
       related_ids: ["tengiz", "cpc", "btc"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Kazakh export / typical Kashagan assay",
     }),
     S({
       id: "kebco",
@@ -4816,6 +4927,7 @@
       notes: "Kazakh export blend label used in some Med/Asian placements.",
       related_ids: ["cpc", "tengiz", "urals"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Kazakh export / typical KEBCO assay",
     }),
     S({
       id: "novy-port",
@@ -4846,6 +4958,7 @@
       notes: "Russian Arctic medium sweet; Northern Sea Route / Murmansk marketing.",
       related_ids: ["siberian-light", "espo", "urals"],
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
+      source: "Russian export / typical Novy Port assay",
     }),
     S({
       id: "vityaz",
@@ -4875,6 +4988,7 @@
 
       notes: "Sakhalin light-medium; seasonal ice-class export companion to Sokol.",
       related_ids: ["sokol", "espo", "brent"],
+      source: "Russian export / typical Vityaz assay",
     }),
     S({
       id: "grane",
@@ -4923,6 +5037,7 @@
       tan: 0.2,
       notes: "UK North Sea light blend; still appears in Med/NWE placements.",
       related_ids: ["forties", "brent", "flotta"],
+      source: "UK North Sea / typical Ninian assay",
     }),
     S({
       id: "alwyn",
@@ -4938,6 +5053,7 @@
       tan: 0.15,
       notes: "TotalEnergies UK North Sea light sweet.",
       related_ids: ["brent", "forties", "ninian"],
+      source: "UK North Sea / typical Alwyn assay",
     }),
     S({
       id: "asgard",
@@ -5085,6 +5201,7 @@
       tan: 0.2,
       notes: "Malaysian deepwater light sweet; Asia refining feedstock.",
       related_ids: ["kimanis", "tapis", "labuan"],
+      source: "Petronas / typical Kikeh assay",
     }),
     S({
       id: "kimanis",
@@ -5100,6 +5217,7 @@
       tan: 0.2,
       notes: "Malaysian Sabah light-medium sweet.",
       related_ids: ["kikeh", "labuan", "tapis"],
+      source: "Petronas / typical Kimanis assay",
     }),
     S({
       id: "shengli",
@@ -5115,6 +5233,7 @@
       tan: 0.8,
       notes: "Chinese medium-heavy; mostly domestic but named in Asia assays.",
       related_ids: ["daqing", "duri", "minas"],
+      source: "Chinese published / typical Shengli assay",
     }),
     S({
       id: "mumbai-high",
@@ -5130,6 +5249,7 @@
       tan: 0.15,
       notes: "Indian west-coast light sweet; largely domestic refining.",
       related_ids: ["mangala", "tapis", "murban"],
+      source: "Indian published / typical Mumbai High assay",
     }),
     S({
       id: "vincent",
@@ -5145,6 +5265,7 @@
       tan: 1.5,
       notes: "Australian heavy high-TAN; niche Asia asphalt/resid market.",
       related_ids: ["enfield", "pyrenees", "cossack"],
+      source: "Australian published / typical Vincent assay",
     }),
     S({
       id: "enfield",
@@ -5160,6 +5281,7 @@
       tan: 0.8,
       notes: "Australian medium-heavy NW Shelf grade.",
       related_ids: ["vincent", "pyrenees", "bree"],
+      source: "Australian published / typical Enfield assay",
     }),
     S({
       id: "pyrenees",
@@ -5175,6 +5297,7 @@
       tan: 1.2,
       notes: "Australian heavy high-TAN NW Shelf stream.",
       related_ids: ["vincent", "enfield", "cossack"],
+      source: "Australian published / typical Pyrenees assay",
     }),
     S({
       id: "cinta",
@@ -5190,6 +5313,7 @@
       tan: 0.3,
       notes: "Indonesian light-medium sweet; Minas family peer.",
       related_ids: ["minas", "widuri", "attaka"],
+      source: "Indonesian published / typical Cinta assay",
     }),
     S({
       id: "widuri",
@@ -5205,6 +5329,7 @@
       tan: 0.25,
       notes: "Indonesian light sweet Java Sea grade.",
       related_ids: ["cinta", "minas", "attaka"],
+      source: "Indonesian published / typical Widuri assay",
     }),
     S({
       id: "seria-light",
@@ -5252,6 +5377,7 @@
       tan: 0.15,
       notes: "Vietnamese light sweet; Bach Ho peer.",
       related_ids: ["bach-ho", "tapis", "minas"],
+      source: "Vietnam published / typical Rang Dong assay",
     }),
     S({
       id: "badak",
@@ -5396,6 +5522,7 @@
       tan: 0.05,
       notes: "Indonesian ultra-light condensate; petrochemical naphtha-oriented.",
       related_ids: ["northwest-shelf", "attaka", "tapis"],
+      source: "Indonesian published / typical Arun Condensate assay",
     }),
 
     // Canada / North America extras
@@ -5612,6 +5739,7 @@
       tan: 0.9,
       notes: "Alberta Peace River heavy; asphalt/resid oriented.",
       related_ids: ["lloydminster", "wcs", "bow-river"],
+      source: "Canadian published / typical Peace River assay",
     }),
     S({
       id: "hebron",
@@ -5659,6 +5787,7 @@
       tan: 0.3,
       notes: "Newfoundland offshore medium sweet.",
       related_ids: ["hibernia", "terra-nova", "hebron"],
+      source: "Canadian published / typical White Rose assay",
     }),
 
     // ——— Remaining named export grades ———
@@ -5709,6 +5838,7 @@
       tan: 0.4,
       notes: "Congolese offshore medium sweet.",
       related_ids: ["djeno", "n-kossa", "cabinda"],
+      source: "Congo published / typical Kitina assay",
     }),
     S({
       id: "odudu",
@@ -5724,6 +5854,7 @@
       tan: 0.35,
       notes: "Nigerian offshore medium sweet.",
       related_ids: ["antan", "yoho", "qua-iboe"],
+      source: "Nigerian published / typical Odudu assay",
     }),
     S({
       id: "antan",
@@ -5739,6 +5870,7 @@
       tan: 0.3,
       notes: "Nigerian offshore light-medium sweet.",
       related_ids: ["odudu", "amenam", "bonny-light"],
+      source: "Nigerian published / typical Antan assay",
     }),
     S({
       id: "okwori",
@@ -5754,6 +5886,7 @@
       tan: 0.25,
       notes: "Nigerian deepwater/shelf light sweet.",
       related_ids: ["erha", "usan", "bonga"],
+      source: "Nigerian published / typical Okwori assay",
     }),
     S({
       id: "zeit-bay",
@@ -5769,6 +5902,7 @@
       tan: 0.3,
       notes: "Egyptian Suez medium sour field grade.",
       related_ids: ["suez-blend", "belayim", "es-sider"],
+      source: "Egyptian published / typical Zeit Bay assay",
     }),
     S({
       id: "albacora",
@@ -5784,6 +5918,7 @@
       tan: 0.5,
       notes: "Campos Basin medium Brazilian export grade.",
       related_ids: ["marlim", "roncador", "frade"],
+      source: "Petrobras / typical Albacora assay",
     }),
     S({
       id: "frade",
@@ -5799,6 +5934,7 @@
       tan: 0.7,
       notes: "Campos heavy-medium Brazilian offshore crude.",
       related_ids: ["albacora", "peregrino", "marlim"],
+      source: "Petrobras / typical Frade assay",
     }),
     S({
       id: "papa-terra",
@@ -5814,6 +5950,7 @@
       tan: 1.0,
       notes: "Campos ultra-heavy offshore; specialized refining slate.",
       related_ids: ["peregrino", "frade", "marlim"],
+      source: "Petrobras / typical Papa Terra assay",
     }),
     S({
       id: "altamira",
@@ -5829,6 +5966,7 @@
       tan: 0.8,
       notes: "Mexican heavy sour; Maya family peer for USGC asphalt/coker.",
       related_ids: ["maya", "isthmus", "olmeca"],
+      source: "Pemex / typical Altamira assay",
     }),
     S({
       id: "iranian-medium",
@@ -5844,6 +5982,7 @@
       tan: 0.25,
       notes: "Iranian medium sour between Light and Heavy OSP grades.",
       related_ids: ["iranian-light", "iranian-heavy", "forozan"],
+      source: "NIOC / typical Iranian Medium assay",
     }),
     S({
       id: "sirri",
@@ -5859,6 +5998,7 @@
       tan: 0.25,
       notes: "Iranian Gulf island medium sour export grade.",
       related_ids: ["forozan", "iranian-light", "iranian-medium"],
+      source: "NIOC / typical Sirri assay",
     }),
     S({
       id: "soroosh",
@@ -5874,6 +6014,7 @@
       tan: 0.5,
       notes: "Iranian heavy sour offshore; often paired with Nowruz.",
       related_ids: ["nowruz", "iranian-heavy", "forozan"],
+      source: "NIOC / typical Soroosh assay",
     }),
     S({
       id: "nowruz",
@@ -5889,6 +6030,7 @@
       tan: 0.5,
       notes: "Iranian heavy sour offshore companion to Soroosh.",
       related_ids: ["soroosh", "iranian-heavy", "arab-heavy"],
+      source: "NIOC / typical Nowruz assay",
     }),
     S({
       id: "masila",
@@ -5905,6 +6047,7 @@
       tan: 0.3,
       notes: "Yemeni light-medium; volumes intermittent with security/ops.",
       related_ids: ["marib", "murban", "oman"],
+      source: "Yemen / typical Masila assay",
     }),
     S({
       id: "marib",
@@ -5920,6 +6063,7 @@
       tan: 0.15,
       notes: "Yemeni light sweet; historically Safir/Ras Isa export path.",
       related_ids: ["masila", "murban", "saharan-blend"],
+      source: "Yemen / typical Marib Light assay",
     }),
     S({
       id: "qatar-condensate",
@@ -5935,6 +6079,7 @@
       tan: 0.05,
       notes: "North Field associated condensate; Asia petrochemical feedstock.",
       related_ids: ["qatar-land", "qatar-marine", "al-shaheen", "arun"],
+      source: "QatarEnergy / typical Qatar Condensate assay",
     }),
     S({
       id: "south-pars",
@@ -5950,6 +6095,7 @@
       tan: 0.05,
       notes: "Iranian South Pars condensate; twin to Qatar North Field liquids.",
       related_ids: ["qatar-condensate", "arun", "northwest-shelf"],
+      source: "NIOC / typical South Pars Condensate assay",
     }),
     S({
       id: "senipah",
@@ -5997,6 +6143,7 @@
       tan: 0.05,
       notes: "Natuna Sea condensate; Asia naphtha-oriented liquids.",
       related_ids: ["senipah", "arun", "northwest-shelf"],
+      source: "Indonesian published / typical Belanak assay",
     }),
 
     // ——— US Strategic Petroleum Reserve (inventory blends, not producing fields) ———
@@ -8187,6 +8334,189 @@
       year: 2016,
       flags: { api: T, sulfur_wt: T, ni_ppm: T, v_ppm: T, tan: T, resid_wt: T, yields: T },
     }),
+
+    // ——— ExxonMobil published assay table (API/S) ———
+    S({
+      id: "bacalhau",
+      name: "Bacalhau",
+      aliases: [],
+      country: "Brazil",
+      basin: "",
+      region: "Latin America",
+      kind: "Conventional",
+      lat: -24.0,
+      lon: -40.5,
+      api: 32.9,
+      sulfur_wt: 0.26,
+      notes: "Pre-salt grade offshore Brazil (Exxon table).",
+      related_ids: ["lula", "buzios"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "banyu-urip",
+      name: "Banyu Urip",
+      aliases: [],
+      country: "Indonesia",
+      basin: "",
+      region: "Asia Pacific",
+      kind: "Conventional",
+      lat: -7.2,
+      lon: 111.6,
+      api: 32.8,
+      sulfur_wt: 0.32,
+      notes: "ExxonMobil Cepu block, East Java.",
+      related_ids: ["minas", "duri"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "coral-condensate",
+      name: "Coral Condensate",
+      aliases: ["Coral"],
+      country: "Mozambique",
+      basin: "",
+      region: "Africa",
+      kind: "Conventional",
+      lat: -10.9,
+      lon: 40.7,
+      api: 52.8,
+      sulfur_wt: 0.02,
+      notes: "Mozambique LNG project condensate.",
+      related_ids: ["saharan-blend"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "ebok",
+      name: "Ebok",
+      aliases: [],
+      country: "Nigeria",
+      basin: "",
+      region: "Africa",
+      kind: "Conventional",
+      lat: 4.3,
+      lon: 8.0,
+      api: 17.9,
+      sulfur_wt: 0.44,
+      notes: "Shallow-water Nigeria heavy-sweet.",
+      related_ids: ["bonny-light", "qua-iboe"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "golden-arrowhead",
+      name: "Golden Arrowhead",
+      aliases: [],
+      country: "Guyana",
+      basin: "",
+      region: "Latin America",
+      kind: "Conventional",
+      lat: 8.0,
+      lon: -56.9,
+      api: 36.5,
+      sulfur_wt: 0.25,
+      notes: "Stabroek block grade.",
+      related_ids: ["liza", "unity", "payara-gold"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "gorgon-condensate",
+      name: "Gorgon Condensate",
+      aliases: ["Gorgon"],
+      country: "Australia",
+      basin: "",
+      region: "Asia Pacific",
+      kind: "Conventional",
+      lat: -20.6,
+      lon: 115.5,
+      api: 57.0,
+      sulfur_wt: 0.02,
+      notes: "Gorgon LNG condensate, NW Shelf.",
+      related_ids: ["northwest-shelf", "ichthys"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "hoops-blend",
+      name: "HOOPS Blend",
+      aliases: ["HOOPS"],
+      country: "United States",
+      basin: "",
+      region: "North America",
+      kind: "Blend",
+      lat: 29.4,
+      lon: -94.9,
+      api: 33.5,
+      sulfur_wt: 1.45,
+      notes: "Houston/offshore pipeline system blend.",
+      related_ids: ["mars", "hls", "lls"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "mondo",
+      name: "Mondo Blend",
+      aliases: ["Mondo"],
+      country: "Angola",
+      basin: "",
+      region: "Africa",
+      kind: "Blend",
+      lat: -6.2,
+      lon: 11.2,
+      api: 27.9,
+      sulfur_wt: 0.48,
+      notes: "Angola Block 15/32 area.",
+      related_ids: ["hungo", "saxi-batuque"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "payara-gold",
+      name: "Payara Gold",
+      aliases: ["Payara"],
+      country: "Guyana",
+      basin: "",
+      region: "Latin America",
+      kind: "Conventional",
+      lat: 8.0,
+      lon: -56.9,
+      api: 30.0,
+      sulfur_wt: 0.66,
+      notes: "Stabroek Payara development.",
+      related_ids: ["liza", "unity"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+    S({
+      id: "terengganu",
+      name: "Terengganu",
+      aliases: [],
+      country: "Malaysia",
+      basin: "",
+      region: "Asia Pacific",
+      kind: "Conventional",
+      lat: 4.8,
+      lon: 103.4,
+      api: 77.5,
+      sulfur_wt: 0.0,
+      notes: "Malaysia condensate / ultra-light.",
+      related_ids: ["tapis"],
+      source: "ExxonMobil crude oil assay library (published table)",
+      year: 2026,
+      flags: { api: "typical", sulfur_wt: "typical" },
+    }),
+
   ];
 
   /* Full crude-tower → vacuum-tower teaching slate (CDU → VDU). Ordered
