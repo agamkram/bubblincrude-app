@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v152";
+  const APP_VERSION = "v153";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -1055,8 +1055,21 @@
     );
   }
 
-  function sourceChip(text) {
-    return '<span class="source-chip" title="' + escapeHtml(text) + '">' + escapeHtml(text) + "</span>";
+  function sourceChip(text, year) {
+    const full = text || "Published assay";
+    /* Sample year already sits to the left — drop a trailing "(22 Oct 2020)"
+       style date so the year is not shown twice. */
+    let label = full;
+    if (year != null) {
+      label = full.replace(/\s*\([^)]*\b20\d{2}\)\s*$/, "").trim() || full;
+    }
+    return (
+      '<span class="source-chip" title="' +
+      escapeHtml(full) +
+      '">' +
+      escapeHtml(label) +
+      "</span>"
+    );
   }
 
   function pillsFor(s) {
@@ -1124,7 +1137,7 @@
     html += "</div>";
     html += '<div class="insp-meta-row">';
     if (s.year) html += "<span>Sample year " + escapeHtml(String(s.year)) + "</span>";
-    html += sourceChip(s.source || "Published assay");
+    html += sourceChip(s.source || "Published assay", s.year);
     html += "</div></div>";
 
     html += '<div class="quality-strip">';
