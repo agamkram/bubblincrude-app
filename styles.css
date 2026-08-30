@@ -24,7 +24,6 @@
   --light: #2ec4b6;
   --heavy: #e8a838;
   --medium: #5b8def;
-  --condensate: #9bf0e8;
   --font: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
   --topbar-h: 72px;
@@ -36,7 +35,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 173;
+  --bc-css: 183;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -238,6 +237,7 @@ html.pwa-standalone .app {
   font: inherit;
   -webkit-appearance: none;
   appearance: none;
+  text-overflow: ellipsis;
 }
 .topbar-search input::-webkit-search-decoration,
 .topbar-search input::-webkit-search-cancel-button {
@@ -1072,11 +1072,6 @@ input[type="range"] {
 }
 button.pill {
   cursor: pointer;
-}
-.pill-condensate {
-  background: rgba(155, 240, 232, 0.16);
-  color: var(--condensate);
-  border-color: rgba(155, 240, 232, 0.35);
 }
 .pill-light {
   background: var(--teal-dim);

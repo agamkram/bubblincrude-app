@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v173";
+  const APP_VERSION = "v183";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -242,8 +242,7 @@
     if (api < 10) return "extra-heavy";
     if (api < 22.3) return "heavy";
     if (api < 31.1) return "medium";
-    if (api < 39) return "light";
-    return "condensate";
+    return "light";
   }
   function apiClassLabel(c) {
     return (
@@ -252,7 +251,6 @@
         heavy: "Heavy",
         medium: "Medium",
         light: "Light",
-        condensate: "Condensate",
       }[c] || c
     );
   }
@@ -262,7 +260,6 @@
   /* API and sulfur are independent axes — use distinct palettes so toggling
      always recolors (shared teal/amber made light-sweet pins look unchanged). */
   const COLOR_API = {
-    condensate: "#9bf0e8",
     light: "#2ec4b6",
     medium: "#5b8def",
     heavy: "#e8a838",
@@ -375,16 +372,35 @@
   }
 
   /* —— Filtering —— */
+  /* Short queries (1–2 chars) match name/alias prefixes so “w” / “wt”
+     surface WTI-class targets instead of every Norway/basin substring.
+     From 3 chars, fall back to full haystack includes. */
+  function queryTokens(s) {
+    const name = String(s.name || "").toLowerCase();
+    const aliases = (s.aliases || []).map((a) => String(a).toLowerCase());
+    return { name, aliases };
+  }
+  function queryPrefixHit(s, q) {
+    const { name, aliases } = queryTokens(s);
+    return name.startsWith(q) || aliases.some((a) => a.startsWith(q));
+  }
+  function queryHaystack(s) {
+    return [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes]
+      .concat(s.aliases || [])
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+  }
+  function queryMatchesPin(s, q) {
+    if (!q) return true;
+    if (q.length <= 2) return queryPrefixHit(s, q);
+    return queryHaystack(s).includes(q);
+  }
+
   function streamMatches(s) {
     const f = state.filters;
     const q = state.query.trim().toLowerCase();
-    if (q) {
-      const hay = [s.name, s.country, s.basin, s.region, s.kind]
-        .concat(s.aliases || [])
-        .join(" ")
-        .toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
+    if (q && !queryMatchesPin(s, q)) return false;
     if (s.api != null) {
       if (s.api < f.apiMin || s.api > f.apiMax) return false;
     }
@@ -411,12 +427,7 @@
   function siteMatches(s) {
     const f = state.filters;
     const q = state.query.trim().toLowerCase();
-    if (q) {
-      const hay = [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes]
-        .join(" ")
-        .toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
+    if (q && !queryMatchesPin(s, q)) return false;
     if (f.regions.length && !f.regions.includes(s.region)) return false;
     /* Sites without sulfur stay visible for sweet/sour=all; when filtering
        sweet/sour they must have a value to match. */
@@ -471,7 +482,7 @@
   /* Starter picks so the inspector is never an empty prompt on home —
      users see a real assay / site card and understand the panel. */
   const DEFAULT_STREAM_ID = "wti";
-  const DEFAULT_SITE_ID = "spindletop";
+  const DEFAULT_SITE_ID = "drake-well";
 
   function pickDefaultStreamId() {
     if (getStream(DEFAULT_STREAM_ID)) return DEFAULT_STREAM_ID;
@@ -885,7 +896,7 @@
           requestAnimationFrame(() => keepTooltipInMap(node));
         });
       }
-      marker.on("click", () => pickPin(s, true));
+      marker.on("click", () => pickPin(s, false));
       if (!showTips) {
         marker.on("add", () => {
           const elIcon = marker.getElement();
@@ -903,7 +914,7 @@
             const t = e.changedTouches && e.changedTouches[0];
             if (!t || sx == null) return;
             if (Math.hypot(t.clientX - sx, t.clientY - sy) > 12) return;
-            pickPin(s, true);
+            pickPin(s, false);
           });
         });
       }
@@ -1034,10 +1045,7 @@
     state.query = "";
     if (el.search) {
       el.search.value = "";
-      el.search.placeholder =
-        layer === "sites"
-          ? "Search fields, basins, historic sites…"
-          : "Search name, alias, country, basin…";
+      el.search.placeholder = layer === "sites" ? "Search sites…" : "Search streams…";
     }
     syncSearchClear();
     if (layer === "sites") state.streamId = null;
@@ -1069,7 +1077,7 @@
     if (state.layer === "sites") {
       title.textContent = "Select a site";
       body.textContent =
-        "Tap a field, basin, or historic find — or search Spindletop, Ghawar, Bakken…";
+        "Tap a field, basin, or historic find — or search Drake Well, Ghawar, Bakken…";
     } else {
       title.textContent = "Select a stream";
       body.textContent = "Tap a marker on the map, or search for WTI, Merey-16, Boscan…";
@@ -1564,6 +1572,12 @@
     bindClearSelection(root);
   }
 
+  function resetInspectorScroll() {
+    const rail = $("inspector-rail");
+    if (rail) rail.scrollTop = 0;
+    if (el.inspectorBody) el.inspectorBody.scrollTop = 0;
+  }
+
   function renderInspector() {
     if (state.layer === "sites") {
       const site = getSite(state.siteId);
@@ -1571,12 +1585,14 @@
         el.inspectorEmpty.classList.remove("hidden");
         el.inspectorBody.classList.add("hidden");
         el.inspectorBody.innerHTML = "";
+        resetInspectorScroll();
         return;
       }
       el.inspectorEmpty.classList.add("hidden");
       el.inspectorBody.classList.remove("hidden");
       el.inspectorBody.innerHTML = siteInspectorHtml(site);
       bindSiteInspectorEvents(el.inspectorBody);
+      resetInspectorScroll();
       return;
     }
     const s = getStream(state.streamId);
@@ -1584,12 +1600,14 @@
       el.inspectorEmpty.classList.remove("hidden");
       el.inspectorBody.classList.add("hidden");
       el.inspectorBody.innerHTML = "";
+      resetInspectorScroll();
       return;
     }
     el.inspectorEmpty.classList.add("hidden");
     el.inspectorBody.classList.remove("hidden");
     el.inspectorBody.innerHTML = inspectorHtml(s);
     bindInspectorEvents(el.inspectorBody);
+    resetInspectorScroll();
   }
 
   function siteInspectorHtml(s) {
@@ -1888,8 +1906,7 @@
       ];
     }
     return [
-      [COLOR_API.condensate, "Condensate ≥39°"],
-      [COLOR_API.light, "Light 31–39°"],
+      [COLOR_API.light, "Light ≥31°"],
       [COLOR_API.medium, "Medium 22–31°"],
       [COLOR_API.heavy, "Heavy 10–22°"],
       [COLOR_API["extra-heavy"], "Extra-heavy <10°"],
@@ -1955,13 +1972,17 @@
     const q = state.query.trim().toLowerCase();
     if (!q) return [];
     const list = activePins();
-    const prefix = [];
+    const namePrefix = [];
+    const aliasPrefix = [];
     const rest = [];
     for (const s of list) {
-      if (String(s.name).toLowerCase().startsWith(q)) prefix.push(s);
+      const name = String(s.name || "").toLowerCase();
+      const aliases = (s.aliases || []).map((a) => String(a).toLowerCase());
+      if (name.startsWith(q)) namePrefix.push(s);
+      else if (aliases.some((a) => a.startsWith(q))) aliasPrefix.push(s);
       else rest.push(s);
     }
-    return prefix.concat(rest);
+    return namePrefix.concat(aliasPrefix, rest);
   }
 
   function renderSearchResults() {
@@ -2536,8 +2557,8 @@
       '<h2 class="page-title">About</h2>' +
       '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
       '<div class="about-block"><h3>Glossary</h3><dl class="glossary">' +
-      '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Condensate ≥39°, light 31–39°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°.</dd>' +
-      "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons (≥39°API here), often from gas or gas-condensate fields. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit).</dd>" +
+      '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Map classes follow the usual crude bands: light ≥31°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°. Condensate is a product type, not an API class here.</dd>' +
+      "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons, typically field or plant pentanes-plus from gas or gas-condensate streams. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit). Distinct from light sweet crude.</dd>" +
       '<dt id="g-sulfur">Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to refine. This app’s sweet cutoff is ≤0.5 wt% S.</dd>' +
       "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher sulfur. Independent of light/heavy (API).</dd>" +
       '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (wt%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>' +
