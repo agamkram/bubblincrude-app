@@ -37,7 +37,7 @@ EXXON_TABLE = [
     ("Ebok", "ebok", 17.9, 0.44, "Nigeria", "Africa", 4.3, 8.0, "Conventional", [], "Shallow-water Nigeria heavy-sweet.", ["bonny-light", "qua-iboe"]),
     ("Erha", "erha", 35.1, 0.18, "Nigeria", "Africa", 5.35, 4.33, "Conventional", [], "Deepwater Nigeria light sweet.", ["bonga", "usan"]),
     ("Gindungo", "gindungo", 32.7, 0.52, "Angola", "Africa", -6.2, 11.2, "Conventional", [], "Angola Block 32.", ["hungo", "mostarda"]),
-    ("Gippsland Condensate", "gippsland", 68.4, 0.01, "Australia", "Asia Pacific", -38.3, 148.0, "Conventional", ["Gippsland"], "Bass Strait condensate.", ["northwest-shelf", "cossack"]),
+    ("Gippsland Condensate", "gippsland-condensate", 68.4, 0.01, "Australia", "Asia Pacific", -38.3, 148.0, "Conventional", ["Bass Strait Condensate"], "Bass Strait condensate.", ["gippsland", "northwest-shelf", "cossack"]),
     ("Girassol", "girassol", 29.9, 0.33, "Angola", "Africa", -7.7, 11.7, "Conventional", [], "Block 17 flagship.", ["dalia", "clov"]),
     ("Golden Arrowhead", "golden-arrowhead", 36.5, 0.25, "Guyana", "Latin America", 8.0, -56.9, "Conventional", [], "Stabroek block grade.", ["liza", "unity", "payara-gold"]),
     ("Gorgon Condensate", "gorgon-condensate", 57.0, 0.02, "Australia", "Asia Pacific", -20.6, 115.5, "Conventional", ["Gorgon"], "Gorgon LNG condensate, NW Shelf.", ["northwest-shelf", "ichthys"]),
