@@ -5,6 +5,7 @@
   const DATA = window.CRUDE_DATA;
   const SITES = window.SITES_DATA;
   const HUBS = window.HUBS_DATA;
+  const REFINERIES = window.REFINERIES_DATA;
   if (!DATA) {
     console.error("CRUDE_DATA missing");
     return;
@@ -15,6 +16,10 @@
   }
   if (!HUBS || !Array.isArray(HUBS.hubs)) {
     console.error("HUBS_DATA missing");
+    return;
+  }
+  if (!REFINERIES || !Array.isArray(REFINERIES.refineries)) {
+    console.error("REFINERIES_DATA missing");
     return;
   }
 
@@ -33,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v207";
+  const APP_VERSION = "v208";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -54,10 +59,11 @@
 
   const state = {
     route: "home",
-    layer: "streams", // streams | sites | hubs
+    layer: "streams", // streams | sites | hubs | refineries
     streamId: null,
     siteId: null,
     hubId: null,
+    refineryId: null,
     compareIds: [],
     query: "",
     filters: defaultFilters(),
@@ -322,7 +328,8 @@
   }
 
   function markerColor(s) {
-    /* Hubs ignore API/S color mode — paint by commercial role. */
+    /* Hubs ignore API/S color mode — paint by commercial role.
+       Refineries are place-only plants; one violet, no fake assay color. */
     if (state.layer === "hubs") {
       if (s.role === "pricing") return "#e8a838";
       if (s.role === "storage") return "#4a8fd4";
@@ -330,6 +337,7 @@
       if (s.role === "blend") return "#5ec8b0";
       return "#e8a838"; /* accent */
     }
+    if (state.layer === "refineries") return "#a78bfa";
     if (state.colorMode === "sulfur") return sulfurRampColor(s.sulfur_wt);
     return apiRampColor(s.api);
   }
@@ -415,18 +423,20 @@
     const name = String(s.name || "").toLowerCase();
     const aliases = (s.aliases || []).map((a) => String(a).toLowerCase());
     const role = String(s.role || "").toLowerCase();
-    return { name, aliases, role };
+    const operator = String(s.operator || "").toLowerCase();
+    return { name, aliases, role, operator };
   }
   function queryPrefixHit(s, q) {
-    const { name, aliases, role } = queryTokens(s);
+    const { name, aliases, role, operator } = queryTokens(s);
     return (
       name.startsWith(q) ||
       aliases.some((a) => a.startsWith(q)) ||
-      (role && role.startsWith(q))
+      (role && role.startsWith(q)) ||
+      (operator && operator.startsWith(q))
     );
   }
   function queryHaystack(s) {
-    return [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes, s.role]
+    return [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes, s.role, s.operator]
       .concat(s.aliases || [])
       .filter(Boolean)
       .join(" ")
@@ -519,6 +529,18 @@
     return HUBS.hubs.find((s) => s.id === id) || null;
   }
 
+  function refineryMatches(s) {
+    return hubMatches(s);
+  }
+
+  function filteredRefineries() {
+    return REFINERIES.refineries.filter(refineryMatches);
+  }
+
+  function getRefinery(id) {
+    return REFINERIES.refineries.find((s) => s.id === id) || null;
+  }
+
   function uniqueById(list) {
     const seen = new Set();
     const out = [];
@@ -579,6 +601,8 @@
     if (state.layer !== layer) setLayer(layer);
     if (layer === "sites") selectSite(id, true);
     else if (layer === "hubs") selectHub(id, true);
+    else if (layer === "refineries") selectRefinery(id, true);
+    else selectStream(id, true);
   }
 
   /* Stream / site / hub ids can collide. Compare keys are namespaced so a
@@ -592,7 +616,7 @@
     if (i <= 0) return { kind: "stream", id: raw };
     const kind = raw.slice(0, i);
     const id = raw.slice(i + 1);
-    if (kind !== "stream" && kind !== "site" && kind !== "hub") {
+    if (kind !== "stream" && kind !== "site" && kind !== "hub" && kind !== "refinery") {
       return { kind: "stream", id: raw };
     }
     return { kind, id };
@@ -601,18 +625,21 @@
     const p = parsePinKey(key);
     if (p.kind === "site") return getSite(p.id) || null;
     if (p.kind === "hub") return getHub(p.id) || null;
+    if (p.kind === "refinery") return getRefinery(p.id) || null;
     return getStream(p.id) || null;
   }
 
   function activePins() {
     if (state.layer === "sites") return filteredSites();
     if (state.layer === "hubs") return filteredHubs();
+    if (state.layer === "refineries") return filteredRefineries();
     return filteredStreams();
   }
 
   function selectedPinId() {
     if (state.layer === "sites") return state.siteId;
     if (state.layer === "hubs") return state.hubId;
+    if (state.layer === "refineries") return state.refineryId;
     return state.streamId;
   }
 
@@ -621,6 +648,7 @@
   const DEFAULT_STREAM_ID = "wti";
   const DEFAULT_SITE_ID = "drake-well";
   const DEFAULT_HUB_ID = "cushing";
+  const DEFAULT_REFINERY_ID = "motiva-port-arthur-refinery";
 
   function pickDefaultStreamId() {
     if (getStream(DEFAULT_STREAM_ID)) return DEFAULT_STREAM_ID;
@@ -640,6 +668,14 @@
     return first ? first.id : null;
   }
 
+  function pickDefaultRefineryId() {
+    if (getRefinery(DEFAULT_REFINERY_ID)) return DEFAULT_REFINERY_ID;
+    const named = REFINERIES.refineries.find((s) => /baytown|port arthur|jamnagar/i.test(s.name || ""));
+    if (named) return named.id;
+    const first = REFINERIES.refineries.find((s) => s && s.id);
+    return first ? first.id : null;
+  }
+
   function ensureHomeSelection() {
     if (state.route !== "home") return;
     if (state.layer === "sites") {
@@ -649,6 +685,7 @@
       state.siteId = id;
       state.streamId = null;
       state.hubId = null;
+      state.refineryId = null;
       return;
     }
     if (state.layer === "hubs") {
@@ -658,6 +695,17 @@
       state.hubId = id;
       state.streamId = null;
       state.siteId = null;
+      state.refineryId = null;
+      return;
+    }
+    if (state.layer === "refineries") {
+      if (getRefinery(state.refineryId)) return;
+      const id = pickDefaultRefineryId();
+      if (!id) return;
+      state.refineryId = id;
+      state.streamId = null;
+      state.siteId = null;
+      state.hubId = null;
       return;
     }
     if (getStream(state.streamId)) return;
@@ -666,6 +714,7 @@
     state.streamId = id;
     state.siteId = null;
     state.hubId = null;
+    state.refineryId = null;
   }
 
   /* —— Map —— */
@@ -679,7 +728,7 @@
   function crudeBeltBounds() {
     let south = 90;
     let north = -90;
-    for (const s of DATA.streams.concat(SITES.sites, HUBS.hubs)) {
+    for (const s of DATA.streams.concat(SITES.sites, HUBS.hubs, REFINERIES.refineries)) {
       if (s.lat == null) continue;
       if (s.lat < south) south = s.lat;
       if (s.lat > north) north = s.lat;
@@ -917,6 +966,7 @@
   function tipHtml(s) {
     if (state.layer === "sites") return tipHtmlSite(s);
     if (state.layer === "hubs") return tipHtmlHub(s);
+    if (state.layer === "refineries") return tipHtmlRefinery(s);
     const pills = [];
     const ac = apiClass(s.api);
     if (ac) pills.push(apiClassLabel(ac));
@@ -1004,6 +1054,29 @@
     );
   }
 
+  function tipHtmlRefinery(s) {
+    const key = pinKey("refinery", s.id);
+    const inTray = state.compareIds.includes(key);
+    const action = inTray
+      ? '<span class="pill pill-compare is-done">In tray</span>'
+      : '<button type="button" class="pill pill-compare" data-add="' +
+        escapeHtml(key) +
+        '">Compare</button>';
+    const meta = [s.operator, s.country].filter(Boolean).join(" · ");
+    return (
+      '<div class="tip-name">' +
+      escapeHtml(s.name) +
+      "</div>" +
+      '<div class="tip-meta">' +
+      escapeHtml(meta || "Refinery") +
+      "</div>" +
+      '<div class="tip-pills">' +
+      '<span class="pill pill-kind">refinery</span>' +
+      action +
+      "</div>"
+    );
+  }
+
   /* Restyle selected pin without tearing down the layer. A full rebuild
      closes an open tip mid-tap — on iOS the tip often opens while our click
      handler never runs, so the inspector stayed empty under Compare. */
@@ -1017,6 +1090,7 @@
       let s;
       if (state.layer === "sites") s = getSite(id);
       else if (state.layer === "hubs") s = getHub(id);
+      else if (state.layer === "refineries") s = getRefinery(id);
       else s = getStream(id);
       if (!marker || !s) return;
       marker.setIcon(makeIcon(s, !!on, few));
@@ -1028,6 +1102,7 @@
   function pickPin(s, fly) {
     if (state.layer === "sites") selectSite(s.id, fly);
     else if (state.layer === "hubs") selectHub(s.id, fly);
+    else if (state.layer === "refineries") selectRefinery(s.id, fly);
     else selectStream(s.id, fly);
   }
 
@@ -1178,10 +1253,11 @@
 
   function selectStream(id, fly) {
     const prev = state.streamId;
-    const same = prev === id && !state.siteId && !state.hubId;
+    const same = prev === id && !state.siteId && !state.hubId && !state.refineryId;
     state.streamId = id;
     state.siteId = null;
     state.hubId = null;
+    state.refineryId = null;
     dismissSearchQuery();
     saveStorage();
     if (state.route === "home") {
@@ -1204,10 +1280,11 @@
 
   function selectSite(id, fly) {
     const prev = state.siteId;
-    const same = prev === id && !state.streamId && !state.hubId;
+    const same = prev === id && !state.streamId && !state.hubId && !state.refineryId;
     state.siteId = id;
     state.streamId = null;
     state.hubId = null;
+    state.refineryId = null;
     dismissSearchQuery();
     if (!same) syncMarkerSelection(prev, id);
     renderInspector();
@@ -1226,10 +1303,11 @@
 
   function selectHub(id, fly) {
     const prev = state.hubId;
-    const same = prev === id && !state.streamId && !state.siteId;
+    const same = prev === id && !state.streamId && !state.siteId && !state.refineryId;
     state.hubId = id;
     state.streamId = null;
     state.siteId = null;
+    state.refineryId = null;
     dismissSearchQuery();
     if (!same) syncMarkerSelection(prev, id);
     renderInspector();
@@ -1246,8 +1324,37 @@
     }
   }
 
+  function selectRefinery(id, fly) {
+    const prev = state.refineryId;
+    const same = prev === id && !state.streamId && !state.siteId && !state.hubId;
+    state.refineryId = id;
+    state.streamId = null;
+    state.siteId = null;
+    state.hubId = null;
+    dismissSearchQuery();
+    if (!same) syncMarkerSelection(prev, id);
+    renderInspector();
+    renderTray();
+    if (fly && state.map && !same) {
+      const s = getRefinery(id);
+      if (s) flyToPin(s.lat, s.lon);
+    }
+    state._searchFocused = false;
+    renderSearchResults();
+    const w = window.innerWidth;
+    if (w > 699 && w <= 1099) {
+      openInspectorDrawer();
+    }
+  }
+
   function setLayer(layer) {
-    if (layer !== "streams" && layer !== "sites" && layer !== "hubs") return;
+    if (
+      layer !== "streams" &&
+      layer !== "sites" &&
+      layer !== "hubs" &&
+      layer !== "refineries"
+    )
+      return;
     if (state.layer === layer) return;
     state.layer = layer;
     state.query = "";
@@ -1258,18 +1365,27 @@
           ? "Search sites…"
           : layer === "hubs"
             ? "Search hubs…"
-            : "Search streams…";
+            : layer === "refineries"
+              ? "Search refineries…"
+              : "Search streams…";
     }
     syncSearchClear();
     if (layer === "sites") {
       state.streamId = null;
       state.hubId = null;
+      state.refineryId = null;
     } else if (layer === "hubs") {
       state.streamId = null;
       state.siteId = null;
+      state.refineryId = null;
+    } else if (layer === "refineries") {
+      state.streamId = null;
+      state.siteId = null;
+      state.hubId = null;
     } else {
       state.siteId = null;
       state.hubId = null;
+      state.refineryId = null;
     }
     syncLayerSeg();
     renderLegend();
@@ -1304,6 +1420,10 @@
       title.textContent = "Select a hub";
       body.textContent =
         "Tap a pricing, storage, or loading hub — or search Cushing, LOOP, Rotterdam…";
+    } else if (state.layer === "refineries") {
+      title.textContent = "Select a refinery";
+      body.textContent =
+        "Tap a plant on the map — or search Jamnagar, Port Arthur, Ras Tanura…";
     } else {
       title.textContent = "Select a stream";
       body.textContent = "Tap a marker on the map, or search for WTI, Merey-16, Boscan…";
@@ -1851,6 +1971,22 @@
       resetInspectorScroll();
       return;
     }
+    if (state.layer === "refineries") {
+      const plant = getRefinery(state.refineryId);
+      if (!plant) {
+        el.inspectorEmpty.classList.remove("hidden");
+        el.inspectorBody.classList.add("hidden");
+        el.inspectorBody.innerHTML = "";
+        resetInspectorScroll();
+        return;
+      }
+      el.inspectorEmpty.classList.add("hidden");
+      el.inspectorBody.classList.remove("hidden");
+      el.inspectorBody.innerHTML = refineryInspectorHtml(plant);
+      bindRefineryInspectorEvents(el.inspectorBody);
+      resetInspectorScroll();
+      return;
+    }
     const s = getStream(state.streamId);
     if (!s) {
       el.inspectorEmpty.classList.remove("hidden");
@@ -2019,6 +2155,48 @@
     bindClearSelection(root);
   }
 
+  function refineryInspectorHtml(s) {
+    let html = '<div class="insp-header">';
+    html += '<div class="insp-title-row">';
+    html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
+    html +=
+      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += "</div>";
+    html +=
+      '<p class="insp-loc">' +
+      escapeHtml([s.country, s.region].filter(Boolean).join(" · ")) +
+      "</p>";
+    html += '<div class="pill-row">';
+    html += '<span class="pill pill-kind">refinery</span>';
+    if (s.operator) {
+      html += '<span class="pill pill-kind">' + escapeHtml(s.operator) + "</span>";
+    }
+    const plantKey = pinKey("refinery", s.id);
+    if (state.compareIds.includes(plantKey)) {
+      html += '<span class="pill pill-compare is-done">In tray</span>';
+    } else {
+      html +=
+        '<button type="button" class="pill pill-compare" data-compare-add="' +
+        escapeHtml(plantKey) +
+        '">Compare</button>';
+    }
+    html += "</div></div>";
+    if (s.notes) {
+      html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
+    }
+    html +=
+      '<p class="insp-blurb" style="color:var(--text-mute)">Place only — no assay. Capacity is omitted until a published figure is on the record.</p>';
+    return html;
+  }
+
+  function bindRefineryInspectorEvents(root) {
+    root.querySelectorAll("[data-compare-add]").forEach((btn) => {
+      btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
+    });
+    bindGlossaryButtons(root);
+    bindClearSelection(root);
+  }
+
   function bindClearSelection(root) {
     root.querySelectorAll("[data-clear-selection]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
@@ -2033,6 +2211,7 @@
     state.streamId = null;
     state.siteId = null;
     state.hubId = null;
+    state.refineryId = null;
     $("inspector-rail")?.classList.remove("is-drawer-open");
     ensureHomeSelection();
     updateMarkers();
@@ -2048,7 +2227,13 @@
         if (!s) return "";
         const kind = parsePinKey(key).kind;
         const kindLabel =
-          kind === "site" ? " site" : kind === "hub" ? " hub" : "";
+          kind === "site"
+            ? " site"
+            : kind === "hub"
+              ? " hub"
+              : kind === "refinery"
+                ? " refinery"
+                : "";
         return (
           '<div class="tray-chip"><span class="name">' +
           escapeHtml(s.name) +
@@ -2252,6 +2437,13 @@
         "</div>"
       );
     }
+    if (state.layer === "refineries") {
+      return (
+        '<div class="legend-ramp legend-ramp-roles" aria-label="Refineries">' +
+        legendRoleTick("#a78bfa", "plants") +
+        "</div>"
+      );
+    }
     if (state.colorMode === "sulfur") {
       return legendBarHtml(SULFUR_RAMP, "0% S", "3%+ S", "Sulfur from 0% to 3%+");
     }
@@ -2261,6 +2453,9 @@
   function legendHelpText() {
     if (state.layer === "hubs") {
       return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, pale loading, teal blend.";
+    }
+    if (state.layer === "refineries") {
+      return "Refineries are the plants that turn crude into products. Place only — no assay, no invented capacity. Violet dots.";
     }
     if (state.colorMode === "sulfur") {
       return "Sweet is ≤ 0.5 wt% S. The ramp runs 0% to 3%+. Grey means no sulfur in the record.";
@@ -2325,6 +2520,7 @@
       const aliases = (s.aliases || []).map((a) => String(a).toLowerCase());
       if (name.startsWith(q)) namePrefix.push(s);
       else if (aliases.some((a) => a.startsWith(q))) aliasPrefix.push(s);
+      else if (String(s.operator || "").toLowerCase().startsWith(q)) aliasPrefix.push(s);
       else rest.push(s);
     }
     return namePrefix.concat(aliasPrefix, rest);
@@ -2341,7 +2537,13 @@
     }
     const hits = rankedSearchHits();
     const noun =
-      state.layer === "sites" ? "sites" : state.layer === "hubs" ? "hubs" : "streams";
+      state.layer === "sites"
+        ? "sites"
+        : state.layer === "hubs"
+          ? "hubs"
+          : state.layer === "refineries"
+            ? "refineries"
+            : "streams";
     if (!hits.length) {
       box.classList.remove("hidden");
       box.innerHTML =
@@ -2356,6 +2558,8 @@
         meta = [s.country, s.kind, s.year != null ? String(s.year) : ""].filter(Boolean).join(" · ");
       } else if (state.layer === "hubs") {
         meta = [s.country, s.role].filter(Boolean).join(" · ");
+      } else if (state.layer === "refineries") {
+        meta = [s.country, s.operator].filter(Boolean).join(" · ") || "refinery";
       } else {
         meta =
           s.country +
@@ -2460,6 +2664,7 @@
     saveStorage();
     if (state.layer === "sites") selectSite(id, true);
     else if (state.layer === "hubs") selectHub(id, true);
+    else if (state.layer === "refineries") selectRefinery(id, true);
     else selectStream(id, true);
   }
 
@@ -2473,7 +2678,7 @@
     const streams = pins.map((p) => p.s);
     if (streams.length < 2) {
       el.viewCompare.innerHTML =
-        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, or mix.</p>';
+        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
       return;
     }
 
@@ -2494,14 +2699,20 @@
         escapeHtml(s.name) +
         "</strong></div>" +
         '<div style="margin-top:8px;font-family:var(--mono);font-size:13px">' +
-        (p.kind === "site" ? "site · " : p.kind === "hub" ? "hub · " : "") +
-        densityLabel(s.api) +
-        " " +
-        densityUnit() +
-        " · " +
-        sulfurLabel(s.sulfur_wt) +
-        " " +
-        sulfurUnit() +
+        (p.kind === "refinery"
+          ? "refinery · " +
+            escapeHtml([s.country, s.operator].filter(Boolean).join(" · "))
+          : p.kind === "hub"
+            ? "hub · " +
+              escapeHtml([s.country, s.role].filter(Boolean).join(" · "))
+            : (p.kind === "site" ? "site · " : "") +
+              densityLabel(s.api) +
+              " " +
+              densityUnit() +
+              " · " +
+              sulfurLabel(s.sulfur_wt) +
+              " " +
+              sulfurUnit()) +
         "</div></div>";
     });
     html += "</div>";
@@ -2935,7 +3146,7 @@
   function renderAbout() {
     el.viewAbout.innerHTML =
       '<h2 class="page-title">About</h2>' +
-      '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
+      '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan), a <strong>Sites</strong> layer (fields, basins, plays, historic finds), <strong>Hubs</strong> (pricing, storage, loading, blend), and <strong>Refineries</strong> (the plants that turn crude into products). Stream values are typical published assay ranges, not live well samples.</p></div>' +
       '<div class="about-block"><h3>Glossary</h3><dl class="glossary">' +
       '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Inspector labels use the usual crude bands: light ≥31°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°. Map pins use a continuous color ramp by API (not those four buckets). Condensate is a product type, not an API class here.</dd>' +
       "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons, typically field or plant pentanes-plus from gas or gas-condensate streams. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit). Distinct from light sweet crude.</dd>" +
@@ -2945,6 +3156,7 @@
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
       "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point on the Hubs map layer (Cushing, LOOP, Rotterdam). Geography and role — not an assay.</dd>" +
+      "<dt>Refinery</dt><dd>A plant that turns crude into products. The Refineries map layer is place, operator, and notes — not an assay, and not an invented capacity.</dd>" +
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>" +
       "<dt>Play</dt><dd>A repeatable exploration/development concept within a basin (Eagle Ford shale, Bakken, Vaca Muerta).</dd>" +
@@ -2970,8 +3182,8 @@
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>" +
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
-      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint stream and site pins on a continuous ramp by API or sulfur — the scale sits under the map buttons. Hub pins are painted by commercial role instead.</p></div>' +
-      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps.</p></div>' +
+      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint stream and site pins on a continuous ramp by API or sulfur — the scale sits under the map buttons. Hub pins are painted by commercial role. Refinery pins are a single plant color — place, not assay.</p></div>' +
+      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps. Refinery locations are from OpenStreetMap (ODbL) plus a short curated list of well-known plants OSM missed.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
   }
@@ -3006,7 +3218,8 @@
           s.name.toLowerCase().includes(qq) ||
           (s.aliases || []).some((a) => a.toLowerCase().includes(qq)) ||
           (s.country || "").toLowerCase().includes(qq) ||
-          (s.basin || "").toLowerCase().includes(qq)
+          (s.basin || "").toLowerCase().includes(qq) ||
+          (s.operator || "").toLowerCase().includes(qq)
         );
       }).map((s) => ({ s, kind, key: pinKey(kind, s.id) }));
     }
@@ -3014,11 +3227,14 @@
     if (state.route === "compare") {
       items = hits("stream", filteredStreams())
         .concat(hits("site", filteredSites()))
-        .concat(hits("hub", filteredHubs()));
+        .concat(hits("hub", filteredHubs()))
+        .concat(hits("refinery", filteredRefineries()));
     } else if (state.layer === "sites") {
       items = hits("site", filteredSites());
     } else if (state.layer === "hubs") {
       items = hits("hub", filteredHubs());
+    } else if (state.layer === "refineries") {
+      items = hits("refinery", filteredRefineries());
     } else {
       items = hits("stream", filteredStreams());
     }
@@ -3035,16 +3251,22 @@
               ? "Site · "
               : item.kind === "hub"
                 ? "Hub · "
-                : "") +
+                : item.kind === "refinery"
+                  ? "Refinery · "
+                  : "") +
             escapeHtml(item.s.country) +
             (item.kind === "hub"
               ? item.s.role
                 ? " · " + escapeHtml(item.s.role)
                 : ""
-              : " · " +
-                densityLabel(item.s.api) +
-                " " +
-                densityUnit()) +
+              : item.kind === "refinery"
+                ? item.s.operator
+                  ? " · " + escapeHtml(item.s.operator)
+                  : ""
+                : " · " +
+                  densityLabel(item.s.api) +
+                  " " +
+                  densityUnit()) +
             "</div></span><span class=\"sub\">Add</span></button>"
         )
         .join("") ||
@@ -3586,7 +3808,19 @@
     $("has-sara").checked = state.filters.hasSara;
     $("has-metals").checked = state.filters.hasMetals;
     render();
+    paintVersionBadge();
     pinShellViewport();
+  }
+
+  function paintVersionBadge() {
+    const node = document.getElementById("bc-ver");
+    if (!node) return;
+    const css = getComputedStyle(document.documentElement)
+      .getPropertyValue("--bc-css")
+      .trim();
+    const jsN = APP_VERSION.replace(/^v/, "");
+    node.textContent =
+      css && css !== jsN ? APP_VERSION + " / css" + css : APP_VERSION;
   }
 
   if (document.readyState === "loading") {
