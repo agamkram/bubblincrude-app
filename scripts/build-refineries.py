@@ -42,7 +42,8 @@ SKIP_NAME = re.compile(
     r"\bcamino |\bprivada |rooftop|emergency services|cogeneration|"
     r"fire dept|board of public utilities|bar and grill|"
     r"aesthetique|\bspa\b|biorefining|renewable diesel|"
-    r"fuel gas line|training department",
+    r"fuel gas line|training department|"
+    r"commemorative plaque|refinery fence|district pond",
     re.I,
 )
 # OSM still has a pin. These are not operable crude CDUs.
@@ -93,7 +94,7 @@ COUNTRIES = [
     ("Canada", "North America", 42.95, -82.4),  # Sarnia
     ("Canada", "North America", 46.76, -71.20),  # Lévis
     ("Canada", "North America", 45.27, -66.07),  # Saint John
-    ("Canada", "North America", 49.28, -122.96),  # Burnaby
+    ("Canada", "North America", 50.5, -104.6),  # Regina / Moose Jaw
     ("Mexico", "Latin America", 23.6, -102.5),
     ("Brazil", "Latin America", -14.2, -51.9),
     ("Argentina", "Latin America", -38.4, -63.6),
@@ -581,6 +582,7 @@ def build(payloads):
         r["id"] = sid
         out.append(r)
     attach_eia(out)
+    out = prune_us_without_eia(out)
     return out
 
 
@@ -824,6 +826,45 @@ def _eia_score(e, p):
     if not company_hit:
         return 0
     return sc
+
+
+def in_united_states(lat, lon):
+    if 24.5 <= lat <= 49.4 and -124.8 <= lon <= -66.9:
+        return True
+    if 51 <= lat <= 72 and -170 <= lon <= -129:
+        return True
+    if 18.5 <= lat <= 22.5 and -160.5 <= lon <= -154.5:
+        return True
+    if 17.6 <= lat <= 18.6 and -67.5 <= lon <= -64.4:
+        return True
+    return False
+
+
+def prune_us_without_eia(rows):
+    """US crude CDUs are the EIA operable list. No published kb/d, no US pin."""
+    kept = []
+    dropped = 0
+    relabeled = 0
+    for r in rows:
+        if r.get("capacity_kbd") is not None:
+            kept.append(r)
+            continue
+        if r.get("country") != "United States":
+            kept.append(r)
+            continue
+        if not in_united_states(r["lat"], r["lon"]):
+            country, region = country_of(r["lat"], r["lon"])
+            r["country"] = country
+            r["region"] = region
+            relabeled += 1
+            if country == "United States":
+                dropped += 1
+                continue
+            kept.append(r)
+            continue
+        dropped += 1
+    print("dropped US without EIA kb/d", dropped, "relabeled non-US", relabeled)
+    return kept
 
 
 def attach_eia(rows):
