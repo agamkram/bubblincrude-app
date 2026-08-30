@@ -38,8 +38,6 @@
         var sh = (window.screen && window.screen.height) || 0;
         var screenMax = Math.max(sw, sh);
         var screenMin = Math.min(sw, sh);
-        r.style.setProperty("--vv-top", "0px");
-        r.style.setProperty("--vv-left", "0px");
         if (standalone) {
           r.classList.add("pwa-standalone");
           var fillH = ih >= iw ? Math.max(ih, screenMax) : Math.max(ih, screenMin);
@@ -48,13 +46,8 @@
           var total = fillH + extra;
           r.style.setProperty("--pwa-fill-h", fillH + "px");
           r.style.setProperty("--pwa-extra-b", extra + "px");
-          r.style.setProperty("--vv-w", iw + "px");
-          r.style.setProperty("--vv-h", total + "px");
           r.style.height = total + "px";
           r.style.minHeight = total + "px";
-        } else {
-          r.style.setProperty("--vv-w", "100%");
-          r.style.setProperty("--vv-h", "100%");
         }
       } catch (e) {}
     })();
@@ -68,7 +61,7 @@
   <meta property="og:title" content="BubblinCrude — crude oil explorer" />
   <meta
     property="og:description"
-    content="Global crude streams — filter, analyze, compare. Assay-style quality with source chips and quality flags."
+    content="Global crude streams — filter, analyze, and compare assays on a world map."
   />
   <meta property="og:url" content="https://bubblincrude.markmaga.com/" />
   <link rel="canonical" href="https://bubblincrude.markmaga.com/" />
@@ -96,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=160" />
+  <link rel="stylesheet" href="styles.css?v=172" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,7 +99,7 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v160</span>
+          <span class="brand-ver" id="app-version">v172</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
@@ -300,15 +293,6 @@
     </main>
   </div>
 
-  <!-- Mobile inspector sheet -->
-  <div id="sheet-inspector" class="sheet sheet-inspector hidden" role="dialog" aria-modal="true" aria-label="Stream details">
-    <div class="sheet-backdrop" data-close-sheet></div>
-    <div class="sheet-panel sheet-snap">
-      <div class="sheet-handle"></div>
-      <div class="sheet-body" id="sheet-inspector-body"></div>
-    </div>
-  </div>
-
   <!-- Add to compare picker -->
   <div id="picker-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Add to compare">
     <div class="modal-backdrop" data-close-modal></div>
@@ -323,9 +307,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=160"></script>
-  <script src="sites.js?v=160"></script>
-  <script src="app.js?v=160"></script>
+  <script src="data.js?v=172"></script>
+  <script src="sites.js?v=172"></script>
+  <script src="app.js?v=172"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -336,7 +320,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v160";
+    var EXPECTED = "v172";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

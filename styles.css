@@ -36,11 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 160;
-  --vv-top: 0px;
-  --vv-left: 0px;
-  --vv-w: 100%;
-  --vv-h: 100%;
+  --bc-css: 172;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -225,13 +221,6 @@ html.pwa-standalone .app {
   min-width: 0;
 }
 
-.topbar-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
 .topbar-search {
   position: relative;
   width: 100%;
@@ -385,17 +374,6 @@ html.pwa-standalone .app {
   background: var(--teal-dim);
 }
 
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-}
-
-.mobile-only {
-  display: none;
-}
-
 /* —— Buttons —— */
 .btn {
   display: inline-flex;
@@ -425,17 +403,6 @@ html.pwa-standalone .app {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.btn-primary {
-  background: var(--teal);
-  border-color: var(--teal);
-  color: #041016;
-  font-weight: 600;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--teal-deep);
-  border-color: var(--teal-deep);
-  color: #041016;
-}
 .btn-ghost {
   background: transparent;
 }
@@ -450,11 +417,6 @@ html.pwa-standalone .app {
   color: var(--text);
   background: var(--bg-hover);
 }
-.btn-icon {
-  min-width: 44px;
-  min-height: 44px;
-}
-
 .seg {
   display: flex;
   flex-wrap: wrap;
@@ -477,11 +439,6 @@ html.pwa-standalone .app {
   border-color: var(--teal);
   color: var(--teal);
 }
-.seg-sm .seg-btn {
-  min-height: 28px;
-  font-size: 11px;
-}
-
 /* —— Main layout —— */
 .main {
   flex: 1 1 auto;
@@ -781,20 +738,6 @@ input[type="range"] {
   color: var(--text-dim);
   margin-top: 4px;
 }
-.tick-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--text-mute);
-  margin-top: 4px;
-}
-.slider-label {
-  display: block;
-  font-size: 11px;
-  color: var(--text-mute);
-  margin: 8px 0 4px;
-}
-
 .check-grid {
   display: flex;
   flex-direction: column;
@@ -884,12 +827,6 @@ input[type="range"] {
   line-height: 32px !important;
 }
 
-.map-chrome-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
 .topbar-tools {
   display: flex;
   flex-wrap: wrap;
@@ -1241,44 +1178,40 @@ button.pill {
 
 .quality-strip {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
   margin-bottom: 10px;
 }
-.q-flag {
-  font-family: var(--mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--amber);
-}
 .metric-tile {
-  padding: 7px 8px;
+  position: relative;
+  padding: 5px 22px 5px 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg);
+  min-width: 0;
+}
+.metric-tile > .flag-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
 }
 .metric-tile .k {
   font-size: 9px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   color: var(--text-mute);
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 .metric-tile .v {
   font-family: var(--mono);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
-  margin-top: 2px;
+  margin-top: 1px;
   line-height: 1.1;
 }
 .metric-tile .u {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--text-mute);
-  margin-top: 1px;
+  margin-top: 0;
 }
 .metric-tile.is-teal .v {
   color: var(--teal);
@@ -1445,6 +1378,19 @@ button.pill {
   overflow: hidden;
   box-sizing: border-box;
   z-index: 4;
+}
+/* Mac / iPad: match slider row height + buffer under tray so the map
+   stage is shorter and the belt fit sits flush (kills the slim top gap). */
+@media (min-width: 700px) {
+  .compare-tray {
+    height: 34px;
+    min-height: 34px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  .map-pane {
+    padding-bottom: 17px;
+  }
 }
 .compare-tray[hidden] {
   display: none !important;
@@ -1894,6 +1840,13 @@ button.pill {
   line-height: 1.45;
   color: var(--text-dim);
 }
+.glossary dt.is-target,
+#g-quality-flags.is-target h3 {
+  color: var(--teal);
+  outline: 1px solid var(--teal);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 .flag-list {
   display: grid;
   gap: 8px;
@@ -1954,16 +1907,12 @@ html.pwa-standalone:not(.app-home) .view-page {
   cursor: pointer;
 }
 
-.modal,
-.sheet,
-.drawer {
+.modal {
   position: fixed;
   inset: 0;
   z-index: 80;
 }
-.modal-backdrop,
-.sheet-backdrop,
-.drawer-backdrop {
+.modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
@@ -2033,65 +1982,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   color: var(--text-mute);
 }
 
-.sheet-panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  border-top: 1px solid var(--border-strong);
-  border-radius: 16px 16px 0 0;
-  background: var(--bg-panel);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
-}
-.sheet-handle {
-  width: 40px;
-  height: 4px;
-  margin: 10px auto 6px;
-  border-radius: 2px;
-  background: var(--border-strong);
-}
-.sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px 8px;
-}
-.sheet-head h2 {
-  margin: 0;
-  font-size: 16px;
-}
-.sheet-body {
-  overflow: auto;
-  padding: 0 16px 16px;
-  -webkit-overflow-scrolling: touch;
-}
-.sheet-inspector .sheet-panel {
-  max-height: 92vh;
-}
-.sheet-snap {
-  height: 55vh;
-}
-.sheet-snap.is-full {
-  height: 92vh;
-}
-
-.drawer-panel {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: min(400px, 100vw);
-  overflow: auto;
-  padding: 20px;
-  background: var(--bg-panel);
-  border-left: 1px solid var(--border-strong);
-  box-shadow: var(--shadow);
-}
 
 .compare-stream-swatches {
   display: flex;
@@ -2130,9 +2020,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   .home-search {
     border-right: none;
   }
-  .mobile-only {
-    display: inline-flex;
-  }
   /* Hide the tagline, never the version badge — the badge is most needed on
      phones, which is exactly where this breakpoint applies. */
   .brand-sub-text {
@@ -2154,13 +2041,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   .brand-title {
     font-size: 22px;
     line-height: 24px;
-  }
-  .topbar-row {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .topbar-actions {
-    margin-left: auto;
   }
   .topbar-nav {
     gap: 2px;
@@ -2201,10 +2081,6 @@ html.pwa-standalone:not(.app-home) .view-page {
     gap: 2px 0;
     padding: 4px 14px 5px;
   }
-  .map-slider-block {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 8px;
-  }
   .rail-inspector {
     display: block;
     border-left: none;
@@ -2241,9 +2117,6 @@ html.pwa-standalone:not(.app-home) .view-page {
     border-radius: var(--radius);
     background: var(--bg-panel);
   }
-  .quality-strip {
-    grid-template-columns: 1fr 1fr;
-  }
   .mb-row {
     grid-template-columns: 72px 1fr 48px;
   }
@@ -2262,7 +2135,13 @@ html.pwa-standalone:not(.app-home) .view-page {
     box-shadow: var(--shadow);
   }
   .compare-tray {
-    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+    /* Height/buffer set in the ≥700px rule; keep safe-area in the pane pad. */
+    padding-bottom: 0;
+  }
+}
+@media (min-width: 700px) and (max-width: 1099px) {
+  .map-pane {
+    padding-bottom: max(17px, env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -2273,8 +2152,5 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .topbar {
     min-height: 48px;
-  }
-  .sheet-snap {
-    height: 70vh;
   }
 }

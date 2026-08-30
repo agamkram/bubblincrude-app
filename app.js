@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v160";
+  const APP_VERSION = "v172";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -65,7 +65,6 @@
     markers: new Map(),
     clusterLayer: null,
     originMap: null,
-    sheetFull: false,
     molGroup: "all",
   };
 
@@ -102,12 +101,7 @@
     return 0;
   }
 
-  /**
-   * Pin .app.
-   * PWA: fillH (Bug B).
-   * Safari tab: inset 0 — never VV offsetTop/Left (those + map overflow
-   * painted black corner boxes mostly off-screen).
-   */
+  /** Pin .app height for PWA (fillH); Safari tab uses normal document flow. */
   function pinShellViewport() {
     const root = document.documentElement;
     const standalone = isStandaloneDisplay();
@@ -122,10 +116,6 @@
         lastFillKey = key;
         root.style.setProperty("--pwa-fill-h", fillH + "px");
         root.style.setProperty("--pwa-extra-b", extra + "px");
-        root.style.setProperty("--vv-top", "0px");
-        root.style.setProperty("--vv-left", "0px");
-        root.style.setProperty("--vv-w", (window.innerWidth || 0) + "px");
-        root.style.setProperty("--vv-h", total + "px");
         root.style.height = total + "px";
         root.style.minHeight = total + "px";
       }
@@ -137,15 +127,7 @@
     root.style.removeProperty("--pwa-extra-b");
     root.style.removeProperty("height");
     root.style.removeProperty("min-height");
-
-    const key = "safari-inset";
-    if (key !== lastFillKey) {
-      lastFillKey = key;
-      root.style.setProperty("--vv-top", "0px");
-      root.style.setProperty("--vv-left", "0px");
-      root.style.setProperty("--vv-w", "100%");
-      root.style.setProperty("--vv-h", "100%");
-    }
+    lastFillKey = "safari";
     return window.innerHeight || 0;
   }
 
@@ -174,7 +156,6 @@
     el.search = $("search-input");
     el.searchClear = $("search-clear");
     el.searchResults = $("search-results");
-    el.filtersRail = $("filters-rail");
     el.activeChips = $("active-chips");
     el.regionFilters = $("region-filters");
     el.kindFilters = $("kind-filters");
@@ -191,10 +172,6 @@
     el.viewCuts = $("view-cuts");
     el.viewMolecules = $("view-molecules");
     el.viewAbout = $("view-about");
-    el.sheetFilters = $("sheet-filters");
-    el.sheetFiltersBody = $("sheet-filters-body");
-    el.sheetInspector = $("sheet-inspector");
-    el.sheetInspectorBody = $("sheet-inspector-body");
     el.pickerModal = $("picker-modal");
     el.pickerList = $("picker-list");
     el.pickerSearch = $("picker-search");
@@ -319,10 +296,18 @@
     if (kind === "sulfur") {
       return value <= 0.5 ? "teal" : "amber";
     }
-    if (kind === "metals" || kind === "resid") {
-      return value > 100 || (kind === "resid" && value > 30) ? "amber" : "mute";
+    if (kind === "lights") {
+      return value >= 55 ? "teal" : value >= 40 ? "mute" : "amber";
     }
     return "mute";
+  }
+
+  function lightsYield(s) {
+    if (!s || !s.yields) return null;
+    const n = s.yields.naphtha;
+    const m = s.yields.middle;
+    if (n == null && m == null) return null;
+    return (n || 0) + (m || 0);
   }
 
   /* —— Persistence / URL —— */
@@ -377,9 +362,9 @@
     render();
   }
 
-  function scrollToCutHash() {
+  function scrollToHashTarget() {
     const hash = location.hash || "";
-    if (!hash.startsWith("#cut-")) return;
+    if (!hash.startsWith("#cut-") && !hash.startsWith("#g-")) return;
     const node = document.getElementById(hash.slice(1));
     if (!node) return;
     requestAnimationFrame(() => {
@@ -601,7 +586,15 @@
     if (state.map.getZoom() + 0.001 < need) {
       state.map.setZoom(need, { animate: false });
     }
-    state.map.panInsideBounds(belt, { animate: false });
+    /* At floor zoom the view is *larger* than the belt (letterbox). 
+       panInsideBounds then pins to one edge and leaves a persistent strip
+       on the opposite side — the ~1/8" gap on Mac/iPad. Recenter instead.
+       When zoomed in, pan as usual so the belt can't be dragged away. */
+    if (state.map.getZoom() > need + 0.01) {
+      state.map.panInsideBounds(belt, { animate: false });
+    } else {
+      state.map.setView(belt.getCenter(), state.map.getZoom(), { animate: false });
+    }
     state._clamping = false;
   }
 
@@ -612,12 +605,16 @@
     state.map.invalidateSize({ pan: false });
     state.map.setMinZoom(0);
     const belt = WORLD_BOUNDS;
-    /* inside=false — the whole belt fits, so the full world width shows. */
+    /* Temporarily disable snap so the belt can fill the pane exactly.
+       Interactive zoom keeps zoomSnap 0.5 for productive Mac pinch. */
+    const prevSnap = state.map.options.zoomSnap;
+    state.map.options.zoomSnap = 0;
     const zoom = state.map.getBoundsZoom(belt, false);
     const center = belt.getCenter();
     const finish = () => {
       lockFullZoomFloor();
       stayInBelt();
+      state.map.options.zoomSnap = prevSnap;
     };
     if (animate) {
       let settled = false;
@@ -636,6 +633,55 @@
     }
   }
 
+  /* Leaflet stamps inline W×H on first layout. If the topbar/fonts settle a
+     beat later, the pane grows and leaves a slim empty strip until the next
+     invalidate+fit (zoom/unzoom). Refit whenever the stage size is real. */
+  function refitMapToPane() {
+    if (!state.map || state.route !== "home" || state._fittingFull) return;
+    sizeMapToBelt();
+    state.map.invalidateSize({ pan: false });
+    const sz = state.map.getSize();
+    if (!sz || sz.x < 2 || sz.y < 2) return;
+    if (state.query.trim()) fitToFiltered(false);
+    else fitMapFull(false);
+  }
+
+  function scheduleMapFill() {
+    if (!state.map) return;
+    const run = () => refitMapToPane();
+    requestAnimationFrame(() => requestAnimationFrame(run));
+    setTimeout(run, 100);
+    setTimeout(run, 320);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(run).catch(() => {});
+    }
+  }
+
+  function ensureMapSizeWatch() {
+    if (state._mapSizeWatch || typeof ResizeObserver === "undefined") return;
+    const stage = document.querySelector(".map-stage");
+    if (!stage) return;
+    let lastKey = "";
+    let timer = null;
+    state._mapSizeWatch = new ResizeObserver(() => {
+      if (!state.map || state.route !== "home" || state._fittingFull) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!state.map || state._fittingFull) return;
+        sizeMapToBelt();
+        state.map.invalidateSize({ pan: false });
+        const sz = state.map.getSize();
+        if (!sz || sz.x < 2 || sz.y < 2) return;
+        const key = sz.x + "x" + sz.y;
+        if (key === lastKey) return;
+        lastKey = key;
+        if (state.query.trim()) fitToFiltered(false);
+        else fitMapFull(false);
+      }, 40);
+    });
+    state._mapSizeWatch.observe(stage);
+  }
+
   function initMap() {
     if (state.map || !window.L) return;
     const belt = WORLD_BOUNDS;
@@ -645,8 +691,9 @@
       attributionControl: false,
       minZoom: 0,
       maxZoom: 10,
-      zoomSnap: 0,
-      zoomDelta: 0.5,
+      zoomSnap: 0.5,
+      zoomDelta: 1,
+      wheelPxPerZoomLevel: 20,
       maxBounds: belt,
       maxBoundsViscosity: 1.0,
     });
@@ -672,7 +719,8 @@
       if (state.map.getZoom() <= floor + 0.01) fitMapFull(true);
     });
     updateMarkers();
-    setTimeout(() => fitMapFull(false), 50);
+    ensureMapSizeWatch();
+    scheduleMapFill();
   }
 
   function makeIcon(s, selected, few) {
@@ -1042,6 +1090,7 @@
       btn.addEventListener("click", clearSelection);
       rail.insertBefore(btn, rail.firstChild);
     }
+    scheduleMapFill();
   }
 
   /* —— Compare —— */
@@ -1077,10 +1126,22 @@
       .replace(/"/g, "&quot;");
   }
 
+  function glossaryBtn(termId, label) {
+    return (
+      '<button type="button" class="flag-btn" data-glossary="' +
+      escapeHtml(termId) +
+      '" title="Glossary: ' +
+      escapeHtml(label) +
+      '" aria-label="Glossary: ' +
+      escapeHtml(label) +
+      '">i</button>'
+    );
+  }
+
   function flagBtn(flag, label) {
     const f = flag || "unknown";
     return (
-      '<button type="button" class="flag-btn" title="' +
+      '<button type="button" class="flag-btn" data-glossary="quality-flags" title="' +
       escapeHtml(label || "Quality") +
       ": " +
       f +
@@ -1136,11 +1197,8 @@
 
   function inspectorHtml(s) {
     if (!s) return "";
-    const niV =
-      s.ni_ppm != null || s.v_ppm != null
-        ? fmtNum((s.ni_ppm || 0) + (s.v_ppm || 0), 0)
-        : null;
     const flags = s.flags || {};
+    const lights = lightsYield(s);
 
     let html = "";
     html += '<div class="insp-header">';
@@ -1181,32 +1239,21 @@
       densityLabel(s.api),
       densityUnit(),
       metricTone("api", s.api),
-      flags.api,
-      s.source
+      "api"
     );
     html += metricTile(
       "Sulfur",
       sulfurLabel(s.sulfur_wt),
       sulfurUnit(),
       metricTone("sulfur", s.sulfur_wt),
-      flags.sulfur_wt,
-      s.source
+      "sulfur"
     );
     html += metricTile(
-      "Ni+V",
-      niV == null ? "—" : niV,
-      "ppm",
-      metricTone("metals", niV),
-      flags.ni_ppm || flags.v_ppm,
-      s.source
-    );
-    html += metricTile(
-      "Vac. resid",
-      s.resid_wt == null ? "—" : fmtNum(s.resid_wt, 0),
+      "Lights",
+      lights == null ? "—" : fmtNum(lights, 0),
       "wt%",
-      metricTone("resid", s.resid_wt),
-      flags.resid_wt,
-      s.source
+      metricTone("lights", lights),
+      "lights"
     );
     html += "</div>";
 
@@ -1270,20 +1317,18 @@
     return html;
   }
 
-  function metricTile(label, value, unit, tone, flag, source) {
+  function metricTile(label, value, unit, tone, glossaryId) {
     return (
       '<div class="metric-tile is-' +
       tone +
-      '"><div class="k">' +
+      '">' +
+      (glossaryId ? glossaryBtn(glossaryId, label) : "") +
+      '<div class="k">' +
       escapeHtml(label) +
-      " " +
-      flagBtn(flag, label) +
-      "</div><div class=\"v\">" +
+      '</div><div class="v">' +
       escapeHtml(value) +
       '</div><div class="u">' +
       escapeHtml(unit) +
-      " · " +
-      escapeHtml((source || "").split("/")[0].trim() || "source") +
       "</div></div>"
     );
   }
@@ -1486,6 +1531,17 @@
     return html;
   }
 
+  function bindGlossaryButtons(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-glossary]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-glossary");
+        if (id) navigate("about", { hash: "#g-" + id });
+      });
+    });
+  }
+
   function bindInspectorEvents(root) {
     if (!root) return;
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
@@ -1504,6 +1560,7 @@
         if (id) navigate("cuts", { hash: "#cut-" + id });
       });
     });
+    bindGlossaryButtons(root);
     bindClearSelection(root);
   }
 
@@ -1576,34 +1633,27 @@
       html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
     }
     html += '<div class="quality-strip">';
-    html +=
-      '<div class="q-cell"><div class="q-label">API' +
-      (s.flags && s.flags.api && s.flags.api !== "unknown"
-        ? ' <span class="q-flag">' + escapeHtml(s.flags.api) + "</span>"
-        : "") +
-      '</div><div class="q-val">' +
-      escapeHtml(densityLabel(s.api)) +
-      ' <span class="q-unit">' +
-      escapeHtml(densityUnit()) +
-      "</span></div></div>";
-    html +=
-      '<div class="q-cell"><div class="q-label">Sulfur' +
-      (s.flags && s.flags.sulfur_wt && s.flags.sulfur_wt !== "unknown"
-        ? ' <span class="q-flag">' + escapeHtml(s.flags.sulfur_wt) + "</span>"
-        : "") +
-      '</div><div class="q-val">' +
-      escapeHtml(sulfurLabel(s.sulfur_wt)) +
-      ' <span class="q-unit">' +
-      escapeHtml(sulfurUnit()) +
-      "</span></div></div>";
-    html +=
-      '<div class="q-cell"><div class="q-label">Year</div><div class="q-val">' +
-      (s.year != null ? escapeHtml(String(s.year)) : "—") +
-      "</div></div>";
-    html +=
-      '<div class="q-cell"><div class="q-label">Type</div><div class="q-val">' +
-      escapeHtml(s.kind) +
-      "</div></div>";
+    html += metricTile(
+      "API",
+      densityLabel(s.api),
+      densityUnit(),
+      metricTone("api", s.api),
+      "api"
+    );
+    html += metricTile(
+      "Sulfur",
+      sulfurLabel(s.sulfur_wt),
+      sulfurUnit(),
+      metricTone("sulfur", s.sulfur_wt),
+      "sulfur"
+    );
+    html += metricTile(
+      "Year",
+      s.year != null ? String(s.year) : "—",
+      "",
+      "mute",
+      null
+    );
     html += "</div>";
     const related = (s.related_ids || []).map(getStream).filter(Boolean);
     if (related.length) {
@@ -1632,6 +1682,7 @@
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
     });
+    bindGlossaryButtons(root);
     bindClearSelection(root);
   }
 
@@ -1649,7 +1700,6 @@
     state.streamId = null;
     state.siteId = null;
     $("inspector-rail")?.classList.remove("is-drawer-open");
-    closeSheets();
     ensureHomeSelection();
     updateMarkers();
     renderInspector();
@@ -2373,7 +2423,7 @@
     }
     html += "</div>";
     el.viewCuts.innerHTML = html;
-    scrollToCutHash();
+    scrollToHashTarget();
   }
 
   function renderMolecules() {
@@ -2486,10 +2536,11 @@
       '<h2 class="page-title">About</h2>' +
       '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
       '<div class="about-block"><h3>Glossary</h3><dl class="glossary">' +
-      "<dt>API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Condensate ≥39°, light 31–39°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°.</dd>" +
+      '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Condensate ≥39°, light 31–39°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°.</dd>' +
       "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons (≥39°API here), often from gas or gas-condensate fields. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit).</dd>" +
-      "<dt>Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to refine. This app’s sweet cutoff is ≤0.5 wt% S.</dd>" +
+      '<dt id="g-sulfur">Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to refine. This app’s sweet cutoff is ≤0.5 wt% S.</dd>' +
       "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher sulfur. Independent of light/heavy (API).</dd>" +
+      '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (wt%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>' +
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
@@ -2504,14 +2555,14 @@
       "<dt>Blend</dt><dd>A commercial stream mixed from more than one field or grade to meet a quality or logistics specification.</dd>" +
       "<dt>Dilbit</dt><dd>Diluted bitumen — extra-heavy oil mixed with light diluent so it can flow in a pipeline.</dd>" +
       "<dt>SCO / synthetic</dt><dd>Synthetic crude oil from upgrading bitumen or heavy oil (e.g. Syncrude), usually lighter and sweeter than the feedstock.</dd>" +
-      "<dt>SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil.</dd>" +
+      '<dt id="g-sara">SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil.</dd>' +
       "<dt>HHV</dt><dd>Higher heating value — heat released when a fuel burns completely, per kilogram. HHV also counts the heat you get if water vapor in the exhaust is cooled back to liquid; LHV leaves that out. More hydrogen per carbon means higher HHV, so light cuts run hotter per kg than heavy residue.</dd>" +
       "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises. That curve is what the Cuts page turns into named slices.</dd>" +
       "<dt>Residue (resid)</dt><dd>The leftover bottoms after distillation — not a finished “product cut” by itself. Atmospheric residue is first-tower bottoms; vacuum residue is what’s left after light and heavy VGO are taken — asphalt, coke, heavy fuel, or further upgrading.</dd>" +
       "<dt>Metals (Ni, V)</dt><dd>Nickel and vanadium in the oil. They poison refining catalysts and rise with heavier, sourer crudes.</dd>" +
       "<dt>TAN</dt><dd>Total acid number — organic acidity. Higher TAN can mean corrosion risk in refining equipment.</dd>" +
       "</dl></div>" +
-      '<div class="about-block"><h3>Quality flags</h3><ul class="flag-list">' +
+      '<div class="about-block" id="g-quality-flags"><h3>Quality flags</h3><ul class="flag-list">' +
       "<li><strong>measured</strong> — from a cited assay sample or lab report for that stream.</li>" +
       "<li><strong>typical</strong> — widely published representative value for the commercial grade.</li>" +
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>" +
@@ -2534,36 +2585,6 @@
       '<div style="margin-bottom:12px"><a class="btn btn-ghost" href="/">← Map</a></div>' +
       inspectorHtml(s);
     bindInspectorEvents(el.viewStream);
-  }
-
-  function openInspectorSheet() {
-    const s = getStream(state.streamId);
-    if (!s) return;
-    el.sheetInspectorBody.innerHTML = inspectorHtml(s);
-    bindInspectorEvents(el.sheetInspectorBody);
-    el.sheetInspector.classList.remove("hidden");
-    const panel = el.sheetInspector.querySelector(".sheet-snap");
-    if (panel) {
-      panel.classList.toggle("is-full", state.sheetFull);
-      panel.onclick = (e) => {
-        if (e.target === panel || e.target.classList.contains("sheet-handle")) {
-          state.sheetFull = !state.sheetFull;
-          panel.classList.toggle("is-full", state.sheetFull);
-        }
-      };
-    }
-  }
-
-  function closeSheets() {
-    el.sheetInspector?.classList.add("hidden");
-  }
-
-  function openFiltersSheet() {
-    /* Filters button removed — API/S sliders live under the map. */
-  }
-
-  function restoreFiltersRail() {
-    /* no-op: filter sheet removed */
   }
 
   function openPicker() {
@@ -2710,8 +2731,8 @@
       setTimeout(() => {
         pinShellViewport();
         if (state.map) {
-          state.map.invalidateSize({ pan: false });
-          if (firstMap) fitMapFull(false);
+          if (firstMap) scheduleMapFill();
+          else state.map.invalidateSize({ pan: false });
         }
       }, 60);
       ensureHomeSelection();
@@ -2727,7 +2748,10 @@
     else if (state.route === "stream") renderStreamPage();
     else if (state.route === "cuts") renderCuts();
     else if (state.route === "molecules") renderMolecules();
-    else if (state.route === "about") renderAbout();
+    else if (state.route === "about") {
+      renderAbout();
+      scrollToHashTarget();
+    }
   }
 
   function render() {
@@ -3001,9 +3025,6 @@
     $("btn-add-stream")?.addEventListener("click", openPicker);
     $("btn-open-compare")?.addEventListener("click", () => navigate("compare"));
 
-    document.querySelectorAll("[data-close-sheet]").forEach((n) => {
-      n.addEventListener("click", closeSheets);
-    });
     document.querySelectorAll("[data-close-modal]").forEach((n) => {
       n.addEventListener("click", () => el.pickerModal.classList.add("hidden"));
     });
@@ -3025,7 +3046,10 @@
         navigate("cuts", hashIdx >= 0 ? { hash: href.slice(hashIdx) } : {});
       }
       else if (href === "/molecules" || href.startsWith("/molecules?")) navigate("molecules");
-      else if (href === "/about" || href.startsWith("/about?")) navigate("about");
+      else if (href === "/about" || href.startsWith("/about?") || href.startsWith("/about#")) {
+        const hashIdx = href.indexOf("#");
+        navigate("about", hashIdx >= 0 ? { hash: href.slice(hashIdx) } : {});
+      }
     });
 
     window.addEventListener("popstate", () => {
@@ -3040,7 +3064,6 @@
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        closeSheets();
         el.pickerModal.classList.add("hidden");
         el.unitsPopover.classList.add("hidden");
       }
@@ -3064,9 +3087,7 @@
     function onViewportChange() {
       pinShellViewport();
       if (window.innerWidth >= 1100) {
-        restoreFiltersRail();
         $("inspector-rail")?.classList.remove("is-drawer-open");
-        closeSheets();
       }
       if (state.map) {
         setTimeout(() => {
