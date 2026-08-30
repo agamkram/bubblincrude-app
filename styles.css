@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 154;
+  --bc-css: 155;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -2168,7 +2168,7 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .map-sliders {
     grid-template-columns: 1fr;
-    gap: 7px 0;
+    gap: 2px 0;
     padding: 4px 14px 5px;
   }
   .map-slider-block {
