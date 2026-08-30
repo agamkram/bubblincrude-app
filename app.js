@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v153";
+  const APP_VERSION = "v154";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -762,6 +762,9 @@
     const list = activePins();
     const selId = selectedPinId();
     const few = list.length > 0 && list.length <= 8;
+    /* Hover tips on Mac/desktop; on touch the inspector is the detail surface
+       and tips mostly duplicated it (plus clipped on belt-edge pins). */
+    const showTips = !L.Browser.touch;
 
     for (const s of list) {
       if (s.lat == null || s.lon == null) continue;
@@ -771,60 +774,57 @@
         title: s.name,
         riseOnHover: true,
       });
-      marker.bindTooltip(tipHtml(s), {
-        className: "stream-tip",
-        /* auto: Gippsland (and other belt-edge pins) used to open "top" and
-           hang half off the map pane. Leaflet picks the side with room. */
-        direction: "auto",
-        offset: [0, -6],
-        opacity: 1,
-        sticky: false,
-        interactive: true,
-      });
+      if (showTips) {
+        marker.bindTooltip(tipHtml(s), {
+          className: "stream-tip",
+          /* auto: Gippsland (and other belt-edge pins) used to open "top" and
+             hang half off the map pane. Leaflet picks the side with room. */
+          direction: "auto",
+          offset: [0, -6],
+          opacity: 1,
+          sticky: false,
+          interactive: true,
+        });
+        marker.on("tooltipopen", () => {
+          const tip = marker.getTooltip();
+          if (!tip) return;
+          const node = tip.getElement();
+          if (!node) return;
+          L.DomEvent.disableClickPropagation(node);
+          L.DomEvent.disableScrollPropagation(node);
+          const btn = node.querySelector("[data-add]");
+          if (btn) {
+            btn.onclick = (e) => {
+              L.DomEvent.stop(e);
+              addToCompare(btn.getAttribute("data-add"));
+              marker.closeTooltip();
+            };
+          }
+          requestAnimationFrame(() => keepTooltipInMap(node));
+        });
+      }
       marker.on("click", () => pickPin(s, true));
-      /* iOS/Safari: tip opens on tap but the synthetic click often never
-         reaches this handler. Selecting from tooltipopen + a short-move
-         touchend keeps the assay panel under Compare in sync with the tip. */
-      marker.on("tooltipopen", () => {
-        if (L.Browser.touch) {
-          const cur = selectedPinId();
-          if (cur !== s.id) pickPin(s, true);
-        }
-        const tip = marker.getTooltip();
-        if (!tip) return;
-        const node = tip.getElement();
-        if (!node) return;
-        L.DomEvent.disableClickPropagation(node);
-        L.DomEvent.disableScrollPropagation(node);
-        const btn = node.querySelector("[data-add]");
-        if (btn) {
-          btn.onclick = (e) => {
-            L.DomEvent.stop(e);
-            addToCompare(btn.getAttribute("data-add"));
-            marker.closeTooltip();
-          };
-        }
-        requestAnimationFrame(() => keepTooltipInMap(node));
-      });
-      marker.on("add", () => {
-        const elIcon = marker.getElement();
-        if (!elIcon || elIcon._bcTouchBound) return;
-        elIcon._bcTouchBound = true;
-        let sx = null;
-        let sy = null;
-        L.DomEvent.on(elIcon, "touchstart", (e) => {
-          const t = e.touches && e.touches[0];
-          if (!t) return;
-          sx = t.clientX;
-          sy = t.clientY;
+      if (!showTips) {
+        marker.on("add", () => {
+          const elIcon = marker.getElement();
+          if (!elIcon || elIcon._bcTouchBound) return;
+          elIcon._bcTouchBound = true;
+          let sx = null;
+          let sy = null;
+          L.DomEvent.on(elIcon, "touchstart", (e) => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            sx = t.clientX;
+            sy = t.clientY;
+          });
+          L.DomEvent.on(elIcon, "touchend", (e) => {
+            const t = e.changedTouches && e.changedTouches[0];
+            if (!t || sx == null) return;
+            if (Math.hypot(t.clientX - sx, t.clientY - sy) > 12) return;
+            pickPin(s, true);
+          });
         });
-        L.DomEvent.on(elIcon, "touchend", (e) => {
-          const t = e.changedTouches && e.changedTouches[0];
-          if (!t || sx == null) return;
-          if (Math.hypot(t.clientX - sx, t.clientY - sy) > 12) return;
-          pickPin(s, true);
-        });
-      });
+      }
       marker.addTo(state.markerLayer);
       state.markers.set(s.id, marker);
     }
