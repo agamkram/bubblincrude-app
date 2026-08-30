@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v158";
+  const APP_VERSION = "v159";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -1835,7 +1835,8 @@
     }
   }
 
-  function onFiltersChanged() {
+  function onFiltersChanged(opts) {
+    const fit = !opts || opts.fit !== false;
     renderActiveChips();
     renderSearchResults();
     /* Slider input fires many times per swipe. Rebuilding every pin on each
@@ -1848,7 +1849,9 @@
       saveStorage();
     }, 120);
     clearTimeout(state._fitFilterTimer);
-    if (state.query.trim()) {
+    /* Typing a search still frames the hits. Saved views (Orinoco, etc.)
+       should only filter pins — not steal the camera. */
+    if (fit && state.query.trim()) {
       state._fitFilterTimer = setTimeout(() => fitToFiltered(true), 180);
     }
   }
@@ -2635,7 +2638,7 @@
     $("has-sara").checked = f.hasSara;
     $("has-metals").checked = f.hasMetals;
     syncSearchClear();
-    onFiltersChanged();
+    onFiltersChanged({ fit: false });
   }
 
   function showView() {
