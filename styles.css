@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 194;
+  --bc-css: 199;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1355,19 +1355,40 @@ button.pill {
   gap: 6px;
 }
 .related-chip {
-  min-height: 32px;
-  padding: 4px 10px;
-  border: 1px solid var(--border);
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid rgba(232, 168, 56, 0.5);
   border-radius: 999px;
-  background: var(--bg);
-  color: var(--text-dim);
+  background: var(--accent-dim);
+  color: var(--text);
   font: inherit;
   font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.related-chip:hover {
-  border-color: var(--teal);
-  color: var(--teal);
+.related-chip::after {
+  content: " →";
+  color: var(--accent);
+  font-weight: 700;
+}
+@media (hover: hover) {
+  .related-chip:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #041016;
+  }
+  .related-chip:hover::after {
+    color: #041016;
+  }
+}
+.related-chip:active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #041016;
+}
+.related-chip:active::after {
+  color: #041016;
 }
 
 .assay-table {

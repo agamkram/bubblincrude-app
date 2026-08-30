@@ -4,12 +4,17 @@
 
   const DATA = window.CRUDE_DATA;
   const SITES = window.SITES_DATA;
+  const HUBS = window.HUBS_DATA;
   if (!DATA) {
     console.error("CRUDE_DATA missing");
     return;
   }
   if (!SITES || !Array.isArray(SITES.sites)) {
     console.error("SITES_DATA missing");
+    return;
+  }
+  if (!HUBS || !Array.isArray(HUBS.hubs)) {
+    console.error("HUBS_DATA missing");
     return;
   }
 
@@ -28,7 +33,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v194";
+  const APP_VERSION = "v199";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -49,9 +54,10 @@
 
   const state = {
     route: "home",
-    layer: "streams", // streams | sites
+    layer: "streams", // streams | sites | hubs
     streamId: null,
     siteId: null,
+    hubId: null,
     compareIds: [],
     query: "",
     filters: defaultFilters(),
@@ -315,6 +321,14 @@
   }
 
   function markerColor(s) {
+    /* Hubs ignore API/S color mode — paint by commercial role. */
+    if (state.layer === "hubs") {
+      if (s.role === "pricing") return "#e8a838";
+      if (s.role === "storage") return "#4a8fd4";
+      if (s.role === "loading") return "#f0d78c";
+      if (s.role === "blend") return "#5ec8b0";
+      return "#e8a838"; /* accent */
+    }
     if (state.colorMode === "sulfur") return sulfurRampColor(s.sulfur_wt);
     return apiRampColor(s.api);
   }
@@ -333,6 +347,7 @@
   function forgetStorage() {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem("bubblincrude-session-v1");
     } catch (_) {}
   }
   function saveStorage() {
@@ -398,14 +413,19 @@
   function queryTokens(s) {
     const name = String(s.name || "").toLowerCase();
     const aliases = (s.aliases || []).map((a) => String(a).toLowerCase());
-    return { name, aliases };
+    const role = String(s.role || "").toLowerCase();
+    return { name, aliases, role };
   }
   function queryPrefixHit(s, q) {
-    const { name, aliases } = queryTokens(s);
-    return name.startsWith(q) || aliases.some((a) => a.startsWith(q));
+    const { name, aliases, role } = queryTokens(s);
+    return (
+      name.startsWith(q) ||
+      aliases.some((a) => a.startsWith(q)) ||
+      (role && role.startsWith(q))
+    );
   }
   function queryHaystack(s) {
-    return [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes]
+    return [s.name, s.country, s.basin, s.region, s.kind, s.status, s.notes, s.role]
       .concat(s.aliases || [])
       .filter(Boolean)
       .join(" ")
@@ -472,8 +492,34 @@
     return SITES.sites.find((s) => s.id === id) || null;
   }
 
-  /* Stream and site ids collide (kern-river, eagle-ford, …). Compare keys
-     are namespaced so a stream and its field can sit in the tray together. */
+  function hubMatches(s) {
+    const f = state.filters;
+    const q = state.query.trim().toLowerCase();
+    if (q && !queryMatchesPin(s, q)) return false;
+    if (f.regions.length && !f.regions.includes(s.region)) return false;
+    /* Hubs have neither API nor sulfur — skip those filters when null.
+       Ignore kinds and assay-completeness filters entirely. */
+    if (s.api != null) {
+      if (s.api < f.apiMin || s.api > f.apiMax) return false;
+    }
+    if (s.sulfur_wt != null) {
+      if (f.sweetSour === "sweet" && s.sulfur_wt > DATA.SWEET_S_MAX) return false;
+      if (f.sweetSour === "sour" && s.sulfur_wt <= DATA.SWEET_S_MAX) return false;
+      if (s.sulfur_wt > f.sulfurMax) return false;
+    }
+    return true;
+  }
+
+  function filteredHubs() {
+    return HUBS.hubs.filter(hubMatches);
+  }
+
+  function getHub(id) {
+    return HUBS.hubs.find((s) => s.id === id) || null;
+  }
+
+  /* Stream / site / hub ids can collide. Compare keys are namespaced so a
+     stream and its field or hub can sit in the tray together. */
   function pinKey(kind, id) {
     return kind + ":" + id;
   }
@@ -483,26 +529,35 @@
     if (i <= 0) return { kind: "stream", id: raw };
     const kind = raw.slice(0, i);
     const id = raw.slice(i + 1);
-    if (kind !== "stream" && kind !== "site") return { kind: "stream", id: raw };
+    if (kind !== "stream" && kind !== "site" && kind !== "hub") {
+      return { kind: "stream", id: raw };
+    }
     return { kind, id };
   }
   function getComparePin(key) {
     const p = parsePinKey(key);
-    return (p.kind === "site" ? getSite(p.id) : getStream(p.id)) || null;
+    if (p.kind === "site") return getSite(p.id) || null;
+    if (p.kind === "hub") return getHub(p.id) || null;
+    return getStream(p.id) || null;
   }
 
   function activePins() {
-    return state.layer === "sites" ? filteredSites() : filteredStreams();
+    if (state.layer === "sites") return filteredSites();
+    if (state.layer === "hubs") return filteredHubs();
+    return filteredStreams();
   }
 
   function selectedPinId() {
-    return state.layer === "sites" ? state.siteId : state.streamId;
+    if (state.layer === "sites") return state.siteId;
+    if (state.layer === "hubs") return state.hubId;
+    return state.streamId;
   }
 
   /* Starter picks so the inspector is never an empty prompt on home —
-     users see a real assay / site card and understand the panel. */
+     users see a real assay / site / hub card and understand the panel. */
   const DEFAULT_STREAM_ID = "wti";
   const DEFAULT_SITE_ID = "drake-well";
+  const DEFAULT_HUB_ID = "cushing";
 
   function pickDefaultStreamId() {
     if (getStream(DEFAULT_STREAM_ID)) return DEFAULT_STREAM_ID;
@@ -516,6 +571,12 @@
     return first ? first.id : null;
   }
 
+  function pickDefaultHubId() {
+    if (getHub(DEFAULT_HUB_ID)) return DEFAULT_HUB_ID;
+    const first = HUBS.hubs.find((s) => s && s.id);
+    return first ? first.id : null;
+  }
+
   function ensureHomeSelection() {
     if (state.route !== "home") return;
     if (state.layer === "sites") {
@@ -524,6 +585,16 @@
       if (!id) return;
       state.siteId = id;
       state.streamId = null;
+      state.hubId = null;
+      return;
+    }
+    if (state.layer === "hubs") {
+      if (getHub(state.hubId)) return;
+      const id = pickDefaultHubId();
+      if (!id) return;
+      state.hubId = id;
+      state.streamId = null;
+      state.siteId = null;
       return;
     }
     if (getStream(state.streamId)) return;
@@ -531,6 +602,7 @@
     if (!id) return;
     state.streamId = id;
     state.siteId = null;
+    state.hubId = null;
   }
 
   /* —— Map —— */
@@ -544,7 +616,7 @@
   function crudeBeltBounds() {
     let south = 90;
     let north = -90;
-    for (const s of DATA.streams.concat(SITES.sites)) {
+    for (const s of DATA.streams.concat(SITES.sites, HUBS.hubs)) {
       if (s.lat == null) continue;
       if (s.lat < south) south = s.lat;
       if (s.lat > north) north = s.lat;
@@ -781,6 +853,7 @@
 
   function tipHtml(s) {
     if (state.layer === "sites") return tipHtmlSite(s);
+    if (state.layer === "hubs") return tipHtmlHub(s);
     const pills = [];
     const ac = apiClass(s.api);
     if (ac) pills.push(apiClassLabel(ac));
@@ -844,6 +917,30 @@
     );
   }
 
+  function tipHtmlHub(s) {
+    const key = pinKey("hub", s.id);
+    const inTray = state.compareIds.includes(key);
+    const action = inTray
+      ? '<span class="pill pill-compare is-done">In tray</span>'
+      : '<button type="button" class="pill pill-compare" data-add="' +
+        escapeHtml(key) +
+        '">Compare</button>';
+    return (
+      '<div class="tip-name">' +
+      escapeHtml(s.name) +
+      "</div>" +
+      '<div class="tip-meta">' +
+      escapeHtml([s.role, s.country].filter(Boolean).join(" · ")) +
+      "</div>" +
+      '<div class="tip-pills">' +
+      (s.role
+        ? '<span class="pill pill-kind">' + escapeHtml(s.role) + "</span>"
+        : "") +
+      action +
+      "</div>"
+    );
+  }
+
   /* Restyle selected pin without tearing down the layer. A full rebuild
      closes an open tip mid-tap — on iOS the tip often opens while our click
      handler never runs, so the inspector stayed empty under Compare. */
@@ -854,7 +951,10 @@
     const paint = (id, on) => {
       if (!id) return;
       const marker = state.markers.get(id);
-      const s = state.layer === "sites" ? getSite(id) : getStream(id);
+      let s;
+      if (state.layer === "sites") s = getSite(id);
+      else if (state.layer === "hubs") s = getHub(id);
+      else s = getStream(id);
       if (!marker || !s) return;
       marker.setIcon(makeIcon(s, !!on, few));
     };
@@ -864,6 +964,7 @@
 
   function pickPin(s, fly) {
     if (state.layer === "sites") selectSite(s.id, fly);
+    else if (state.layer === "hubs") selectHub(s.id, fly);
     else selectStream(s.id, fly);
   }
 
@@ -1014,9 +1115,10 @@
 
   function selectStream(id, fly) {
     const prev = state.streamId;
-    const same = prev === id && !state.siteId;
+    const same = prev === id && !state.siteId && !state.hubId;
     state.streamId = id;
     state.siteId = null;
+    state.hubId = null;
     dismissSearchQuery();
     saveStorage();
     if (state.route === "home") {
@@ -1039,9 +1141,10 @@
 
   function selectSite(id, fly) {
     const prev = state.siteId;
-    const same = prev === id && !state.streamId;
+    const same = prev === id && !state.streamId && !state.hubId;
     state.siteId = id;
     state.streamId = null;
+    state.hubId = null;
     dismissSearchQuery();
     if (!same) syncMarkerSelection(prev, id);
     renderInspector();
@@ -1058,18 +1161,53 @@
     }
   }
 
+  function selectHub(id, fly) {
+    const prev = state.hubId;
+    const same = prev === id && !state.streamId && !state.siteId;
+    state.hubId = id;
+    state.streamId = null;
+    state.siteId = null;
+    dismissSearchQuery();
+    if (!same) syncMarkerSelection(prev, id);
+    renderInspector();
+    renderTray();
+    if (fly && state.map && !same) {
+      const s = getHub(id);
+      if (s) flyToPin(s.lat, s.lon);
+    }
+    state._searchFocused = false;
+    renderSearchResults();
+    const w = window.innerWidth;
+    if (w > 699 && w <= 1099) {
+      openInspectorDrawer();
+    }
+  }
+
   function setLayer(layer) {
-    if (layer !== "streams" && layer !== "sites") return;
+    if (layer !== "streams" && layer !== "sites" && layer !== "hubs") return;
     if (state.layer === layer) return;
     state.layer = layer;
     state.query = "";
     if (el.search) {
       el.search.value = "";
-      el.search.placeholder = layer === "sites" ? "Search sites…" : "Search streams…";
+      el.search.placeholder =
+        layer === "sites"
+          ? "Search sites…"
+          : layer === "hubs"
+            ? "Search hubs…"
+            : "Search streams…";
     }
     syncSearchClear();
-    if (layer === "sites") state.streamId = null;
-    else state.siteId = null;
+    if (layer === "sites") {
+      state.streamId = null;
+      state.hubId = null;
+    } else if (layer === "hubs") {
+      state.streamId = null;
+      state.siteId = null;
+    } else {
+      state.siteId = null;
+      state.hubId = null;
+    }
     syncLayerSeg();
     syncInspectorEmptyCopy();
     renderSearchResults();
@@ -1098,6 +1236,10 @@
       title.textContent = "Select a site";
       body.textContent =
         "Tap a field, basin, or historic find — or search Drake Well, Ghawar, Bakken…";
+    } else if (state.layer === "hubs") {
+      title.textContent = "Select a hub";
+      body.textContent =
+        "Tap a pricing, storage, or loading hub — or search Cushing, LOOP, Rotterdam…";
     } else {
       title.textContent = "Select a stream";
       body.textContent = "Tap a marker on the map, or search for WTI, Merey-16, Boscan…";
@@ -1317,7 +1459,7 @@
     }
 
     if (s.related_ids && s.related_ids.length) {
-      html += '<div class="block"><div class="block-title">Related streams</div><div class="related-list">';
+      html += '<div class="block"><div class="block-title">Similar grades</div><div class="related-list">';
       for (const rid of s.related_ids) {
         const r = getStream(rid);
         if (!r) continue;
@@ -1620,6 +1762,22 @@
       resetInspectorScroll();
       return;
     }
+    if (state.layer === "hubs") {
+      const hub = getHub(state.hubId);
+      if (!hub) {
+        el.inspectorEmpty.classList.remove("hidden");
+        el.inspectorBody.classList.add("hidden");
+        el.inspectorBody.innerHTML = "";
+        resetInspectorScroll();
+        return;
+      }
+      el.inspectorEmpty.classList.add("hidden");
+      el.inspectorBody.classList.remove("hidden");
+      el.inspectorBody.innerHTML = hubInspectorHtml(hub);
+      bindHubInspectorEvents(el.inspectorBody);
+      resetInspectorScroll();
+      return;
+    }
     const s = getStream(state.streamId);
     if (!s) {
       el.inspectorEmpty.classList.remove("hidden");
@@ -1700,10 +1858,10 @@
     html += "</div>";
     const related = (s.related_ids || []).map(getStream).filter(Boolean);
     if (related.length) {
-      html += '<div class="insp-block"><h3>Related streams</h3><div class="insp-meta-row">';
+      html += '<div class="insp-block"><h3>Related streams</h3><div class="related-list">';
       for (const r of related) {
         html +=
-          '<button type="button" class="pill pill-kind" data-goto-stream="' +
+          '<button type="button" class="related-chip" data-goto-stream="' +
           escapeHtml(r.id) +
           '">' +
           escapeHtml(r.name) +
@@ -1715,6 +1873,65 @@
   }
 
   function bindSiteInspectorEvents(root) {
+    root.querySelectorAll("[data-goto-stream]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-goto-stream");
+        setLayer("streams");
+        selectStream(id, true);
+      });
+    });
+    root.querySelectorAll("[data-compare-add]").forEach((btn) => {
+      btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
+    });
+    bindGlossaryButtons(root);
+    bindClearSelection(root);
+  }
+
+  function hubInspectorHtml(s) {
+    let html = '<div class="insp-header">';
+    html += '<div class="insp-title-row">';
+    html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
+    html +=
+      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += "</div>";
+    html +=
+      '<p class="insp-loc">' +
+      escapeHtml([s.country, s.region].filter(Boolean).join(" · ")) +
+      "</p>";
+    html += '<div class="pill-row">';
+    if (s.role) {
+      html += '<span class="pill pill-kind">' + escapeHtml(s.role) + "</span>";
+    }
+    const hubKey = pinKey("hub", s.id);
+    if (state.compareIds.includes(hubKey)) {
+      html += '<span class="pill pill-compare is-done">In tray</span>';
+    } else {
+      html +=
+        '<button type="button" class="pill pill-compare" data-compare-add="' +
+        escapeHtml(hubKey) +
+        '">Compare</button>';
+    }
+    html += "</div></div>";
+    if (s.notes) {
+      html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
+    }
+    const related = (s.related_ids || []).map(getStream).filter(Boolean);
+    if (related.length) {
+      html += '<div class="insp-block"><h3>Related streams</h3><div class="related-list">';
+      for (const r of related) {
+        html +=
+          '<button type="button" class="related-chip" data-goto-stream="' +
+          escapeHtml(r.id) +
+          '">' +
+          escapeHtml(r.name) +
+          "</button>";
+      }
+      html += "</div></div>";
+    }
+    return html;
+  }
+
+  function bindHubInspectorEvents(root) {
     root.querySelectorAll("[data-goto-stream]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-goto-stream");
@@ -1742,6 +1959,7 @@
   function clearSelection() {
     state.streamId = null;
     state.siteId = null;
+    state.hubId = null;
     $("inspector-rail")?.classList.remove("is-drawer-open");
     ensureHomeSelection();
     updateMarkers();
@@ -1756,10 +1974,12 @@
         const s = getComparePin(key);
         if (!s) return "";
         const kind = parsePinKey(key).kind;
+        const kindLabel =
+          kind === "site" ? " site" : kind === "hub" ? " hub" : "";
         return (
           '<div class="tray-chip"><span class="name">' +
           escapeHtml(s.name) +
-          (kind === "site" ? '<span class="meta"> site</span>' : "") +
+          (kindLabel ? '<span class="meta">' + kindLabel + "</span>" : "") +
           '</span><button type="button" class="rm" data-rm="' +
           escapeHtml(key) +
           '" aria-label="Remove ' +
@@ -2011,7 +2231,8 @@
       return;
     }
     const hits = rankedSearchHits();
-    const noun = state.layer === "sites" ? "sites" : "streams";
+    const noun =
+      state.layer === "sites" ? "sites" : state.layer === "hubs" ? "hubs" : "streams";
     if (!hits.length) {
       box.classList.remove("hidden");
       box.innerHTML =
@@ -2024,6 +2245,8 @@
       let meta;
       if (state.layer === "sites") {
         meta = [s.country, s.kind, s.year != null ? String(s.year) : ""].filter(Boolean).join(" · ");
+      } else if (state.layer === "hubs") {
+        meta = [s.country, s.role].filter(Boolean).join(" · ");
       } else {
         meta =
           s.country +
@@ -2096,6 +2319,7 @@
     updateMarkers();
     saveStorage();
     if (state.layer === "sites") selectSite(id, true);
+    else if (state.layer === "hubs") selectHub(id, true);
     else selectStream(id, true);
   }
 
@@ -2109,7 +2333,7 @@
     const streams = pins.map((p) => p.s);
     if (streams.length < 2) {
       el.viewCompare.innerHTML =
-        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, or both.</p>';
+        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, or mix.</p>';
       return;
     }
 
@@ -2130,7 +2354,7 @@
         escapeHtml(s.name) +
         "</strong></div>" +
         '<div style="margin-top:8px;font-family:var(--mono);font-size:13px">' +
-        (p.kind === "site" ? "site · " : "") +
+        (p.kind === "site" ? "site · " : p.kind === "hub" ? "hub · " : "") +
         densityLabel(s.api) +
         " " +
         densityUnit() +
@@ -2580,6 +2804,7 @@
       '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (wt%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>' +
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
+      "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point on the Hubs map layer (Cushing, LOOP, Rotterdam). Geography and role — not an assay.</dd>" +
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>" +
       "<dt>Play</dt><dd>A repeatable exploration/development concept within a basin (Eagle Ford shale, Bakken, Vaca Muerta).</dd>" +
@@ -2647,9 +2872,13 @@
     }
     let items;
     if (state.route === "compare") {
-      items = hits("stream", filteredStreams()).concat(hits("site", filteredSites()));
+      items = hits("stream", filteredStreams())
+        .concat(hits("site", filteredSites()))
+        .concat(hits("hub", filteredHubs()));
     } else if (state.layer === "sites") {
       items = hits("site", filteredSites());
+    } else if (state.layer === "hubs") {
+      items = hits("hub", filteredHubs());
     } else {
       items = hits("stream", filteredStreams());
     }
@@ -2662,12 +2891,20 @@
             '"><span><strong>' +
             escapeHtml(item.s.name) +
             '</strong><div class="sub">' +
-            (item.kind === "site" ? "Site · " : "") +
+            (item.kind === "site"
+              ? "Site · "
+              : item.kind === "hub"
+                ? "Hub · "
+                : "") +
             escapeHtml(item.s.country) +
-            " · " +
-            densityLabel(item.s.api) +
-            " " +
-            densityUnit() +
+            (item.kind === "hub"
+              ? item.s.role
+                ? " · " + escapeHtml(item.s.role)
+                : ""
+              : " · " +
+                densityLabel(item.s.api) +
+                " " +
+                densityUnit()) +
             "</div></span><span class=\"sub\">Add</span></button>"
         )
         .join("") ||
