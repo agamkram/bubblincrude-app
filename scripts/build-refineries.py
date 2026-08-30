@@ -39,7 +39,10 @@ SKIP_NAME = re.compile(
     r"campground|maple syrup|computer refinery|dirty hippy|"
     r"beer refinery|ministry|crossfit|waste facility|"
     r"historical commission|brownfield|\bcalle |\bavenida |"
-    r"\bcamino |\bprivada |rooftop|emergency services|cogeneration",
+    r"\bcamino |\bprivada |rooftop|emergency services|cogeneration|"
+    r"fire dept|board of public utilities|bar and grill|"
+    r"aesthetique|\bspa\b|biorefining|renewable diesel|"
+    r"fuel gas line|training department",
     re.I,
 )
 KEEP_NAME = re.compile(
@@ -71,8 +74,24 @@ COUNTRIES = [
     ("United States", "North America", 39.3, -76.6),  # Baltimore / Delaware
     ("United States", "North America", 29.2, -90.0),  # Louisiana coast
     ("United States", "North America", 35.4, -119.0),  # Bakersfield
+    ("United States", "North America", 45.8, -108.5),  # Billings
+    ("United States", "North America", 32.3, -106.8),  # El Paso
+    ("United States", "North America", 27.8, -97.4),  # Corpus Christi
+    ("United States", "North America", 40.8, -111.9),  # Salt Lake
+    ("United States", "North America", 39.8, -105.0),  # Denver
+    ("United States", "North America", 42.85, -106.3),  # Casper
+    ("United States", "North America", 47.5, -111.3),  # Great Falls
+    ("United States", "North America", 38.3, -97.6),  # McPherson
+    ("United States", "North America", 41.6, -83.5),  # Toledo
+    ("United States", "North America", 34.2, -97.1),  # Ardmore
+    ("United States", "North America", 37.05, -95.6),  # Coffeyville
+    ("United States", "North America", 46.8, -100.9),  # Mandan
     ("Canada", "North America", 56.1, -106.3),
     ("Canada", "North America", 53.5, -113.5),
+    ("Canada", "North America", 42.95, -82.4),  # Sarnia
+    ("Canada", "North America", 46.76, -71.20),  # Lévis
+    ("Canada", "North America", 45.27, -66.07),  # Saint John
+    ("Canada", "North America", 49.28, -122.96),  # Burnaby
     ("Mexico", "Latin America", 23.6, -102.5),
     ("Brazil", "Latin America", -14.2, -51.9),
     ("Argentina", "Latin America", -38.4, -63.6),
@@ -222,7 +241,25 @@ CURATED = [
     ("valero-benicia", "Valero Benicia Refinery", "United States", "North America", 38.0724, -122.1377, "Valero", "Valero Benicia."),
     ("trainer-refinery", "Trainer Refinery", "United States", "North America", 39.8205, -75.4046, "Monroe Energy", "Monroe Energy Trainer."),
     ("shell-norco", "Norco Refinery", "United States", "North America", 30.0039, -90.4027, "Shell", "Shell Norco."),
-    ("valero-houston-rfy", "Valero Houston Refinery", "United States", "North America", 29.7148, -95.2525, "Valero", "Valero Houston."),
+    ("st-charles-rfy", "St. Charles Refinery", "United States", "North America", 29.9910, -90.3956, "Valero", "Valero St. Charles (Norco)."),
+    ("valero-houston-rfy", "Valero Houston Refinery", "United States", "North America", 29.7188, -95.2540, "Valero", "Valero Houston."),
+    ("toledo-refining", "Toledo Refining Company", "United States", "North America", 41.63207, -83.50306, "PBF Energy", "PBF Toledo."),
+    ("flint-hills-cc-west", "Flint Hills Corpus Christi West", "United States", "North America", 27.8388, -97.5201, "Flint Hills Resources", "Flint Hills Corpus Christi West."),
+    ("flint-hills-cc-east", "Flint Hills Corpus Christi East", "United States", "North America", 27.8063, -97.4206, "Flint Hills Resources", "Flint Hills Corpus Christi East."),
+    ("citgo-corpus", "Citgo Corpus Christi Refinery", "United States", "North America", 27.8170, -97.4340, "Citgo", "Citgo Corpus Christi."),
+    ("valero-texas-city", "Valero Texas City Refinery", "United States", "North America", 29.3577, -94.9460, "Valero", "Valero Texas City."),
+    ("pasadena-refining", "Pasadena Refinery", "United States", "North America", 29.7185, -95.2111, "Pasadena Refining Systems", "Pasadena Refining Systems (PRSI)."),
+    ("marathon-el-paso", "Marathon El Paso Refinery", "United States", "North America", 31.7704, -106.4025, "Marathon Petroleum", "Marathon El Paso (Western Refining)."),
+    ("cvr-coffeyville", "CVR Coffeyville Refinery", "United States", "North America", 37.0443, -95.6051, "CVR Energy", "CVR Coffeyville."),
+    ("delek-tyler", "Delek Tyler Refinery", "United States", "North America", 32.36194, -95.28040, "Delek", "Delek Tyler."),
+    ("hf-sinclair-casper", "HF Sinclair Casper Refinery", "United States", "North America", 42.8569, -106.2740, "HF Sinclair", "HF Sinclair Casper (Evansville)."),
+    ("calumet-great-falls", "Calumet Montana Refining", "United States", "North America", 47.5241, -111.2906, "Calumet", "Calumet Montana Refining."),
+    ("cross-oil-smackover", "Cross Oil Smackover", "United States", "North America", 33.36431, -92.71347, "Cross Oil", "Cross Oil Smackover."),
+    ("woods-cross-hf", "Woods Cross Refinery", "United States", "North America", 40.88725, -111.90382, "HF Sinclair", "HF Sinclair Woods Cross."),
+    ("north-salt-lake", "North Salt Lake Refinery", "United States", "North America", 40.83835, -111.92137, "Big West Oil", "Big West Oil North Salt Lake."),
+    ("chs-mcpherson", "CHS McPherson Refinery", "United States", "North America", 38.34519, -97.67610, "CHS", "CHS McPherson."),
+    ("suncor-commerce-city", "Suncor Commerce City Refinery", "United States", "North America", 39.80277, -104.94728, "Suncor", "Suncor Commerce City."),
+    ("valero-wilmington-rfy", "Valero Wilmington Refinery", "United States", "North America", 33.77792, -118.23403, "Valero", "Valero Wilmington."),
 ]
 
 
@@ -373,6 +410,15 @@ def keep(tags, name):
         return False
     if name.lower() in ("the refinery", "refinery", "refinería", "la refinería", "refinery complex"):
         return False
+    if re.search(
+        r"the refinery (church|spa|grill|room|house|detroit|charleston|east|construction)|"
+        r"refinery (bar and grill|room|church|ventures|on seventh)|"
+        r"refiner.s house|artspace|manufacturing jeweller|cà phê|"
+        r"arts & spirit|at domino|•the refinery•",
+        name,
+        re.I,
+    ):
+        return False
     if KEEP_NAME.search(name) or KEEP_NAME.search(tags.get("operator") or ""):
         return True
     return False
@@ -393,6 +439,32 @@ def load_payloads():
     payload = fetch_overpass()
     Path("/tmp/overpass-refineries.json").write_text(json.dumps(payload), encoding="utf-8")
     return [payload]
+
+
+JUNK_NEAR = re.compile(
+    r"emergency|cogen|pier|credit union|lodge|tank farm|business center|"
+    r"fire dept|fire company|heliport|substation|power station|lateral|"
+    r"fuel gas|training department|well pump|administrative",
+    re.I,
+)
+
+
+def _name_key(s):
+    s = (s or "").lower().replace("&", " and ")
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _same_plant_name(a, b):
+    na, nb = _name_key(a), _name_key(b)
+    if not na or not nb:
+        return False
+    if na == nb or na in nb or nb in na:
+        return True
+    at, bt = set(na.split()), set(nb.split())
+    skip = {"refinery", "refining", "oil", "company", "co", "llc", "the", "plant"}
+    at, bt = at - skip, bt - skip
+    return bool(at and bt) and (at <= bt or bt <= at)
 
 
 def build(payloads):
@@ -430,31 +502,42 @@ def build(payloads):
                 }
             )
 
-    # Dedup plants mapped twice within ~2.5 km — keep the named longer record.
+    # Collapse junk onto a nearby real plant, or the same plant mapped twice.
+    # Do not merge neighboring Gulf / Ship Channel / Corpus plants.
     rows.sort(
         key=lambda r: (
-            1
-            if re.search(
-                r"emergency|cogen|pier|credit union|lodge|tank farm|business center",
-                r["name"],
-                re.I,
-            )
-            else 0,
+            1 if JUNK_NEAR.search(r["name"]) else 0,
             -len(r["name"]),
             r["name"],
         )
     )
     kept = []
     for r in rows:
-        if any(haversine(r["lat"], r["lon"], k["lat"], k["lon"]) < 2.5 for k in kept):
-            continue
-        kept.append(r)
+        drop = False
+        for k in kept:
+            d = haversine(r["lat"], r["lon"], k["lat"], k["lon"])
+            if JUNK_NEAR.search(r["name"]) and d < 2.5:
+                drop = True
+                break
+            if d < 1.0:
+                drop = True
+                break
+            if d < 2.5 and _same_plant_name(r["name"], k["name"]):
+                drop = True
+                break
+        if not drop:
+            kept.append(r)
     kept.sort(key=lambda r: (r["region"], r["country"], r["name"].lower()))
 
     for c in CURATED:
         sid, name, country, region, lat, lon, operator, notes = c
         near = next(
-            (k for k in kept if haversine(lat, lon, k["lat"], k["lon"]) < 2.5),
+            (
+                k
+                for k in kept
+                if haversine(lat, lon, k["lat"], k["lon"]) < 1.2
+                and _same_plant_name(name, k["name"])
+            ),
             None,
         )
         if near:
@@ -464,7 +547,7 @@ def build(payloads):
                 near["operator"] = operator
             if notes:
                 near["notes"] = notes
-            if name.lower() not in near["name"].lower() and len(near["name"]) < 24:
+            if len(name) > len(near["name"]):
                 near["name"] = name
             continue
         kept.append(
@@ -550,11 +633,26 @@ def _junk_pin(p):
         re.search(
             r"credit union|lodge |tank farm|pier$|business center|campground|"
             r"salon|barber|church|ministry|historic|hotel|ethanol|lithium|"
-            r"hair |fitness|taproom|asphalt plant",
+            r"hair |fitness|taproom|asphalt plant|fire dept|public utilities",
             blob,
             re.I,
         )
     )
+
+
+# Condensate splitters, asphalt plants, product terminals — not crude CDUs.
+EIA_SKIP = {
+    ("GALENA PARK", "KINDER MORGAN"),
+    ("GALVESTON", "TEXAS INTERNATIONAL"),
+    ("WILMINGTON ASPHALT PLANT", "VALERO"),
+    ("KERN", "TALLEY"),
+    ("CORPUS CHRISTI", "BUCKEYE"),
+    ("CORPUS CHRISTI", "MAGELLAN"),
+}
+# Second CDU at the same mapped yard — do not invent a second pin.
+EIA_SKIP_SAME_YARD = {
+    ("COMMERCE CITY EAST", "SUNCOR"),
+}
 
 
 # EIA site + company token → catalog id. Only when the plant is already on the map.
@@ -585,11 +683,14 @@ EIA_PIN = {
     ("SALT LAKE CITY", "TESORO"): "salt-lake-city-refinery",
     ("SALT LAKE CITY", "CHEVRON"): "chevron-salt-lake-refinery",
     ("WOODS CROSS", "SILVER"): "silver-eagle-woods-cross-refinery",
+    ("WOODS CROSS", "HF SINCLAIR"): "woods-cross-refinery",
     ("PAULSBORO", "PAULSBORO"): "paulsboro-refinery",
-    ("BILLINGS", "EXXON"): "exxonmobile-billings-refinery",
+    ("BILLINGS", "PAR"): "exxonmobile-billings-refinery",
+    ("BILLINGS", "PHILLIPS"): "phillips-66-refinery",
     ("LAUREL", "CENEX"): "laurel-refinery",
     ("ARTESIA", "HF SINCLAIR"): "navajo-refinery",
     ("EL DORADO", "LION"): "lion-oil-company",
+    ("EL DORADO", "HF SINCLAIR"): "hollyfrontier-refinery",
     ("BRADFORD", "AMERICAN"): "american-refining-group-inc",
     ("WARREN", "UNITED"): "warren-refinery",
     ("KENAI", "TESORO"): "kenai-refinery",
@@ -610,8 +711,52 @@ EIA_PIN = {
     ("RICHMOND", "CHEVRON"): "chevron-richmond-refinery",
     ("TORRANCE", "TORRANCE"): "torrance-refinery",
     ("MARTINEZ", "MARTINEZ"): "martinez-refinery",
-    ("WHITING", "BP PRODUCTS"): "bp-whiting-refinery",
+    ("LIMA", "LIMA"): "lima-refinery",
+    ("TOLEDO", "TOLEDO REFINING"): "toledo-refining-company",
+    ("TOLEDO", "OHIO REFINING"): "cenovus-oil-refinery",
+    ("CORPUS CHRISTI WEST", "FLINT"): "flint-hills-corpus-christi-west",
+    ("CORPUS CHRISTI EAST", "FLINT"): "flint-hills-corpus-christi-east",
+    ("CORPUS CHRISTI", "VALERO"): "valero-refinery",
+    ("CORPUS CHRISTI", "CITGO"): "citgo-corpus-christi-refinery",
+    ("TEXAS CITY", "VALERO"): "valero-texas-city-refinery",
+    ("PASADENA", "PASADENA"): "pasadena-refinery",
+    ("EL PASO", "WESTERN"): "marathon-el-paso-refinery",
+    ("COFFEYVILLE", "CVR"): "cvr-coffeyville-refinery",
+    ("KAPOLEI", "PAR HAWAII"): "par-hawaii-refinery",
+    ("ARDMORE", "VALERO"): "valero-refinery-2",
+    ("SINCLAIR", "HF SINCLAIR"): "sinclair-wyoming-refinery",
+    ("PORT ALLEN", "PLACID"): "placid-refining",
+    ("TYLER", "DELEK"): "delek-tyler-refinery",
+    ("MCPHERSON", "CHS"): "chs-mcpherson-refinery",
+    ("COMMERCE CITY WEST", "SUNCOR"): "suncor-commerce-city-refinery",
+    ("NORTH SALT LAKE", "BIG WEST"): "north-salt-lake-refinery",
+    ("EVANSVILLE", "HF SINCLAIR"): "hf-sinclair-casper-refinery",
+    ("VICKSBURG", "ERGON"): "ergon-refinery",
+    ("GREAT FALLS", "CALUMET"): "calumet-montana-refining",
+    ("PAULSBORO", "CPI"): "axeon-specialty-products-refinery",
+    ("SMACKOVER", "CROSS"): "cross-oil-smackover",
+    ("WILMINGTON REFINERY", "ULTRAMAR"): "valero-wilmington-refinery",
+    ("WYNNEWOOD", "CVR"): "wynnewood-refinery",
+    ("CANTON", "MARATHON"): "ohio-refining-division-canton-refinery",
+    ("TACOMA", "US OIL"): "us-oil-tacoma-refinery",
+    ("DELAWARE CITY", "DELAWARE"): "delaware-city-refinery",
+    ("LEMONT", "PDV"): "lemont-refinery",
+    ("BORGER", "WRB"): "borger-refinery",
+    ("SANDERSVILLE", "HUNT"): "hunt-southland-refining-company",
+    ("NEWCASTLE", "WYOMING"): "newcastle-refinery",
 }
+
+
+def _eia_skip(e):
+    site = (e["site"] or "").upper()
+    company = (e["company"] or "").upper()
+    for s, c in EIA_SKIP:
+        if s == site and c in company:
+            return "not a crude CDU"
+    for s, c in EIA_SKIP_SAME_YARD:
+        if s == site and c in company:
+            return "same yard as a mapped unit"
+    return None
 
 
 def _eia_explicit(e, by_id):
@@ -628,9 +773,13 @@ def _eia_explicit(e, by_id):
 def _eia_score(e, p):
     if _junk_pin(p):
         return 0
+    if p.get("country") not in ("United States", "United States of America"):
+        # Puerto Rico / VI still count if the pin is already US-labeled.
+        pass
     hay = _norm(p.get("name", "") + " " + p.get("operator", ""))
     site = _norm(e["site"])
     sc = 0
+    company_hit = False
     if site and site in hay:
         sc += 6
     else:
@@ -643,6 +792,7 @@ def _eia_score(e, p):
     for token in company.split():
         if len(token) >= 4 and token in hay:
             sc += 2
+            company_hit = True
             break
     aliases = (
         ("motiva", "motiva"),
@@ -656,11 +806,19 @@ def _eia_score(e, p):
         ("citgo", "citgo"),
         ("sinclair", "sinclair"),
         ("flint", "flint"),
+        ("suncor", "suncor"),
+        ("delek", "delek"),
+        ("placid", "placid"),
+        ("ergon", "ergon"),
+        ("calumet", "calumet"),
     )
     for needle, alias in aliases:
         if needle in company and alias in hay:
             sc += 2
+            company_hit = True
             break
+    if not company_hit:
+        return 0
     return sc
 
 
@@ -671,7 +829,13 @@ def attach_eia(rows):
     by_id = {r["id"]: r for r in rows}
     used = set()
     matched = 0
+    skipped = 0
+    unmatched = []
     for e in plants:
+        why = _eia_skip(e)
+        if why:
+            skipped += 1
+            continue
         hit = _eia_explicit(e, by_id)
         if hit and hit["id"] in used:
             hit = None
@@ -680,6 +844,8 @@ def attach_eia(rows):
             for p in rows:
                 if p["id"] in used:
                     continue
+                if p.get("country") != "United States":
+                    continue
                 sc = _eia_score(e, p)
                 if sc >= 6:
                     cands.append((sc, p))
@@ -687,6 +853,7 @@ def attach_eia(rows):
             if cands and (len(cands) == 1 or cands[0][0] > cands[1][0]):
                 hit = cands[0][1]
         if not hit:
+            unmatched.append(e)
             continue
         used.add(hit["id"])
         kbd = round(e["bcd"] / 1000.0, 1)
@@ -700,7 +867,12 @@ def attach_eia(rows):
         if "EIA operable" not in notes:
             hit["notes"] = (notes + " " + extra).strip() if notes else extra
         matched += 1
-    print("EIA matched", matched, "of", len(plants), "operable US plants")
+    print("EIA matched", matched, "of", len(plants), "operable US plants; skipped", skipped)
+    for e in unmatched:
+        print(
+            "  unmatched  %s kb/d  %s  %s  %s"
+            % (round(e["bcd"] / 1000.0, 1), e["state"], e["site"], e["company"])
+        )
 
 
 def emit(rows):

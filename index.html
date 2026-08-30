@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=209" />
+  <link rel="stylesheet" href="styles.css?v=210" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -309,11 +309,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=209"></script>
-  <script src="sites.js?v=209"></script>
-  <script src="hubs.js?v=209"></script>
-  <script src="refineries.js?v=209"></script>
-  <script src="app.js?v=209"></script>
+  <script src="data.js?v=210"></script>
+  <script src="sites.js?v=210"></script>
+  <script src="hubs.js?v=210"></script>
+  <script src="refineries.js?v=210"></script>
+  <script src="app.js?v=210"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -324,7 +324,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v209";
+    var EXPECTED = "v210";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

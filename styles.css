@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 209;
+  --bc-css: 210;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
