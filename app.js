@@ -33,7 +33,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v203";
+  const APP_VERSION = "v204";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -516,6 +516,68 @@
 
   function getHub(id) {
     return HUBS.hubs.find((s) => s.id === id) || null;
+  }
+
+  function uniqueById(list) {
+    const seen = new Set();
+    const out = [];
+    for (const x of list) {
+      if (!x || !x.id || seen.has(x.id)) continue;
+      seen.add(x.id);
+      out.push(x);
+    }
+    return out;
+  }
+  /* Stream card uses the ids on the stream. Site/hub cards also pick up
+     streams that point back, so a field that names WTI still shows it. */
+  function sitesForStream(s) {
+    return uniqueById((s.site_ids || []).map(getSite).filter(Boolean));
+  }
+  function hubsForStream(s) {
+    return uniqueById((s.hub_ids || []).map(getHub).filter(Boolean));
+  }
+  function streamsForSite(site) {
+    const ids = new Set(site.related_ids || []);
+    for (const s of DATA.streams) {
+      if ((s.site_ids || []).indexOf(site.id) >= 0) ids.add(s.id);
+    }
+    return uniqueById([...ids].map(getStream).filter(Boolean));
+  }
+  function streamsForHub(hub) {
+    const ids = new Set(hub.related_ids || []);
+    for (const s of DATA.streams) {
+      if ((s.hub_ids || []).indexOf(hub.id) >= 0) ids.add(s.id);
+    }
+    return uniqueById([...ids].map(getStream).filter(Boolean));
+  }
+  function placeChipRow(title, items, attr) {
+    if (!items.length) return "";
+    let html =
+      '<div class="block"><div class="block-title">' +
+      title +
+      '</div><div class="related-list">';
+    for (const r of items) {
+      html +=
+        '<button type="button" class="related-chip" ' +
+        attr +
+        '="' +
+        escapeHtml(r.id) +
+        '">' +
+        escapeHtml(r.name) +
+        "</button>";
+    }
+    html += "</div></div>";
+    return html;
+  }
+  function goToLayerPin(layer, id) {
+    if (state.route !== "home") {
+      state.route = "home";
+      history.pushState(null, "", "/");
+      render();
+    }
+    if (state.layer !== layer) setLayer(layer);
+    if (layer === "sites") selectSite(id, true);
+    else if (layer === "hubs") selectHub(id, true);
   }
 
   /* Stream / site / hub ids can collide. Compare keys are namespaced so a
@@ -1458,6 +1520,9 @@
         "</div></div>";
     }
 
+    html += placeChipRow("Sites", sitesForStream(s), "data-goto-site");
+    html += placeChipRow("Hubs", hubsForStream(s), "data-goto-hub");
+
     if (s.related_ids && s.related_ids.length) {
       html += '<div class="block"><div class="block-title">Similar grades</div><div class="related-list">';
       for (const rid of s.related_ids) {
@@ -1729,6 +1794,12 @@
         else selectStream(id, true);
       });
     });
+    root.querySelectorAll("[data-goto-site]").forEach((btn) => {
+      btn.addEventListener("click", () => goToLayerPin("sites", btn.getAttribute("data-goto-site")));
+    });
+    root.querySelectorAll("[data-goto-hub]").forEach((btn) => {
+      btn.addEventListener("click", () => goToLayerPin("hubs", btn.getAttribute("data-goto-hub")));
+    });
     root.querySelectorAll("[data-cut]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-cut");
@@ -1856,7 +1927,7 @@
       null
     );
     html += "</div>";
-    const related = (s.related_ids || []).map(getStream).filter(Boolean);
+    const related = streamsForSite(s);
     if (related.length) {
       html += '<div class="insp-block"><h3>Related streams</h3><div class="related-list">';
       for (const r of related) {
@@ -1915,7 +1986,7 @@
     if (s.notes) {
       html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
     }
-    const related = (s.related_ids || []).map(getStream).filter(Boolean);
+    const related = streamsForHub(s);
     if (related.length) {
       html += '<div class="insp-block"><h3>Related streams</h3><div class="related-list">';
       for (const r of related) {

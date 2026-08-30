@@ -39,7 +39,7 @@
       lat: 29.75,
       lon: -95.12,
       role: "pricing",
-      related_ids: ["wti-houston", "midland", "lls"],
+      related_ids: ["eagle-ford", "midland", "wti-houston", "wtl", "delaware", "spr-big-hill-sweet", "spr-big-hill-sour", "spr-bryan-mound-sweet", "spr-bryan-mound-sour"],
       notes: "USGC export pricing hub for Permian-quality light sweet (MEH / WTI Houston).",
     }),
     Hub({
@@ -50,7 +50,7 @@
       lat: 28.88,
       lon: -90.02,
       role: "loading",
-      related_ids: ["mars", "poseidon", "southern-green-canyon"],
+      related_ids: ["mars", "thunder-horse", "southern-green-canyon", "poseidon", "cascade-chinook", "southern-peninsula", "bonito", "shenzi", "hoover-diana", "hoops-blend"],
       notes: "Louisiana Offshore Oil Port — deepwater US import/export marine terminal.",
     }),
     Hub({
@@ -61,7 +61,7 @@
       lat: 30.0,
       lon: -90.85,
       role: "blend",
-      related_ids: ["lls", "hls"],
+      related_ids: ["lls", "hls", "spr-bayou-choctaw-sweet", "spr-bayou-choctaw-sour", "spr-west-hackberry-sweet", "spr-west-hackberry-sour"],
       notes: "Louisiana pipeline hub for Light Louisiana Sweet and Gulf Coast grades.",
     }),
     Hub({
@@ -72,7 +72,7 @@
       lat: 52.67,
       lon: -111.31,
       role: "blend",
-      related_ids: ["wcs", "cold-lake", "access-western-blend"],
+      related_ids: ["wcs", "cold-lake", "access-western-blend", "christina-lake", "bow-river", "lloydminster", "kearl", "surmont", "conventional-heavy", "premium-conventional-heavy", "bow-river-south", "clearwater-heavy", "seal-heavy", "wabasca-heavy", "western-canadian-blend", "borealis-heavy-blend", "canadian-natural-high-tan", "fort-hills-dilbit", "leismer-corner-blend", "long-lake-heavy-dilbit", "western-canada-dilbit", "long-lake-heavy", "surmont-heavy-blend"],
       notes: "Alberta heavy-oil aggregation and WCS pricing/blend point.",
     }),
     Hub({
@@ -83,7 +83,7 @@
       lat: 53.55,
       lon: -113.49,
       role: "blend",
-      related_ids: ["condensate-blend", "syncrude", "cochin-condensate"],
+      related_ids: ["syncrude", "albian", "msw", "lsb", "cochin-condensate", "condensate-blend", "fort-saskatchewan-condensate", "peace-condensate", "pembina-condensate", "rangeland-condensate", "southern-lights-diluent", "federated", "light-smiley", "peace-msw-feeder", "pembina-blend", "secure-sask-light", "rainbow", "hardisty-light", "medium-gibson-sour", "midale", "peace-pipe-sour", "conventional-heavy", "hardisty-synthetic", "medium-sour-blend", "msw-superior", "premium-conventional-heavy", "premium-synthetic", "synthetic-sweet-blend", "bc-light", "boundary-lake", "koch-alberta", "moose-jaw-tops", "pembina-light-sour", "cnrl-light-sweet-synthetic", "husky-synthetic-blend", "long-lake-light-synthetic", "premium-albian-synthetic", "shell-synthetic-light", "suncor-synthetic-a", "clearwater-heavy", "fosterton", "lloyd-kerrobert", "seal-heavy", "smiley-coleville", "wabasca-heavy", "western-canadian-blend", "suncor-synthetic-h"],
       notes: "Western Canada light/synthetic and diluent pool gateway to Enbridge.",
     }),
     Hub({
@@ -116,7 +116,7 @@
       lat: 10.1,
       lon: -64.85,
       role: "loading",
-      related_ids: ["merey-16", "hamaca", "cerro-negro"],
+      related_ids: ["merey-16", "cerro-negro", "hamaca", "zuata", "petrocedeno"],
       notes: "Orinoco upgrader and export complex east of Puerto La Cruz — Merey/SCO gateway.",
     }),
     Hub({
@@ -139,7 +139,7 @@
       lat: 51.95,
       lon: 4.15,
       role: "pricing",
-      related_ids: ["brent", "forties", "urals"],
+      related_ids: ["brent", "forties"],
       notes: "Northwest Europe refining and barge hub; ARA pricing complex.",
     }),
     Hub({
@@ -172,7 +172,7 @@
       lat: 36.8,
       lon: 35.9,
       role: "loading",
-      related_ids: ["btc", "azeri-light", "kirkuk"],
+      related_ids: ["azeri-light", "kirkuk", "btc"],
       notes: "Mediterranean end of BTC and historic Kirkuk line — Caspian/Iraqi loadings.",
     }),
     Hub({
@@ -183,7 +183,7 @@
       lat: 60.34,
       lon: 28.62,
       role: "loading",
-      related_ids: ["urals"],
+      related_ids: ["urals", "siberian-light"],
       notes: "Baltic Sea Urals export terminal (Transneft).",
     }),
     Hub({
@@ -194,7 +194,7 @@
       lat: 44.72,
       lon: 37.77,
       role: "loading",
-      related_ids: ["urals", "cpc"],
+      related_ids: ["cpc", "urals", "tengiz", "kashagan", "kebco"],
       notes: "Black Sea crude port; Urals and CPC-system loadings.",
     }),
     Hub({
@@ -216,7 +216,7 @@
       lat: 59.67,
       lon: 28.32,
       role: "loading",
-      related_ids: ["urals"],
+      related_ids: ["urals", "siberian-light"],
       notes: "Baltic export complex supplementing Primorsk.",
     }),
     // ——— Middle East ———
@@ -228,7 +228,7 @@
       lat: 26.64,
       lon: 50.16,
       role: "loading",
-      related_ids: ["arab-light", "arab-medium", "arab-heavy", "arab-extra-light"],
+      related_ids: ["arab-light", "arab-heavy", "arab-medium", "arab-extra-light"],
       notes: "Primary Saudi Arabian Gulf crude export terminal.",
     }),
     Hub({
@@ -261,7 +261,7 @@
       lat: 25.12,
       lon: 56.35,
       role: "storage",
-      related_ids: ["murban", "upper-zakum", "dubai"],
+      related_ids: ["murban", "upper-zakum", "al-shaheen", "dubai", "lower-zakum"],
       notes: "Indian Ocean storage and bunkering hub outside the Strait of Hormuz.",
     }),
     Hub({
@@ -294,7 +294,7 @@
       lat: 29.24,
       lon: 50.31,
       role: "loading",
-      related_ids: ["iranian-light", "iranian-heavy"],
+      related_ids: ["iranian-light", "iranian-heavy", "forozan", "iranian-medium", "sirri", "soroosh", "nowruz"],
       notes: "Historic Iranian Gulf crude export island.",
     }),
     Hub({
@@ -305,7 +305,7 @@
       lat: 29.07,
       lon: 48.15,
       role: "loading",
-      related_ids: ["kuwait-export"],
+      related_ids: ["kuwait-export", "khafji"],
       notes: "Kuwait’s primary crude export terminal.",
     }),
     // ——— Africa ———
@@ -317,7 +317,7 @@
       lat: 4.45,
       lon: 7.17,
       role: "loading",
-      related_ids: ["bonny-light", "qua-iboe"],
+      related_ids: ["bonny-light", "yoho"],
       notes: "Niger Delta export hub for Bonny Light and related sweets.",
     }),
     Hub({
@@ -339,7 +339,7 @@
       lat: 30.64,
       lon: 18.35,
       role: "loading",
-      related_ids: ["es-sider", "brega"],
+      related_ids: ["es-sider", "amna", "brega", "sirtica"],
       notes: "Libyan Mediterranean crude export terminal.",
     }),
     Hub({
@@ -350,7 +350,7 @@
       lat: 36.88,
       lon: 6.91,
       role: "loading",
-      related_ids: ["saharan-blend"],
+      related_ids: ["saharan-blend", "zarzaitine"],
       notes: "Algerian Mediterranean port for Saharan Blend exports.",
     }),
     // ——— Asia Pacific ———
@@ -362,7 +362,7 @@
       lat: 1.29,
       lon: 103.85,
       role: "pricing",
-      related_ids: ["dubai", "oman", "tapis"],
+      related_ids: ["tapis", "oman", "dubai"],
       notes: "Asia pricing, storage, and bunkering crossroads for Middle East and regional crudes.",
     }),
     Hub({
@@ -373,7 +373,7 @@
       lat: 35.5,
       lon: 129.4,
       role: "loading",
-      related_ids: ["espo", "murban"],
+      related_ids: [],
       notes: "Major NE Asia refining port receiving Middle East and Far East crudes.",
     }),
     Hub({
@@ -384,7 +384,7 @@
       lat: 29.95,
       lon: 122.1,
       role: "loading",
-      related_ids: ["espo", "arab-light", "castilla"],
+      related_ids: [],
       notes: "China’s largest crude import port complex.",
     }),
     Hub({
@@ -395,7 +395,7 @@
       lat: 5.62,
       lon: 115.88,
       role: "loading",
-      related_ids: ["kimanis", "labuan"],
+      related_ids: ["tapis", "labuan", "kimanis"],
       notes: "Sabah crude export system on the South China Sea.",
     }),
   ];
