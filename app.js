@@ -33,7 +33,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v206";
+  const APP_VERSION = "v207";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -2390,8 +2390,39 @@
   }
 
   function syncSearchClear() {
-    if (!el.searchClear) return;
-    el.searchClear.classList.toggle("hidden", !String(el.search && el.search.value).trim());
+    if (el.searchClear) {
+      el.searchClear.classList.toggle("hidden", !String(el.search && el.search.value).trim());
+    }
+    syncSearchOpen();
+  }
+
+  function searchIsOpen() {
+    return !!(state._searchFocused || String(el.search && el.search.value).trim());
+  }
+
+  function syncSearchOpen(opts) {
+    const tools = document.querySelector(".topbar-tools");
+    const btn = $("btn-search");
+    const open = !!(opts && opts.forceOpen) || searchIsOpen();
+    const was = tools && tools.classList.contains("is-search-open");
+    if (tools) tools.classList.toggle("is-search-open", open);
+    btn?.setAttribute("aria-pressed", open ? "true" : "false");
+    if (open && opts && opts.focus) {
+      requestAnimationFrame(() => el.search && el.search.focus());
+    }
+    if (was !== open && state.map) {
+      requestAnimationFrame(() => {
+        if (!state.map) return;
+        sizeMapToBelt();
+        state.map.invalidateSize({ pan: false });
+      });
+    }
+  }
+
+  function openSearch() {
+    state._searchFocused = true;
+    syncSearchOpen({ forceOpen: true, focus: true });
+    renderSearchResults();
   }
 
   function dismissSearchQuery() {
@@ -3323,6 +3354,7 @@
     });
     el.search.addEventListener("focus", () => {
       state._searchFocused = true;
+      syncSearchOpen();
       renderSearchResults();
     });
     el.search.addEventListener("blur", () => {
@@ -3330,6 +3362,7 @@
       setTimeout(() => {
         state._searchFocused = false;
         renderSearchResults();
+        syncSearchOpen();
       }, 180);
     });
     el.search.addEventListener("keydown", (e) => {
@@ -3370,6 +3403,15 @@
       e.stopPropagation();
       const open = el.legendHelp?.classList.contains("hidden");
       setLegendHelpOpen(!!open);
+    });
+
+    $("btn-search")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (searchIsOpen() && document.activeElement === el.search && !String(el.search.value).trim()) {
+        clearSearch();
+        return;
+      }
+      openSearch();
     });
 
     $("btn-reset-view")?.addEventListener("click", () => {
@@ -3447,6 +3489,13 @@
         el.pickerModal.classList.add("hidden");
         el.unitsPopover.classList.add("hidden");
         setLegendHelpOpen(false);
+      }
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const t = e.target;
+        const tag = t && t.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || (t && t.isContentEditable)) return;
+        e.preventDefault();
+        if (state.route === "home") openSearch();
       }
     });
 

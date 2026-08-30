@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 206;
+  --bc-css: 207;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -216,26 +216,26 @@ html.pwa-standalone .app {
 }
 
 .topbar-search {
+  display: none;
   position: relative;
+  flex: 1 0 100%;
+  order: 2;
   width: 100%;
   min-width: 0;
+  max-width: min(420px, 100%);
+  margin: 0 auto;
 }
-
-.home-search {
-  grid-area: search;
-  width: 100%;
-  max-width: none;
-  padding: 8px 12px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-panel);
-  z-index: 35;
-  box-sizing: border-box;
+.topbar-tools.is-search-open .topbar-search {
+  display: block;
+}
+html:not(.app-home) #btn-search,
+html:not(.app-home) .topbar-search {
+  display: none !important;
 }
 
 .topbar-search input {
   width: 100%;
-  height: 36px;
+  height: 28px;
   padding: 0 36px 0 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -286,7 +286,7 @@ html.pwa-standalone .app {
   left: 0;
   right: 0;
   top: calc(100% + 4px);
-  z-index: 90;
+  z-index: 95;
   max-height: min(42vh, 320px);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -450,10 +450,8 @@ html.pwa-standalone .app {
 .view-home {
   display: grid;
   grid-template-columns: var(--filters-w) 1fr var(--inspector-w);
-  grid-template-rows: auto 1fr;
-  grid-template-areas:
-    "search map inspector"
-    "filters map inspector";
+  grid-template-rows: 1fr;
+  grid-template-areas: "filters map inspector";
   height: 100%;
 }
 
@@ -884,9 +882,14 @@ input[type="range"] {
   font-size: 10px;
   padding: 0 8px;
 }
+.map-reset[aria-pressed="true"] {
+  background: var(--teal-dim);
+  color: var(--teal);
+  border-color: var(--teal);
+}
 /* Real pointer only — touch leaves :hover stuck and washed pressed/expanded gold. */
 @media (hover: hover) {
-  .map-reset:hover {
+  .map-reset:hover:not([aria-pressed="true"]) {
     color: var(--text);
   }
   .color-btn:hover:not([aria-pressed="true"]) {
@@ -902,6 +905,7 @@ input[type="range"] {
 }
 .legend-scale {
   flex: 1 0 100%;
+  order: 3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2068,19 +2072,14 @@ html.pwa-standalone:not(.app-home) .view-page {
 @media (max-width: 1099px) {
   .view-home {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      "search"
-      "map";
+    grid-template-rows: 1fr;
+    grid-template-areas: "map";
   }
   .rail-filters {
     display: none;
   }
   .rail-inspector {
     display: none;
-  }
-  .home-search {
-    border-right: none;
   }
   .brand-sub-text {
     display: none;
@@ -2109,16 +2108,12 @@ html.pwa-standalone:not(.app-home) .view-page {
     padding: 6px 8px;
     font-size: 12px;
   }
-  .home-search {
-    padding: 6px 10px;
-  }
   /* The belt is roughly 2:1, so a full-width world map cannot also be tall.
      The map element is sized to the belt in JS; the inspector takes the rest
      rather than leaving a dead slab where the poles used to be. */
   .view-home {
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
-      "search"
       "map"
       "inspector";
   }

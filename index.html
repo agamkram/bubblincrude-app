@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=206" />
+  <link rel="stylesheet" href="styles.css?v=207" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -134,7 +134,22 @@
               ?
             </button>
           </div>
+          <button type="button" class="map-reset" id="btn-search" title="Search" aria-pressed="false" aria-controls="search-input">Search</button>
           <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+          <div class="topbar-search" id="topbar-search">
+            <label class="sr-only" for="search-input">Search streams</label>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Search streams…"
+              autocomplete="off"
+              enterkeyhint="search"
+              aria-autocomplete="list"
+              aria-controls="search-results"
+            />
+            <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">×</button>
+            <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
+          </div>
           <div class="legend-scale" id="legend-scale" role="status"></div>
           <div class="legend-help hidden" id="legend-help" role="note"></div>
         </div>
@@ -167,22 +182,6 @@
     <main id="main" class="main" tabindex="-1">
       <!-- Map workspace -->
       <section id="view-home" class="view view-home" aria-label="Map workspace">
-        <div class="home-search">
-          <div class="topbar-search">
-            <label class="sr-only" for="search-input">Search streams</label>
-            <input
-              id="search-input"
-              type="search"
-              placeholder="Search streams…"
-              autocomplete="off"
-              enterkeyhint="search"
-              aria-autocomplete="list"
-              aria-controls="search-results"
-            />
-            <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">×</button>
-            <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
-          </div>
-        </div>
         <aside class="rail rail-filters" id="filters-rail" aria-label="Filters">
           <div class="rail-head">
             <h2>Filters</h2>
@@ -308,10 +307,10 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=206"></script>
-  <script src="sites.js?v=206"></script>
-  <script src="hubs.js?v=206"></script>
-  <script src="app.js?v=206"></script>
+  <script src="data.js?v=207"></script>
+  <script src="sites.js?v=207"></script>
+  <script src="hubs.js?v=207"></script>
+  <script src="app.js?v=207"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -322,7 +321,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v206";
+    var EXPECTED = "v207";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
