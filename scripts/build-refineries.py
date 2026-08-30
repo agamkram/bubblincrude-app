@@ -45,6 +45,8 @@ SKIP_NAME = re.compile(
     r"fuel gas line|training department",
     re.I,
 )
+# OSM still has a pin. These are not operable crude CDUs.
+NOT_CRUDE = re.compile(r"^cheyenne refinery$", re.I)
 KEEP_NAME = re.compile(
     r"refiner|raffiner|rafiner|НПЗ|炼油|製油|kilang|pabrik minyak|"
     r"petroleum|petrobras|exxon|shell |bp |total|sinopec|saudi aramco|"
@@ -390,6 +392,8 @@ def keep(tags, name):
         ]
     )
     if SKIP_NAME.search(blob):
+        return False
+    if NOT_CRUDE.search(name):
         return False
     if tags.get("man_made") == "pipeline":
         return False
