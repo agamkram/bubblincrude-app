@@ -9,21 +9,25 @@
   --text: #e8ecf2;
   --text-dim: #9aa3b2;
   --text-mute: #6b7382;
-  --teal: #2ec4b6;
-  --teal-dim: rgba(46, 196, 182, 0.18);
-  --teal-deep: #1a9e92;
+  /* Brand accent = oil amber/gold (replaces former teal). */
+  --accent: #e8a838;
+  --accent-dim: rgba(232, 168, 56, 0.2);
+  --accent-deep: #c98a1e;
+  --teal: var(--accent);
+  --teal-dim: var(--accent-dim);
+  --teal-deep: var(--accent-deep);
   --amber: #e8a838;
   --amber-dim: rgba(232, 168, 56, 0.18);
-  --amber-deep: #c98a1e;
-  --gold: #c9a227;
+  --amber-deep: #a56f12;
+  --gold: #f0d78c;
   --danger: #e85d5d;
-  --sweet: #22c55e;
-  --sweet-dim: rgba(34, 197, 94, 0.18);
+  --sweet: #7bc96f;
+  --sweet-dim: rgba(123, 201, 111, 0.18);
   --sour: #ef4444;
   --sour-dim: rgba(239, 68, 68, 0.16);
-  --light: #2ec4b6;
-  --heavy: #e8a838;
-  --medium: #5b8def;
+  --light: #f0d78c;
+  --heavy: #c98a1e;
+  --medium: #d4a84b;
   --font: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
   --topbar-h: 72px;
@@ -35,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 183;
+  --bc-css: 194;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -67,6 +71,8 @@ body {
   /* Stop Safari from briefly inflating long Cuts/About copy on navigate. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* Kill double-tap page zoom (viewport meta is ignored on modern iOS). */
+  touch-action: manipulation;
 }
 
 /*
@@ -121,6 +127,7 @@ html.pwa-standalone body {
   width: auto;
   height: auto;
   max-width: none;
+  touch-action: manipulation;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -349,15 +356,13 @@ html.pwa-standalone .app {
   font-weight: 500;
   cursor: pointer;
 }
-.nav-link:hover {
-  color: var(--text);
-  background: var(--bg-hover);
-}
-.nav-link.is-active {
+.nav-link.is-active,
+.nav-link.is-active:hover {
   color: var(--teal);
   background: var(--teal-dim);
 }
-.nav-link[aria-expanded="true"] {
+.nav-link[aria-expanded="true"],
+.nav-link[aria-expanded="true"]:hover {
   color: var(--teal);
   background: var(--teal-dim);
 }
@@ -422,7 +427,8 @@ html.pwa-standalone .app {
   font-size: 12px;
   cursor: pointer;
 }
-.seg-btn[aria-pressed="true"] {
+.seg-btn[aria-pressed="true"],
+.seg-btn[aria-pressed="true"]:hover {
   background: var(--teal-dim);
   border-color: var(--teal);
   color: var(--teal);
@@ -857,11 +863,15 @@ input[type="range"] {
   padding: 0 7px;
   color: var(--text-mute);
 }
-.color-btn[aria-pressed="true"] {
+.color-btn[aria-pressed="true"],
+.color-btn[aria-pressed="true"]:hover,
+.color-btn[aria-pressed="true"]:focus {
   background: var(--teal-dim);
   color: var(--teal);
 }
-.color-help[aria-expanded="true"] {
+.color-help[aria-expanded="true"],
+.color-help[aria-expanded="true"]:hover,
+.color-help[aria-expanded="true"]:focus {
   color: var(--teal);
 }
 .map-reset {
@@ -873,10 +883,21 @@ input[type="range"] {
   font-size: 10px;
   padding: 0 8px;
 }
-.map-reset:hover,
-.color-btn:hover,
-.color-help:hover {
-  color: var(--text);
+/* Real pointer only — touch leaves :hover stuck and washed pressed/expanded gold. */
+@media (hover: hover) {
+  .map-reset:hover {
+    color: var(--text);
+  }
+  .color-btn:hover:not([aria-pressed="true"]) {
+    color: var(--text);
+  }
+  .color-help:hover:not([aria-expanded="true"]) {
+    color: var(--text);
+  }
+  .nav-link:hover:not(.is-active):not([aria-expanded="true"]) {
+    color: var(--text);
+    background: var(--bg-hover);
+  }
 }
 .topbar-tools .legend-pop {
   position: absolute;
@@ -891,13 +912,13 @@ input[type="range"] {
   flex: 1 1 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(14, 17, 22, 0.94);
   backdrop-filter: blur(8px);
-  max-width: 200px;
+  max-width: 220px;
 }
 .legend-pop.hidden {
   display: none !important;
@@ -914,6 +935,23 @@ input[type="range"] {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+.legend-ramp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.legend-ramp-bar {
+  height: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+.legend-ramp-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-mute);
+  font-family: var(--mono);
 }
 
 /* Ring is drawn with box-shadow, not border: a border-box border would eat
@@ -1202,6 +1240,9 @@ button.pill {
 .metric-tile.is-amber .v {
   color: var(--amber);
 }
+.metric-tile.is-ramp .v {
+  color: var(--metric-v);
+}
 .metric-tile.is-mute .v {
   color: var(--text-mute);
 }
@@ -1286,7 +1327,7 @@ button.pill {
      0px wide inside the dark track (numbers only — looked blank/black). */
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--teal), var(--amber));
+  background: linear-gradient(90deg, #ff5a2e, #4a8fd4, #e8f2ff);
 }
 .thermo-val {
   font-family: var(--mono);

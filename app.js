@@ -28,13 +28,14 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v183";
+  const APP_VERSION = "v194";
   window.__APP_VERSION = APP_VERSION;
 
-  const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
+  const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
+  /* Four distinct hues — saturates/resins used to both read as amber. */
   const SARA_COLORS = {
-    saturates: "#2ec4b6",
-    aromatics: "#5b8def",
+    saturates: "#5ec8b0",
+    aromatics: "#7aa2ff",
     resins: "#e8a838",
     asphaltenes: "#c45c5c",
   };
@@ -257,46 +258,65 @@
   function isSweet(s) {
     return s.sulfur_wt != null && s.sulfur_wt <= DATA.SWEET_S_MAX;
   }
-  /* API and sulfur are independent axes — use distinct palettes so toggling
-     always recolors (shared teal/amber made light-sweet pins look unchanged). */
-  const COLOR_API = {
-    light: "#2ec4b6",
-    medium: "#5b8def",
-    heavy: "#e8a838",
-    "extra-heavy": "#c98a1e",
-    unknown: "#6b7382",
-  };
-  const COLOR_SULFUR = {
-    sweet: "#22c55e",
-    low: "#84cc16",
-    mid: "#e879f9",
-    high: "#ef4444",
-    unknown: "#6b7382",
-  };
+  /* API and sulfur map colors are continuous ramps (see rampColor).
+     Inspector pills still use Light/Medium/Heavy and Sweet as words. */
+  const COLOR_UNKNOWN = "#6b7382";
+  /* API °: rust (heavy) → blue → ice (light), stretched ~15–45.
+     Ends differ in hue like S; no dark umbers (they vanish on the map). */
+  const API_RAMP = ["#ff5a2e", "#f0a020", "#4a8fd4", "#e8f2ff"];
+  const API_RAMP_MIN = 15;
+  const API_RAMP_MAX = 45;
+  /* Sulfur wt%: soft green (sweet) → gold → red (sour), stretched 0–3. */
+  const SULFUR_RAMP = ["#6bcf7a", "#e8c84a", "#e8853a", "#e85d5d"];
+  const SULFUR_RAMP_MIN = 0;
+  const SULFUR_RAMP_MAX = 3;
+
+  function clamp01(t) {
+    return Math.max(0, Math.min(1, t));
+  }
+  function hexToRgb(hex) {
+    const h = hex.replace("#", "");
+    const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    return {
+      r: parseInt(n.slice(0, 2), 16),
+      g: parseInt(n.slice(2, 4), 16),
+      b: parseInt(n.slice(4, 6), 16),
+    };
+  }
+  function rgbToHex(r, g, b) {
+    const byte = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0");
+    return "#" + byte(r) + byte(g) + byte(b);
+  }
+  function mixHex(a, b, t) {
+    const A = hexToRgb(a);
+    const B = hexToRgb(b);
+    const u = clamp01(t);
+    return rgbToHex(
+      A.r + (B.r - A.r) * u,
+      A.g + (B.g - A.g) * u,
+      A.b + (B.b - A.b) * u
+    );
+  }
+  function rampColor(stops, t) {
+    const u = clamp01(t);
+    if (!stops.length) return COLOR_UNKNOWN;
+    if (stops.length === 1) return stops[0];
+    const x = u * (stops.length - 1);
+    const i = Math.min(Math.floor(x), stops.length - 2);
+    return mixHex(stops[i], stops[i + 1], x - i);
+  }
+  function apiRampColor(api) {
+    if (api == null) return COLOR_UNKNOWN;
+    return rampColor(API_RAMP, (api - API_RAMP_MIN) / (API_RAMP_MAX - API_RAMP_MIN));
+  }
+  function sulfurRampColor(s) {
+    if (s == null) return COLOR_UNKNOWN;
+    return rampColor(SULFUR_RAMP, (s - SULFUR_RAMP_MIN) / (SULFUR_RAMP_MAX - SULFUR_RAMP_MIN));
+  }
 
   function markerColor(s) {
-    if (state.colorMode === "sulfur") {
-      if (s.sulfur_wt == null) return COLOR_SULFUR.unknown;
-      if (s.sulfur_wt <= 0.5) return COLOR_SULFUR.sweet;
-      if (s.sulfur_wt <= 1.5) return COLOR_SULFUR.low;
-      if (s.sulfur_wt <= 3) return COLOR_SULFUR.mid;
-      return COLOR_SULFUR.high;
-    }
-    const c = apiClass(s.api);
-    return (c && COLOR_API[c]) || COLOR_API.unknown;
-  }
-  function metricTone(kind, value) {
-    if (value == null) return "mute";
-    if (kind === "api") {
-      return value >= 31.1 ? "teal" : value >= 22.3 ? "mute" : "amber";
-    }
-    if (kind === "sulfur") {
-      return value <= 0.5 ? "teal" : "amber";
-    }
-    if (kind === "lights") {
-      return value >= 55 ? "teal" : value >= 40 ? "mute" : "amber";
-    }
-    return "mute";
+    if (state.colorMode === "sulfur") return sulfurRampColor(s.sulfur_wt);
+    return apiRampColor(s.api);
   }
 
   function lightsYield(s) {
@@ -1246,21 +1266,21 @@
       "API",
       densityLabel(s.api),
       densityUnit(),
-      metricTone("api", s.api),
+      apiRampColor(s.api),
       "api"
     );
     html += metricTile(
       "Sulfur",
       sulfurLabel(s.sulfur_wt),
       sulfurUnit(),
-      metricTone("sulfur", s.sulfur_wt),
+      sulfurRampColor(s.sulfur_wt),
       "sulfur"
     );
     html += metricTile(
       "Lights",
       lights == null ? "—" : fmtNum(lights, 0),
       "wt%",
-      metricTone("lights", lights),
+      "mute",
       "lights"
     );
     html += "</div>";
@@ -1273,7 +1293,7 @@
 
     if (s.yields) {
       html +=
-        '<div class="block"><div class="block-title">Yield thermometer ' +
+        '<div class="block"><div class="block-title">Yields ' +
         flagBtn(flags.yields, "Yields") +
         "</div>";
       html += yieldThermo(s.yields);
@@ -1325,11 +1345,16 @@
     return html;
   }
 
-  function metricTile(label, value, unit, tone, glossaryId) {
+  function metricTile(label, value, unit, toneOrColor, glossaryId) {
+    const isRamp = typeof toneOrColor === "string" && toneOrColor.charAt(0) === "#";
+    const tone = isRamp ? "ramp" : toneOrColor || "mute";
+    const style = isRamp ? ' style="--metric-v:' + toneOrColor + '"' : "";
     return (
       '<div class="metric-tile is-' +
       tone +
-      '">' +
+      '"' +
+      style +
+      ">" +
       (glossaryId ? glossaryBtn(glossaryId, label) : "") +
       '<div class="k">' +
       escapeHtml(label) +
@@ -1655,14 +1680,14 @@
       "API",
       densityLabel(s.api),
       densityUnit(),
-      metricTone("api", s.api),
+      apiRampColor(s.api),
       "api"
     );
     html += metricTile(
       "Sulfur",
       sulfurLabel(s.sulfur_wt),
       sulfurUnit(),
-      metricTone("sulfur", s.sulfur_wt),
+      sulfurRampColor(s.sulfur_wt),
       "sulfur"
     );
     html += metricTile(
@@ -1885,8 +1910,6 @@
     });
   }
 
-  let legendHideTimer = null;
-
   function syncColorSeg() {
     document.querySelectorAll("[data-color]").forEach((btn) => {
       btn.setAttribute(
@@ -1896,46 +1919,39 @@
     });
   }
 
-  function legendRows() {
+  function legendRampHtml() {
     if (state.colorMode === "sulfur") {
-      return [
-        [COLOR_SULFUR.sweet, "Sweet ≤0.5% S"],
-        [COLOR_SULFUR.low, ">0.5–1.5% S"],
-        [COLOR_SULFUR.mid, ">1.5–3% S"],
-        [COLOR_SULFUR.high, ">3% S"],
-      ];
+      const css = "linear-gradient(90deg," + SULFUR_RAMP.join(",") + ")";
+      return (
+        '<div class="legend-ramp">' +
+        '<div class="legend-ramp-bar" style="background:' +
+        css +
+        '"></div>' +
+        '<div class="legend-ramp-labels"><span>0% S</span><span>sweet</span><span>3%+ S</span></div>' +
+        "</div>"
+      );
     }
-    return [
-      [COLOR_API.light, "Light ≥31°"],
-      [COLOR_API.medium, "Medium 22–31°"],
-      [COLOR_API.heavy, "Heavy 10–22°"],
-      [COLOR_API["extra-heavy"], "Extra-heavy <10°"],
-    ];
+    const css = "linear-gradient(90deg," + API_RAMP.join(",") + ")";
+    return (
+      '<div class="legend-ramp">' +
+      '<div class="legend-ramp-bar" style="background:' +
+      css +
+      '"></div>' +
+      '<div class="legend-ramp-labels"><span>15°</span><span>API</span><span>45°+</span></div>' +
+      "</div>"
+    );
   }
 
   function renderLegend() {
     if (!el.legendScale) return;
-    el.legendScale.innerHTML = legendRows()
-      .map(
-        ([c, l]) =>
-          '<div class="legend-row"><span class="legend-dot" style="background:' +
-          c +
-          '"></span>' +
-          escapeHtml(l) +
-          "</div>"
-      )
-      .join("");
+    el.legendScale.innerHTML = legendRampHtml();
   }
 
   function setLegendOpen(open) {
     if (!el.legendScale) return;
-    clearTimeout(legendHideTimer);
     el.legendScale.classList.toggle("hidden", !open);
     $("btn-legend-help")?.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) {
-      renderLegend();
-      legendHideTimer = setTimeout(() => setLegendOpen(false), 4000);
-    }
+    if (open) renderLegend();
   }
 
   function onFiltersChanged(opts) {
@@ -2557,7 +2573,7 @@
       '<h2 class="page-title">About</h2>' +
       '<div class="about-block"><p>BubblinCrude explores <strong>named commercial crude streams</strong> (WTI, Merey-16, Boscan) and a parallel <strong>Sites</strong> layer — fields, basins, plays, and historic finds (Spindletop, Ghawar, Drake Well). Stream values are typical published assay ranges, not live well samples.</p></div>' +
       '<div class="about-block"><h3>Glossary</h3><dl class="glossary">' +
-      '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Map classes follow the usual crude bands: light ≥31°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°. Condensate is a product type, not an API class here.</dd>' +
+      '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Inspector labels use the usual crude bands: light ≥31°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°. Map pins use a continuous color ramp by API (not those four buckets). Condensate is a product type, not an API class here.</dd>' +
       "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons, typically field or plant pentanes-plus from gas or gas-condensate streams. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit). Distinct from light sweet crude.</dd>" +
       '<dt id="g-sulfur">Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to refine. This app’s sweet cutoff is ≤0.5 wt% S.</dd>' +
       "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher sulfur. Independent of light/heavy (API).</dd>" +
@@ -2589,7 +2605,7 @@
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>" +
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
-      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters and map color modes treat them separately. On Sites, API/S color pins with assays or curated typical/estimated values — check the quality flag on the site card.</p></div>' +
+      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint pins on a continuous ramp by API or sulfur so global source differences read at a glance — check the i legend on the map.</p></div>' +
       '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
@@ -3136,8 +3152,32 @@
     }
   }
 
+  function blockPageZoomGestures() {
+    /* iOS still double-tap / gesture-zooms the page despite user-scalable=no. */
+    document.addEventListener(
+      "gesturestart",
+      (e) => {
+        e.preventDefault();
+      },
+      { passive: false }
+    );
+    let lastTouchEnd = 0;
+    document.addEventListener(
+      "touchend",
+      (e) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 350) {
+          e.preventDefault();
+        }
+        lastTouchEnd = now;
+      },
+      { passive: false }
+    );
+  }
+
   function init() {
     cacheEls();
+    blockPageZoomGestures();
     pinShellViewport();
     forgetStorage();
     parseUrl();
