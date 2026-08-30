@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=156" />
+  <link rel="stylesheet" href="styles.css?v=157" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,7 +106,7 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v156</span>
+          <span class="brand-ver" id="app-version">v157</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
@@ -141,20 +141,6 @@
           </button>
         </div>
         <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
-        <div class="topbar-search">
-          <label class="sr-only" for="search-input">Search streams</label>
-          <input
-            id="search-input"
-            type="search"
-            placeholder="Search name, alias, country, basin…"
-            autocomplete="off"
-            enterkeyhint="search"
-            aria-autocomplete="list"
-            aria-controls="search-results"
-          />
-          <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">×</button>
-          <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
-        </div>
         <div class="legend-pop hidden" id="legend-scale" role="status"></div>
       </div>
     </header>
@@ -185,6 +171,22 @@
     <main id="main" class="main" tabindex="-1">
       <!-- Map workspace -->
       <section id="view-home" class="view view-home" aria-label="Map workspace">
+        <div class="home-search">
+          <div class="topbar-search">
+            <label class="sr-only" for="search-input">Search streams</label>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Search name, alias, country, basin…"
+              autocomplete="off"
+              enterkeyhint="search"
+              aria-autocomplete="list"
+              aria-controls="search-results"
+            />
+            <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">×</button>
+            <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
+          </div>
+        </div>
         <aside class="rail rail-filters" id="filters-rail" aria-label="Filters">
           <div class="rail-head">
             <h2>Filters</h2>
@@ -319,9 +321,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=156"></script>
-  <script src="sites.js?v=156"></script>
-  <script src="app.js?v=156"></script>
+  <script src="data.js?v=157"></script>
+  <script src="sites.js?v=157"></script>
+  <script src="app.js?v=157"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -332,7 +334,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v156";
+    var EXPECTED = "v157";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

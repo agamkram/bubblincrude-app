@@ -27,7 +27,7 @@
   --condensate: #9bf0e8;
   --font: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
-  --topbar-h: 80px;
+  --topbar-h: 52px;
   --filters-w: 260px;
   --inspector-w: 340px;
   --radius: 8px;
@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 156;
+  --bc-css: 157;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -151,12 +151,14 @@ html.pwa-standalone .app {
 .topbar {
   flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
   min-height: var(--topbar-h);
-  padding: calc(2px + env(safe-area-inset-top, 0px))
-    calc(16px + env(safe-area-inset-right, 0px)) 8px
+  padding: calc(4px + env(safe-area-inset-top, 0px))
+    calc(16px + env(safe-area-inset-right, 0px)) 6px
     calc(16px + env(safe-area-inset-left, 0px));
   border-bottom: 1px solid var(--border);
   background: var(--bg-panel);
@@ -166,15 +168,15 @@ html.pwa-standalone .app {
 .topbar-title {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   min-width: 0;
 }
 
 .brand-line {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   min-width: 0;
 }
@@ -184,15 +186,16 @@ html.pwa-standalone .app {
 .brand-title {
   margin: 0;
   font-family: Michroma, "IBM Plex Sans", system-ui, sans-serif;
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 400;
   letter-spacing: -0.02em;
-  line-height: 28px;
+  line-height: 24px;
   white-space: nowrap;
   text-transform: none;
 }
 
 .brand-sub {
+  display: none;
   height: 14px;
   margin: 4px 0 0;
   font-size: 11px;
@@ -221,11 +224,21 @@ html.pwa-standalone .app {
 }
 
 .topbar-search {
-  flex: 0 1 260px;
-  width: 260px;
-  max-width: min(260px, 42vw);
-  min-width: 140px;
   position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.home-search {
+  grid-area: search;
+  width: 100%;
+  max-width: none;
+  padding: 8px 12px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  z-index: 35;
+  box-sizing: border-box;
 }
 
 .topbar-search input {
@@ -477,8 +490,10 @@ html.pwa-standalone .app {
 .view-home {
   display: grid;
   grid-template-columns: var(--filters-w) 1fr var(--inspector-w);
-  grid-template-rows: 1fr;
-  grid-template-areas: "filters map inspector";
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "search map inspector"
+    "filters map inspector";
   height: 100%;
 }
 
@@ -871,7 +886,7 @@ input[type="range"] {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px 5px;
+  gap: 5px;
   position: relative;
 }
 .layer-toggle,
@@ -2092,14 +2107,19 @@ html.pwa-standalone:not(.app-home) .view-page {
 @media (max-width: 1099px) {
   .view-home {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr;
-    grid-template-areas: "map";
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "search"
+      "map";
   }
   .rail-filters {
     display: none;
   }
   .rail-inspector {
     display: none;
+  }
+  .home-search {
+    border-right: none;
   }
   .mobile-only {
     display: inline-flex;
@@ -2117,14 +2137,14 @@ html.pwa-standalone:not(.app-home) .view-page {
 /* —— Responsive: phone —— */
 @media (max-width: 699px) {
   .topbar {
-    gap: 6px;
+    gap: 6px 8px;
     padding: calc(2px + env(safe-area-inset-top, 0px))
       calc(10px + env(safe-area-inset-right, 0px)) 6px
       calc(10px + env(safe-area-inset-left, 0px));
   }
   .brand-title {
-    font-size: 24px;
-    line-height: 26px;
+    font-size: 20px;
+    line-height: 22px;
   }
   .topbar-row {
     flex-wrap: wrap;
@@ -2140,19 +2160,16 @@ html.pwa-standalone:not(.app-home) .view-page {
     padding: 6px 8px;
     font-size: 12px;
   }
-  .topbar-search {
-    flex: 1 1 100%;
-    width: auto;
-    max-width: none;
-    min-width: 0;
-    order: 10;
+  .home-search {
+    padding: 6px 10px;
   }
   /* The belt is roughly 2:1, so a full-width world map cannot also be tall.
      The map element is sized to the belt in JS; the inspector takes the rest
      rather than leaving a dead slab where the poles used to be. */
   .view-home {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
+      "search"
       "map"
       "inspector";
   }
