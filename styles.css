@@ -27,7 +27,7 @@
   --condensate: #9bf0e8;
   --font: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
-  --topbar-h: 96px;
+  --topbar-h: 80px;
   --filters-w: 260px;
   --inspector-w: 340px;
   --radius: 8px;
@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 155;
+  --bc-css: 156;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -221,8 +221,10 @@ html.pwa-standalone .app {
 }
 
 .topbar-search {
-  flex: 1 1 220px;
-  max-width: none;
+  flex: 0 1 260px;
+  width: 260px;
+  max-width: min(260px, 42vw);
+  min-width: 140px;
   position: relative;
 }
 
@@ -869,7 +871,7 @@ input[type="range"] {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 8px 5px;
   position: relative;
 }
 .layer-toggle,
@@ -2139,9 +2141,11 @@ html.pwa-standalone:not(.app-home) .view-page {
     font-size: 12px;
   }
   .topbar-search {
-    flex: 1 1 auto;
-    min-width: 0;
+    flex: 1 1 100%;
+    width: auto;
     max-width: none;
+    min-width: 0;
+    order: 10;
   }
   /* The belt is roughly 2:1, so a full-width world map cannot also be tall.
      The map element is sized to the belt in JS; the inspector takes the rest
