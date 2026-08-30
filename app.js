@@ -28,7 +28,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v159";
+  const APP_VERSION = "v160";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#2ec4b6", "#e8a838", "#7aa2ff"];
@@ -481,6 +481,40 @@
 
   function selectedPinId() {
     return state.layer === "sites" ? state.siteId : state.streamId;
+  }
+
+  /* Starter picks so the inspector is never an empty prompt on home —
+     users see a real assay / site card and understand the panel. */
+  const DEFAULT_STREAM_ID = "wti";
+  const DEFAULT_SITE_ID = "spindletop";
+
+  function pickDefaultStreamId() {
+    if (getStream(DEFAULT_STREAM_ID)) return DEFAULT_STREAM_ID;
+    const first = DATA.streams.find((s) => s && s.id);
+    return first ? first.id : null;
+  }
+
+  function pickDefaultSiteId() {
+    if (getSite(DEFAULT_SITE_ID)) return DEFAULT_SITE_ID;
+    const first = SITES.sites.find((s) => s && s.id);
+    return first ? first.id : null;
+  }
+
+  function ensureHomeSelection() {
+    if (state.route !== "home") return;
+    if (state.layer === "sites") {
+      if (getSite(state.siteId)) return;
+      const id = pickDefaultSiteId();
+      if (!id) return;
+      state.siteId = id;
+      state.streamId = null;
+      return;
+    }
+    if (getStream(state.streamId)) return;
+    const id = pickDefaultStreamId();
+    if (!id) return;
+    state.streamId = id;
+    state.siteId = null;
   }
 
   /* —— Map —— */
@@ -964,6 +998,7 @@
     syncInspectorEmptyCopy();
     renderSearchResults();
     renderActiveChips();
+    ensureHomeSelection();
     updateMarkers();
     renderInspector();
     renderTray();
@@ -1615,6 +1650,7 @@
     state.siteId = null;
     $("inspector-rail")?.classList.remove("is-drawer-open");
     closeSheets();
+    ensureHomeSelection();
     updateMarkers();
     renderInspector();
     renderTray();
@@ -2678,6 +2714,7 @@
           if (firstMap) fitMapFull(false);
         }
       }, 60);
+      ensureHomeSelection();
       updateMarkers();
       renderInspector();
       renderTray();
