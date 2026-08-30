@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=205" />
+  <link rel="stylesheet" href="styles.css?v=206" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -128,14 +128,15 @@
               class="color-help"
               id="btn-legend-help"
               aria-expanded="false"
-              aria-controls="legend-scale"
-              title="Color scale"
+              aria-controls="legend-help"
+              title="Color scale notes"
             >
               ?
             </button>
           </div>
           <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
-          <div class="legend-pop hidden" id="legend-scale" role="status"></div>
+          <div class="legend-scale" id="legend-scale" role="status"></div>
+          <div class="legend-help hidden" id="legend-help" role="note"></div>
         </div>
       </div>
     </header>
@@ -307,10 +308,10 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=205"></script>
-  <script src="sites.js?v=205"></script>
-  <script src="hubs.js?v=205"></script>
-  <script src="app.js?v=205"></script>
+  <script src="data.js?v=206"></script>
+  <script src="sites.js?v=206"></script>
+  <script src="hubs.js?v=206"></script>
+  <script src="app.js?v=206"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -321,7 +322,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v205";
+    var EXPECTED = "v206";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

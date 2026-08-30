@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 205;
+  --bc-css: 206;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -826,8 +826,9 @@ input[type="range"] {
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 4px 5px;
   position: relative;
+  width: 100%;
 }
 .layer-toggle,
 .color-toggle {
@@ -899,59 +900,75 @@ input[type="range"] {
     background: var(--bg-hover);
   }
 }
-.topbar-tools .legend-pop {
+.legend-scale {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14px;
+}
+.legend-ramp {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: min(168px, 62vw);
+}
+.legend-ramp-bar {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 7px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+}
+.legend-ramp-end {
+  flex: 0 0 auto;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-mute);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.legend-ramp-roles {
+  width: auto;
+  max-width: 100%;
+  gap: 10px;
+}
+.legend-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-mute);
+  white-space: nowrap;
+}
+.legend-role i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+.legend-help {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 90;
-  flex: none;
-  width: min(280px, 92vw);
-}
-.legend-pop {
-  flex: 1 1 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
+  width: min(260px, 92vw);
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(14, 17, 22, 0.94);
   backdrop-filter: blur(8px);
-  max-width: 220px;
-}
-.legend-pop.hidden {
-  display: none !important;
-}
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 11px;
+  line-height: 1.35;
   color: var(--text-dim);
+  text-align: center;
 }
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.legend-ramp {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.legend-ramp-bar {
-  height: 10px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-}
-.legend-ramp-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--text-mute);
-  font-family: var(--mono);
+.legend-help.hidden {
+  display: none !important;
 }
 
 /* Ring is drawn with box-shadow, not border: a border-box border would eat
@@ -2135,8 +2152,8 @@ html.pwa-standalone:not(.app-home) .view-page {
   .leaflet-control-zoom {
     display: none !important;
   }
-  .legend-pop {
-    max-width: none;
+  .legend-ramp-roles {
+    gap: 8px;
   }
   .view-compare,
   .view-stream,

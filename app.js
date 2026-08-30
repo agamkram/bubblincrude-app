@@ -33,7 +33,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v205";
+  const APP_VERSION = "v206";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -168,6 +168,7 @@
     el.kindFilters = $("kind-filters");
     el.savedViews = $("saved-views");
     el.legendScale = $("legend-scale");
+    el.legendHelp = $("legend-help");
     el.inspectorEmpty = $("inspector-empty");
     el.inspectorBody = $("inspector-body");
     el.trayChips = $("tray-chips");
@@ -1271,6 +1272,7 @@
       state.hubId = null;
     }
     syncLayerSeg();
+    renderLegend();
     syncInspectorEmptyCopy();
     renderSearchResults();
     renderActiveChips();
@@ -2210,39 +2212,75 @@
     });
   }
 
-  function legendRampHtml() {
-    if (state.colorMode === "sulfur") {
-      const css = "linear-gradient(90deg," + SULFUR_RAMP.join(",") + ")";
-      return (
-        '<div class="legend-ramp">' +
-        '<div class="legend-ramp-bar" style="background:' +
-        css +
-        '"></div>' +
-        '<div class="legend-ramp-labels"><span>0% S</span><span>sweet</span><span>3%+ S</span></div>' +
-        "</div>"
-      );
-    }
-    const css = "linear-gradient(90deg," + API_RAMP.join(",") + ")";
+  function legendBarHtml(stops, left, right, label) {
+    const css = "linear-gradient(90deg," + stops.join(",") + ")";
     return (
-      '<div class="legend-ramp">' +
+      '<div class="legend-ramp" aria-label="' +
+      escapeHtml(label) +
+      '">' +
+      '<span class="legend-ramp-end">' +
+      escapeHtml(left) +
+      "</span>" +
       '<div class="legend-ramp-bar" style="background:' +
       css +
       '"></div>' +
-      '<div class="legend-ramp-labels"><span>15°</span><span>API</span><span>45°+</span></div>' +
+      '<span class="legend-ramp-end">' +
+      escapeHtml(right) +
+      "</span>" +
       "</div>"
     );
+  }
+
+  function legendRoleTick(color, name) {
+    return (
+      '<span class="legend-role"><i style="background:' +
+      color +
+      '"></i>' +
+      escapeHtml(name) +
+      "</span>"
+    );
+  }
+
+  function legendRampHtml() {
+    if (state.layer === "hubs") {
+      return (
+        '<div class="legend-ramp legend-ramp-roles" aria-label="Hubs by commercial role">' +
+        legendRoleTick("#e8a838", "price") +
+        legendRoleTick("#4a8fd4", "store") +
+        legendRoleTick("#f0d78c", "load") +
+        legendRoleTick("#5ec8b0", "blend") +
+        "</div>"
+      );
+    }
+    if (state.colorMode === "sulfur") {
+      return legendBarHtml(SULFUR_RAMP, "0% S", "3%+ S", "Sulfur from 0% to 3%+");
+    }
+    return legendBarHtml(API_RAMP, "15°", "45°+", "API gravity from 15° to 45°+");
+  }
+
+  function legendHelpText() {
+    if (state.layer === "hubs") {
+      return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, pale loading, teal blend.";
+    }
+    if (state.colorMode === "sulfur") {
+      return "Sweet is ≤ 0.5 wt% S. The ramp runs 0% to 3%+. Grey means no sulfur in the record.";
+    }
+    return "The ramp runs 15° API (heavy) to 45°+ (light). Grey means no gravity in the record.";
   }
 
   function renderLegend() {
     if (!el.legendScale) return;
     el.legendScale.innerHTML = legendRampHtml();
+    if (el.legendHelp && !el.legendHelp.classList.contains("hidden")) {
+      el.legendHelp.textContent = legendHelpText();
+    }
   }
 
-  function setLegendOpen(open) {
-    if (!el.legendScale) return;
-    el.legendScale.classList.toggle("hidden", !open);
+  function setLegendHelpOpen(open) {
+    if (!el.legendHelp) return;
+    el.legendHelp.classList.toggle("hidden", !open);
     $("btn-legend-help")?.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) renderLegend();
+    if (open) el.legendHelp.textContent = legendHelpText();
   }
 
   function onFiltersChanged(opts) {
@@ -2901,7 +2939,7 @@
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>" +
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
-      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint pins on a continuous ramp by API or sulfur so global source differences read at a glance — check the i legend on the map.</p></div>' +
+      '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint stream and site pins on a continuous ramp by API or sulfur — the scale sits under the map buttons. Hub pins are painted by commercial role instead.</p></div>' +
       '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
@@ -3324,17 +3362,14 @@
         history.replaceState(null, "", buildUrl());
         syncColorSeg();
         updateMarkers();
-        if (el.legendScale && !el.legendScale.classList.contains("hidden")) {
-          renderLegend();
-          setLegendOpen(true);
-        }
+        renderLegend();
       });
     });
 
     $("btn-legend-help")?.addEventListener("click", (e) => {
       e.stopPropagation();
-      const open = el.legendScale?.classList.contains("hidden");
-      setLegendOpen(!!open);
+      const open = el.legendHelp?.classList.contains("hidden");
+      setLegendHelpOpen(!!open);
     });
 
     $("btn-reset-view")?.addEventListener("click", () => {
@@ -3411,6 +3446,7 @@
       if (e.key === "Escape") {
         el.pickerModal.classList.add("hidden");
         el.unitsPopover.classList.add("hidden");
+        setLegendHelpOpen(false);
       }
     });
 
@@ -3421,10 +3457,10 @@
       }
       if (
         !e.target.closest(".topbar-tools") &&
-        el.legendScale &&
-        !el.legendScale.classList.contains("hidden")
+        el.legendHelp &&
+        !el.legendHelp.classList.contains("hidden")
       ) {
-        setLegendOpen(false);
+        setLegendHelpOpen(false);
       }
     });
 
