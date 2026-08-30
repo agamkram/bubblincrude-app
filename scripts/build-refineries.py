@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Build refineries.js from OpenStreetMap industrial=refinery pins.
+"""Build refineries.js from OpenStreetMap pins plus EIA US capacities.
 
-Geography only — no invented capacities. Re-run anytime:
+Geography from OSM (ODbL). US kb/d from EIA-820 — not invented.
+Re-run anytime:
     python3 scripts/build-refineries.py
 """
 from __future__ import annotations
@@ -17,6 +18,8 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "refineries.js"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 QUERY = '[out:json][timeout:90]; nwr["industrial"="refinery"]; out center tags;'
+EIA_URL = "https://www.eia.gov/petroleum/refinerycapacity/refcap26.xlsx"
+EIA_XLSX = Path("/tmp/refcap26.xlsx")
 
 SKIP_NAME = re.compile(
     r"alumina|aluminium|aluminum|zinc|nickel|sugar|copper smelter|"
@@ -29,7 +32,14 @@ SKIP_NAME = re.compile(
     r"gold & silver|gold and silver|power station|"
     r"\blateral\b|butane system|refined products system|"
     r"rio tinto|alcan |\bway$|apartments|shopping|mall |housing|"
-    r"exolum",
+    r"exolum|credit union|economy lodge|taproom|barber|salon |"
+    r"hair lounge|hair studio|hair refinery|aesthetics|fitness |"
+    r"kitchen|photo |print refinery|lithium|ethanol plant|"
+    r"precious metal|copper refinery|historic marker|fire depart|"
+    r"campground|maple syrup|computer refinery|dirty hippy|"
+    r"beer refinery|ministry|crossfit|waste facility|"
+    r"historical commission|brownfield|\bcalle |\bavenida |"
+    r"\bcamino |\bprivada |rooftop|emergency services|cogeneration",
     re.I,
 )
 KEEP_NAME = re.compile(
@@ -37,7 +47,9 @@ KEEP_NAME = re.compile(
     r"petroleum|petrobras|exxon|shell |bp |total|sinopec|saudi aramco|"
     r"reliance|valero|marathon|phillips|motiva|citgo|pemex|pdvsa|"
     r"indian oil|hpcl|bpcl|adnoc|kpc |socar|rosneft|lukoil|gazprom|"
-    r"eni |omv |mol |neste|preem|pkn |orlen|hellenic|tupras|socar",
+    r"eni |omv |mol |neste|preem|pkn |orlen|hellenic|tupras|socar|"
+    r"tesoro|flint hills|pbf |delek|countrymark|calcasieu|vertex|"
+    r"par hawaii|hollyfrontier|hf sinclair",
     re.I,
 )
 SLUG_BAD = re.compile(r"[^a-z0-9]+")
@@ -204,6 +216,13 @@ CURATED = [
     ("sapref", "SAPREF", "South Africa", "Africa", -29.97, 30.98, "Shell/BP", "South Durban (SAPREF) refinery."),
     ("omsk", "Omsk Refinery", "Russia", "Russia & CIS", 55.05, 73.32, "Gazprom Neft", "Gazprom Neft Omsk refinery."),
     ("kirishi", "Kirishi Refinery", "Russia", "Russia & CIS", 59.45, 32.02, "Surgutneftegas", "KINEF Kirishi refinery."),
+    # US plants EIA lists that OSM industrial=refinery missed (coords from OSM).
+    ("exxon-beaumont", "ExxonMobil Beaumont Refinery", "United States", "North America", 30.0624, -94.0769, "ExxonMobil", "ExxonMobil Beaumont."),
+    ("marathon-galveston-bay", "Marathon Galveston Bay Refinery", "United States", "North America", 29.376, -94.910, "Marathon Petroleum", "Marathon Galveston Bay (Texas City)."),
+    ("valero-benicia", "Valero Benicia Refinery", "United States", "North America", 38.0724, -122.1377, "Valero", "Valero Benicia."),
+    ("trainer-refinery", "Trainer Refinery", "United States", "North America", 39.8205, -75.4046, "Monroe Energy", "Monroe Energy Trainer."),
+    ("shell-norco", "Norco Refinery", "United States", "North America", 30.0039, -90.4027, "Shell", "Shell Norco."),
+    ("valero-houston-rfy", "Valero Houston Refinery", "United States", "North America", 29.7148, -95.2525, "Valero", "Valero Houston."),
 ]
 
 
@@ -346,6 +365,9 @@ def keep(tags, name):
         return True
     if tags.get("industrial") == "refinery":
         return bool(name)
+    if tags.get("industrial") == "oil":
+        low = name.lower()
+        return bool(name) and ("refin" in low or bool(KEEP_NAME.search(name)))
     # Name-only OSM hits are noisy. Need a real plant name, not "The Refinery".
     if len(name) < 12:
         return False
@@ -409,7 +431,19 @@ def build(payloads):
             )
 
     # Dedup plants mapped twice within ~2.5 km — keep the named longer record.
-    rows.sort(key=lambda r: (-len(r["name"]), r["name"]))
+    rows.sort(
+        key=lambda r: (
+            1
+            if re.search(
+                r"emergency|cogen|pier|credit union|lodge|tank farm|business center",
+                r["name"],
+                re.I,
+            )
+            else 0,
+            -len(r["name"]),
+            r["name"],
+        )
+    )
     kept = []
     for r in rows:
         if any(haversine(r["lat"], r["lon"], k["lat"], k["lon"]) < 2.5 for k in kept):
@@ -459,13 +493,221 @@ def build(payloads):
         used.add(sid)
         r["id"] = sid
         out.append(r)
+    attach_eia(out)
     return out
+
+
+def fetch_eia():
+    if EIA_XLSX.exists() and EIA_XLSX.stat().st_size > 10000:
+        print("using", EIA_XLSX, "bytes", EIA_XLSX.stat().st_size)
+        return
+    print("fetching EIA refcap26.xlsx…")
+    req = urllib.request.Request(EIA_URL, headers={"User-Agent": "BubblinCrude/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        EIA_XLSX.write_bytes(resp.read())
+
+
+def load_eia_operable():
+    try:
+        import openpyxl
+    except ImportError:
+        print("openpyxl missing — skip EIA capacities")
+        return []
+    fetch_eia()
+    wb = openpyxl.load_workbook(EIA_XLSX, data_only=True)
+    ws = wb.active
+    rows = []
+    seen = set()
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        corp, survey, period, company, rdist, state, site, padd, product, supply, qty = row[:11]
+        if product != "TOTAL OPERABLE CAPACITY":
+            continue
+        if "calendar day" not in str(supply or "").lower():
+            continue
+        key = (company, site, state)
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            bcd = int(qty)
+        except (TypeError, ValueError):
+            continue
+        if bcd <= 0:
+            continue
+        rows.append({"company": company or "", "site": site or "", "state": state or "", "bcd": bcd})
+    return rows
+
+
+def _norm(s):
+    s = (s or "").lower().replace("&", " and ")
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _junk_pin(p):
+    blob = (p.get("name") or "") + " " + (p.get("operator") or "")
+    return bool(
+        re.search(
+            r"credit union|lodge |tank farm|pier$|business center|campground|"
+            r"salon|barber|church|ministry|historic|hotel|ethanol|lithium|"
+            r"hair |fitness|taproom|asphalt plant",
+            blob,
+            re.I,
+        )
+    )
+
+
+# EIA site + company token → catalog id. Only when the plant is already on the map.
+EIA_PIN = {
+    ("WHITING", "BP"): "bp-whiting-refinery",
+    ("LINDEN", "PHILLIPS"): "bayway-refinery",
+    ("PORT ARTHUR", "MOTIVA"): "motiva-port-arthur-refinery",
+    ("PORT ARTHUR", "PREMCOR"): "valero-port-arthur-refinery",
+    ("PORT ARTHUR", "TOTAL"): "total-port-arthur-refinery",
+    ("BEAUMONT", "EXXON"): "exxonmobil-beaumont-refinery",
+    ("GALVESTON BAY", "MARATHON"): "marathon-galveston-bay-refinery",
+    ("BENICIA", "VALERO"): "valero-benicia-refinery",
+    ("TRAINER", "MONROE"): "trainer-refinery",
+    ("CARSON", "TESORO"): "tesoro-los-angeles-refinery",
+    ("SAINT PAUL", "FLINT"): "pine-bend-refinery",
+    ("SAINT PAUL", "ST PAUL"): "minnesota-refining-division-st-paul-park-refiner",
+    ("NORCO", "SHELL"): "norco-refinery",
+    ("NORCO", "VALERO"): "st-charles-refinery",
+    ("HOUSTON", "VALERO"): "valero-houston-refinery",
+    ("LAKE CHARLES", "CALCASIEU"): "calcasieu-refining",
+    ("LAKE CHARLES", "CITGO"): "lake-charles-refinery",
+    ("WESTLAKE", "PHILLIPS"): "lake-charles-refinery-2",
+    ("FERNDALE", "BP"): "bp-cherry-point-refinery",
+    ("FERNDALE", "PHILLIPS"): "phillips66-ferndale-refinery",
+    ("SUNRAY", "DIAMOND"): "valero-mckee-refinery",
+    ("ANACORTES", "TESORO"): "marathon-anacortes-refinery",
+    ("ANACORTES", "HF SINCLAIR"): "puget-sound-refinery",
+    ("SALT LAKE CITY", "TESORO"): "salt-lake-city-refinery",
+    ("SALT LAKE CITY", "CHEVRON"): "chevron-salt-lake-refinery",
+    ("WOODS CROSS", "SILVER"): "silver-eagle-woods-cross-refinery",
+    ("PAULSBORO", "PAULSBORO"): "paulsboro-refinery",
+    ("BILLINGS", "EXXON"): "exxonmobile-billings-refinery",
+    ("LAUREL", "CENEX"): "laurel-refinery",
+    ("ARTESIA", "HF SINCLAIR"): "navajo-refinery",
+    ("EL DORADO", "LION"): "lion-oil-company",
+    ("BRADFORD", "AMERICAN"): "american-refining-group-inc",
+    ("WARREN", "UNITED"): "warren-refinery",
+    ("KENAI", "TESORO"): "kenai-refinery",
+    ("THREE RIVERS", "DIAMOND"): "three-rivers-refinery-oil-recieving",
+    ("BIG SPRING", "ALON"): "alon-big-spring-refinery",
+    ("KROTZ SPRINGS", "ALON"): "alon-refining",
+    ("MOUNT VERNON", "COUNTRYMARK"): "countrymark-refinery-2",
+    ("DEER PARK", "DEER"): "pemex-deer-park-refinery",
+    ("EL SEGUNDO", "CHEVRON"): "chevron-el-segundo-refinery",
+    ("BAYTOWN", "EXXON"): "baytown-refinery",
+    ("GARYVILLE", "MARATHON"): "garyville-refinery",
+    ("BATON ROUGE", "EXXON"): "baton-rouge-refinery",
+    ("PASCAGOULA", "CHEVRON"): "pascagoula-refinery",
+    ("WOOD RIVER", "WRB"): "wood-river-refinery",
+    ("CATLETTSBURG", "MARATHON"): "catlettsburg-refinery",
+    ("SWEENY", "PHILLIPS"): "sweeny-refinery",
+    ("JOLIET", "EXXON"): "joliet-refinery",
+    ("RICHMOND", "CHEVRON"): "chevron-richmond-refinery",
+    ("TORRANCE", "TORRANCE"): "torrance-refinery",
+    ("MARTINEZ", "MARTINEZ"): "martinez-refinery",
+    ("WHITING", "BP PRODUCTS"): "bp-whiting-refinery",
+}
+
+
+def _eia_explicit(e, by_id):
+    site = (e["site"] or "").upper()
+    company = (e["company"] or "").upper()
+    for (s, c), pid in EIA_PIN.items():
+        if s == site and c in company:
+            p = by_id.get(pid)
+            if p:
+                return p
+    return None
+
+
+def _eia_score(e, p):
+    if _junk_pin(p):
+        return 0
+    hay = _norm(p.get("name", "") + " " + p.get("operator", ""))
+    site = _norm(e["site"])
+    sc = 0
+    if site and site in hay:
+        sc += 6
+    else:
+        bits = [t for t in site.split() if t not in ("east", "west", "plant", "refinery")]
+        if bits and all(t in hay for t in bits):
+            sc += 4
+        elif any(len(t) >= 4 and t in hay for t in bits):
+            sc += 2
+    company = _norm(e["company"])
+    for token in company.split():
+        if len(token) >= 4 and token in hay:
+            sc += 2
+            break
+    aliases = (
+        ("motiva", "motiva"),
+        ("exxon", "exxon"),
+        ("chevron", "chevron"),
+        ("valero", "valero"),
+        ("premcor", "valero"),
+        ("phillips", "phillips"),
+        ("marathon", "marathon"),
+        ("tesoro", "tesoro"),
+        ("citgo", "citgo"),
+        ("sinclair", "sinclair"),
+        ("flint", "flint"),
+    )
+    for needle, alias in aliases:
+        if needle in company and alias in hay:
+            sc += 2
+            break
+    return sc
+
+
+def attach_eia(rows):
+    plants = load_eia_operable()
+    if not plants:
+        return
+    by_id = {r["id"]: r for r in rows}
+    used = set()
+    matched = 0
+    for e in plants:
+        hit = _eia_explicit(e, by_id)
+        if hit and hit["id"] in used:
+            hit = None
+        if not hit:
+            cands = []
+            for p in rows:
+                if p["id"] in used:
+                    continue
+                sc = _eia_score(e, p)
+                if sc >= 6:
+                    cands.append((sc, p))
+            cands.sort(key=lambda x: -x[0])
+            if cands and (len(cands) == 1 or cands[0][0] > cands[1][0]):
+                hit = cands[0][1]
+        if not hit:
+            continue
+        used.add(hit["id"])
+        kbd = round(e["bcd"] / 1000.0, 1)
+        hit["capacity_kbd"] = kbd
+        hit["country"] = "United States"
+        hit["region"] = "North America"
+        extra = "EIA operable atmospheric crude %s kb/d (Jan 1, 2026, barrels per calendar day)." % (
+            str(int(kbd)) if kbd == int(kbd) else kbd
+        )
+        notes = (hit.get("notes") or "").strip()
+        if "EIA operable" not in notes:
+            hit["notes"] = (notes + " " + extra).strip() if notes else extra
+        matched += 1
+    print("EIA matched", matched, "of", len(plants), "operable US plants")
 
 
 def emit(rows):
     lines = [
         "/* BubblinCrude — crude oil refineries.",
-        "   Places only — no assays. Geography from OpenStreetMap (ODbL).",
+        "   Places from OpenStreetMap (ODbL). US kb/d from EIA-820 (Jan 1, 2026)",
+        "   operable atmospheric crude, barrels per calendar day — not invented.",
         "   Rebuild with scripts/build-refineries.py */",
         "(function (global) {",
         '  "use strict";',
@@ -479,6 +721,7 @@ def emit(rows):
         "        lon: 0,",
         '        operator: "",',
         "        related_ids: [],",
+        "        capacity_kbd: null,",
         '        notes: "",',
         "      },",
         "      o",
@@ -488,8 +731,11 @@ def emit(rows):
         "  const refineries = [",
     ]
     for r in rows:
+        extra = ""
+        if r.get("capacity_kbd") is not None:
+            extra = ", capacity_kbd: %s" % r["capacity_kbd"]
         lines.append(
-            "    R({ id: %s, name: %s, country: %s, region: %s, lat: %s, lon: %s, operator: %s, notes: %s }),"
+            "    R({ id: %s, name: %s, country: %s, region: %s, lat: %s, lon: %s, operator: %s, notes: %s%s }),"
             % (
                 js_str(r["id"]),
                 js_str(r["name"]),
@@ -499,6 +745,7 @@ def emit(rows):
                 r["lon"],
                 js_str(r["operator"]),
                 js_str(r["notes"]),
+                extra,
             )
         )
     lines += [
@@ -517,9 +764,13 @@ def main():
     emit(rows)
     print("wrote", OUT.name, "n=", len(rows))
     by = {}
+    cap = 0
     for r in rows:
         by[r["region"]] = by.get(r["region"], 0) + 1
+        if r.get("capacity_kbd") is not None:
+            cap += 1
     print("by region", by)
+    print("with EIA kb/d", cap)
 
 
 if __name__ == "__main__":

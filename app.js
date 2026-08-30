@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v208";
+  const APP_VERSION = "v209";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -232,6 +232,15 @@
   }
   function sulfurUnit() {
     return state.units.conc === "ppm-s" ? "ppm S" : "wt% S";
+  }
+  function capacityLabel(kbd) {
+    if (kbd == null || kbd === "") return "—";
+    const n = Number(kbd);
+    if (!isFinite(n)) return "—";
+    return n === Math.floor(n) ? String(Math.floor(n)) : fmtNum(n, 1);
+  }
+  function refineryCapBit(s) {
+    return s && s.capacity_kbd != null ? capacityLabel(s.capacity_kbd) + " kb/d" : "";
   }
   function tempLabel(c) {
     if (c == null) return "—";
@@ -1062,7 +1071,7 @@
       : '<button type="button" class="pill pill-compare" data-add="' +
         escapeHtml(key) +
         '">Compare</button>';
-    const meta = [s.operator, s.country].filter(Boolean).join(" · ");
+    const meta = [s.operator, s.country, refineryCapBit(s)].filter(Boolean).join(" · ");
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -2181,11 +2190,24 @@
         '">Compare</button>';
     }
     html += "</div></div>";
+    if (s.capacity_kbd != null) {
+      html += '<div class="quality-strip">';
+      html += metricTile(
+        "Capacity",
+        capacityLabel(s.capacity_kbd),
+        "kb/d",
+        "mute",
+        "capacity"
+      );
+      html += "</div>";
+    }
     if (s.notes) {
       html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
     }
-    html +=
-      '<p class="insp-blurb" style="color:var(--text-mute)">Place only — no assay. Capacity is omitted until a published figure is on the record.</p>';
+    if (s.capacity_kbd == null) {
+      html +=
+        '<p class="insp-blurb" style="color:var(--text-mute)">Place only — no assay. Capacity is omitted until a published figure is on the record.</p>';
+    }
     return html;
   }
 
@@ -2455,7 +2477,7 @@
       return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, pale loading, teal blend.";
     }
     if (state.layer === "refineries") {
-      return "Refineries are the plants that turn crude into products. Place only — no assay, no invented capacity. Violet dots.";
+      return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026 — not invented. Other plants have no published figure here.";
     }
     if (state.colorMode === "sulfur") {
       return "Sweet is ≤ 0.5 wt% S. The ramp runs 0% to 3%+. Grey means no sulfur in the record.";
@@ -2559,7 +2581,7 @@
       } else if (state.layer === "hubs") {
         meta = [s.country, s.role].filter(Boolean).join(" · ");
       } else if (state.layer === "refineries") {
-        meta = [s.country, s.operator].filter(Boolean).join(" · ") || "refinery";
+        meta = [s.country, s.operator, refineryCapBit(s)].filter(Boolean).join(" · ") || "refinery";
       } else {
         meta =
           s.country +
@@ -2701,7 +2723,9 @@
         '<div style="margin-top:8px;font-family:var(--mono);font-size:13px">' +
         (p.kind === "refinery"
           ? "refinery · " +
-            escapeHtml([s.country, s.operator].filter(Boolean).join(" · "))
+            escapeHtml(
+              [s.country, s.operator, refineryCapBit(s)].filter(Boolean).join(" · ")
+            )
           : p.kind === "hub"
             ? "hub · " +
               escapeHtml([s.country, s.role].filter(Boolean).join(" · "))
@@ -3156,7 +3180,8 @@
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
       "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point on the Hubs map layer (Cushing, LOOP, Rotterdam). Geography and role — not an assay.</dd>" +
-      "<dt>Refinery</dt><dd>A plant that turns crude into products. The Refineries map layer is place, operator, and notes — not an assay, and not an invented capacity.</dd>" +
+      "<dt>Refinery</dt><dd>A plant that turns crude into products. The Refineries map layer is place, operator, and notes — not an assay. US plants may show published EIA atmospheric crude capacity (kb/d).</dd>" +
+      '<dt id="g-capacity">Capacity (kb/d)</dt><dd>Operable atmospheric crude distillation, thousand barrels per calendar day. US figures are EIA Form EIA-820 as of January 1, 2026. Omitted when no published number is on the record — not invented.</dd>' +
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>" +
       "<dt>Play</dt><dd>A repeatable exploration/development concept within a basin (Eagle Ford shale, Bakken, Vaca Muerta).</dd>" +
@@ -3183,7 +3208,7 @@
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
       '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint stream and site pins on a continuous ramp by API or sulfur — the scale sits under the map buttons. Hub pins are painted by commercial role. Refinery pins are a single plant color — place, not assay.</p></div>' +
-      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps. Refinery locations are from OpenStreetMap (ODbL) plus a short curated list of well-known plants OSM missed.</p></div>' +
+      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps. Refinery locations are from OpenStreetMap (ODbL) plus a short curated list of well-known plants OSM missed. US refinery kb/d is EIA Refinery Capacity Report (Form EIA-820), operable atmospheric crude as of January 1, 2026.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
   }
@@ -3260,8 +3285,11 @@
                 ? " · " + escapeHtml(item.s.role)
                 : ""
               : item.kind === "refinery"
-                ? item.s.operator
-                  ? " · " + escapeHtml(item.s.operator)
+                ? [item.s.operator, refineryCapBit(item.s)].filter(Boolean).length
+                  ? " · " +
+                    escapeHtml(
+                      [item.s.operator, refineryCapBit(item.s)].filter(Boolean).join(" · ")
+                    )
                   : ""
                 : " · " +
                   densityLabel(item.s.api) +
