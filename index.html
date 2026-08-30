@@ -96,7 +96,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=157" />
+  <link rel="stylesheet" href="styles.css?v=158" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -106,42 +106,44 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <span class="brand-ver" id="app-version">v157</span>
+          <span class="brand-ver" id="app-version">v158</span>
         </div>
         <p class="brand-sub brand-sub-text">Global crude streams — filter, analyze, compare</p>
       </div>
 
-      <nav class="topbar-nav" aria-label="Primary">
-        <a href="/" data-nav="home" class="nav-link is-active">Crudes</a>
-        <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
-        <a href="/molecules" data-nav="molecules" class="nav-link">Molecules</a>
-        <a href="/about" data-nav="about" class="nav-link">About</a>
-        <button type="button" class="nav-link" id="btn-units" aria-haspopup="true" aria-expanded="false">
-          Units
-        </button>
-      </nav>
-
-      <div class="topbar-tools" role="toolbar" aria-label="Map tools">
-        <div class="layer-toggle" role="group" aria-label="Map layer">
-          <button type="button" class="color-btn" data-layer="streams" aria-pressed="true">Streams</button>
-          <button type="button" class="color-btn" data-layer="sites" aria-pressed="false">Sites</button>
-        </div>
-        <div class="color-toggle" role="group" aria-label="Map color mode">
-          <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
-          <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
-          <button
-            type="button"
-            class="color-help"
-            id="btn-legend-help"
-            aria-expanded="false"
-            aria-controls="legend-scale"
-            title="Color scale"
-          >
-            ?
+      <div class="topbar-chrome">
+        <nav class="topbar-nav" aria-label="Primary">
+          <a href="/" data-nav="home" class="nav-link is-active">Crudes</a>
+          <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
+          <a href="/molecules" data-nav="molecules" class="nav-link">Molecules</a>
+          <a href="/about" data-nav="about" class="nav-link">About</a>
+          <button type="button" class="nav-link" id="btn-units" aria-haspopup="true" aria-expanded="false">
+            Units
           </button>
+        </nav>
+
+        <div class="topbar-tools" role="toolbar" aria-label="Map tools">
+          <div class="layer-toggle" role="group" aria-label="Map layer">
+            <button type="button" class="color-btn" data-layer="streams" aria-pressed="true">Streams</button>
+            <button type="button" class="color-btn" data-layer="sites" aria-pressed="false">Sites</button>
+          </div>
+          <div class="color-toggle" role="group" aria-label="Map color mode">
+            <button type="button" class="color-btn" data-color="api" aria-pressed="true">API</button>
+            <button type="button" class="color-btn" data-color="sulfur" aria-pressed="false">S</button>
+            <button
+              type="button"
+              class="color-help"
+              id="btn-legend-help"
+              aria-expanded="false"
+              aria-controls="legend-scale"
+              title="Color scale"
+            >
+              ?
+            </button>
+          </div>
+          <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
+          <div class="legend-pop hidden" id="legend-scale" role="status"></div>
         </div>
-        <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
-        <div class="legend-pop hidden" id="legend-scale" role="status"></div>
       </div>
     </header>
 
@@ -321,9 +323,9 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=157"></script>
-  <script src="sites.js?v=157"></script>
-  <script src="app.js?v=157"></script>
+  <script src="data.js?v=158"></script>
+  <script src="sites.js?v=158"></script>
+  <script src="app.js?v=158"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -334,7 +336,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v157";
+    var EXPECTED = "v158";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

@@ -27,7 +27,7 @@
   --condensate: #9bf0e8;
   --font: "IBM Plex Sans", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
-  --topbar-h: 52px;
+  --topbar-h: 72px;
   --filters-w: 260px;
   --inspector-w: 340px;
   --radius: 8px;
@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 157;
+  --bc-css: 158;
   --vv-top: 0px;
   --vv-left: 0px;
   --vv-w: 100%;
@@ -151,14 +151,13 @@ html.pwa-standalone .app {
 .topbar {
   flex: 0 0 auto;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px 14px;
+  gap: 6px;
   min-height: var(--topbar-h);
   padding: calc(4px + env(safe-area-inset-top, 0px))
-    calc(16px + env(safe-area-inset-right, 0px)) 6px
+    calc(16px + env(safe-area-inset-right, 0px)) 8px
     calc(16px + env(safe-area-inset-left, 0px));
   border-bottom: 1px solid var(--border);
   background: var(--bg-panel);
@@ -168,15 +167,15 @@ html.pwa-standalone .app {
 .topbar-title {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
+  text-align: center;
   min-width: 0;
 }
 
 .brand-line {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 8px;
   min-width: 0;
 }
@@ -186,10 +185,10 @@ html.pwa-standalone .app {
 .brand-title {
   margin: 0;
   font-family: Michroma, "IBM Plex Sans", system-ui, sans-serif;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.02em;
-  line-height: 24px;
+  line-height: 28px;
   white-space: nowrap;
   text-transform: none;
 }
@@ -214,6 +213,16 @@ html.pwa-standalone .app {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 10px;
   line-height: 14px;
+}
+
+.topbar-chrome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .topbar-row {
@@ -2143,8 +2152,8 @@ html.pwa-standalone:not(.app-home) .view-page {
       calc(10px + env(safe-area-inset-left, 0px));
   }
   .brand-title {
-    font-size: 20px;
-    line-height: 22px;
+    font-size: 22px;
+    line-height: 24px;
   }
   .topbar-row {
     flex-wrap: wrap;
