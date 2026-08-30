@@ -36,7 +36,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 172;
+  --bc-css: 173;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -197,18 +197,6 @@ html.pwa-standalone .app {
   line-height: 14px;
   color: var(--text-mute);
   white-space: nowrap;
-}
-
-.brand-ver {
-  flex: 0 0 auto;
-  height: 14px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--teal-dim);
-  color: var(--teal);
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 10px;
-  line-height: 14px;
 }
 
 .topbar-chrome {
@@ -2020,8 +2008,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   .home-search {
     border-right: none;
   }
-  /* Hide the tagline, never the version badge — the badge is most needed on
-     phones, which is exactly where this breakpoint applies. */
   .brand-sub-text {
     display: none;
   }

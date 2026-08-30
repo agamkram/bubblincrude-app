@@ -2,8 +2,7 @@
 """Bump the app version everywhere at once.
 
 The version lives in four files and they must agree. If they drift, the app
-either self-heals in a loop or reports a version that is not what loaded —
-which defeats the whole point of having a badge you can trust.
+self-heals or serves mixed assets — which defeats cache-busting.
 
 Usage:
     scripts/bump-version.py          # next version (v6 -> v7)
@@ -23,7 +22,6 @@ CSS = ROOT / "styles.css"
 # name -> (file, pattern with one capture group for the number, template)
 SPOTS = {
     "index asset ?v=": (INDEX, r"\?v=(\d+)", "?v={n}"),
-    "index badge text": (INDEX, r'(?<=id="app-version">)v(\d+)', "v{n}"),
     "index EXPECTED": (INDEX, r'var EXPECTED = "v(\d+)"', 'var EXPECTED = "v{n}"'),
     "app APP_VERSION": (APP, r'const APP_VERSION = "v(\d+)"', 'const APP_VERSION = "v{n}"'),
     "sw CACHE": (SW, r'const CACHE = "bubblincrude-v(\d+)"', 'const CACHE = "bubblincrude-v{n}"'),
