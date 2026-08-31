@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v232";
+  const APP_VERSION = "v233";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -3162,6 +3162,18 @@
     scrollToHashTarget();
   }
 
+  function productBarrelRank(p) {
+    return p && p.rank != null ? p.rank : 9999;
+  }
+
+  function sortProductsByBarrel(list) {
+    return list.slice().sort((a, b) => {
+      const d = productBarrelRank(a) - productBarrelRank(b);
+      if (d) return d;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+  }
+
   function renderProducts() {
     const groups = [
       { id: "all", label: "All" },
@@ -3188,13 +3200,20 @@
         lead: "Recovered value from treating — sulfur sold to fertilizer plants, hydrogen that cleans the rest of the slate.",
       },
     };
+    const groupLabel = {
+      fuels: "Fuel",
+      chemicals: "Chemical",
+      materials: "Material",
+      byproducts: "Byproduct",
+    };
     const active = state.productGroup || "all";
     const all = DATA.products || [];
-    const list =
-      active === "all" ? all.slice() : all.filter((p) => p.group === active);
+    const list = sortProductsByBarrel(
+      active === "all" ? all.slice() : all.filter((p) => p.group === active)
+    );
 
     let html =
-      '<h2 class="page-title">Products</h2><p class="page-lead">The hydrocarbon barrel is not taken to the dump — it is sold, burned for plant heat, or upgraded. <strong>Cuts</strong> are how the still slices the oil; <strong>Products</strong> are what the world takes away: fuels, chemicals, asphalt, coke, wax, sulfur. Each card names a market, what you already know it as, which cuts feed it, and one signature molecule for teaching — not a full chemical catalog.</p>';
+      '<h2 class="page-title">Products</h2><p class="page-lead">The hydrocarbon barrel is not taken to the dump — it is sold, burned for plant heat, or upgraded. <strong>Cuts</strong> are how the still slices the oil; <strong>Products</strong> are what the world takes away. The <strong>All</strong> list reads light → heavy like the tower (fuel gas and treating recoveries at the top; asphalt and coke at the bottom). Filters regroup by market. Each card names a market, what you already know it as, which cuts feed it, and one signature molecule for teaching.</p>';
     html += '<div class="prod-filters" role="toolbar" aria-label="Product groups">';
     for (const g of groups) {
       html +=
@@ -3210,23 +3229,21 @@
     }
     html += "</div>";
 
-    const order = ["fuels", "chemicals", "materials", "byproducts"];
-    const byGroup = {};
-    for (const p of list) {
-      const g = p.group || "fuels";
-      if (!byGroup[g]) byGroup[g] = [];
-      byGroup[g].push(p);
-    }
-
-    for (const gid of order) {
-      const rows = byGroup[gid];
-      if (!rows || !rows.length) continue;
-      const meta = groupMeta[gid];
-      html += '<section class="prod-section">';
-      html += '<h3 class="prod-section-title">' + escapeHtml(meta.title) + "</h3>";
-      html += '<p class="prod-section-lead">' + escapeHtml(meta.lead) + "</p>";
+    if (active === "all") {
+      html +=
+        '<p class="prod-section-lead">Light end and recovered treating products first; vacuum bottoms last — the whole barrel, top to bottom.</p>';
       html += '<div class="prod-grid">';
-      for (const p of rows) html += productCardHtml(p);
+      for (const p of list) html += productCardHtml(p, { showGroup: true, groupLabel });
+      html += "</div>";
+    } else {
+      const meta = groupMeta[active];
+      html += '<section class="prod-section">';
+      if (meta) {
+        html += '<h3 class="prod-section-title">' + escapeHtml(meta.title) + "</h3>";
+        html += '<p class="prod-section-lead">' + escapeHtml(meta.lead) + "</p>";
+      }
+      html += '<div class="prod-grid">';
+      for (const p of list) html += productCardHtml(p, { showGroup: false, groupLabel });
       html += "</div></section>";
     }
 
@@ -3244,7 +3261,8 @@
     scrollToHashTarget();
   }
 
-  function productCardHtml(p) {
+  function productCardHtml(p, opts) {
+    const options = opts || {};
     let html = '<article class="prod-card" id="product-' + escapeHtml(p.id) + '">';
     html += '<div class="prod-card-top">';
     html += "<h4>" + escapeHtml(p.name) + "</h4>";
@@ -3252,6 +3270,12 @@
       html += '<div class="prod-market">' + escapeHtml(p.market) + "</div>";
     }
     html += "</div>";
+    if (options.showGroup && p.group) {
+      const gl =
+        (options.groupLabel && options.groupLabel[p.group]) || p.group;
+      html +=
+        '<div class="prod-group-chip">' + escapeHtml(gl) + "</div>";
+    }
     if (p.blurb) html += '<p class="prod-blurb">' + escapeHtml(p.blurb) + "</p>";
 
     if (p.you_know && p.you_know.length) {

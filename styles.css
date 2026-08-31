@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 232;
+  --bc-css: 233;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1925,6 +1925,19 @@ button.pill {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
+}
+.prod-group-chip {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text-mute);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .prod-card h4 {
   margin: 0;
