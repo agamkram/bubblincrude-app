@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v233";
+  const APP_VERSION = "v239";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -180,6 +180,7 @@
     el.inspectorEmpty = $("inspector-empty");
     el.inspectorBody = $("inspector-body");
     el.trayChips = $("tray-chips");
+    el.btnAddStream = $("btn-add-stream");
     el.btnOpenCompare = $("btn-open-compare");
     el.unitsPopover = $("units-popover");
     el.viewHome = $("view-home");
@@ -1001,12 +1002,7 @@
     if (ac) pills.push(apiClassLabel(ac));
     pills.push(isSweet(s) ? "Sweet" : s.sulfur_wt != null ? "Sour" : "—");
     const key = pinKey("stream", s.id);
-    const inTray = state.compareIds.includes(key);
-    const action = inTray
-      ? '<span class="pill pill-compare is-done">In tray</span>'
-      : '<button type="button" class="pill pill-compare" data-add="' +
-        escapeHtml(key) +
-        '">Compare</button>';
+    const action = compareActionHtml(key);
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -1039,12 +1035,7 @@
     if (s.api != null) metaBits.push(densityLabel(s.api) + " " + densityUnit());
     if (s.sulfur_wt != null) metaBits.push(sulfurLabel(s.sulfur_wt) + " " + sulfurUnit());
     const key = pinKey("site", s.id);
-    const inTray = state.compareIds.includes(key);
-    const action = inTray
-      ? '<span class="pill pill-compare is-done">In tray</span>'
-      : '<button type="button" class="pill pill-compare" data-add="' +
-        escapeHtml(key) +
-        '">Compare</button>';
+    const action = compareActionHtml(key);
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -1061,12 +1052,7 @@
 
   function tipHtmlHub(s) {
     const key = pinKey("hub", s.id);
-    const inTray = state.compareIds.includes(key);
-    const action = inTray
-      ? '<span class="pill pill-compare is-done">In tray</span>'
-      : '<button type="button" class="pill pill-compare" data-add="' +
-        escapeHtml(key) +
-        '">Compare</button>';
+    const action = compareActionHtml(key);
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -1085,12 +1071,7 @@
 
   function tipHtmlRefinery(s) {
     const key = pinKey("refinery", s.id);
-    const inTray = state.compareIds.includes(key);
-    const action = inTray
-      ? '<span class="pill pill-compare is-done">In tray</span>'
-      : '<button type="button" class="pill pill-compare" data-add="' +
-        escapeHtml(key) +
-        '">Compare</button>';
+    const action = compareActionHtml(key);
     const meta = [s.operator, s.country, refineryCapBit(s)].filter(Boolean).join(" · ");
     return (
       '<div class="tip-name">' +
@@ -1493,17 +1474,51 @@
   }
 
   /* —— Compare —— */
+  function comparePlaceBit(s, kind) {
+    if (!s) return "";
+    if (kind === "hub") {
+      return [s.country, s.role].filter(Boolean).join(" · ");
+    }
+    if (kind === "refinery") {
+      return [s.country, s.operator, refineryCapBit(s)].filter(Boolean).join(" · ");
+    }
+    if (kind === "site") {
+      return [s.basin || s.country, s.kind].filter(Boolean).join(" · ");
+    }
+    return s.basin || s.country || "";
+  }
+
   function addToCompare(id) {
     if (state.compareIds.includes(id)) return;
-    if (state.compareIds.length >= 3) {
-      state.compareIds.shift();
-    }
+    if (state.compareIds.length >= 3) return;
     state.compareIds.push(id);
     saveStorage();
     if (state.route === "home") history.replaceState(null, "", buildUrl());
     renderTray();
     renderInspector();
     updateMarkers();
+  }
+
+  function compareTrayFull() {
+    return state.compareIds.length >= 3;
+  }
+
+  /** Compare / In tray / Tray full pill for tips + inspector. */
+  function compareActionHtml(key, attr) {
+    attr = attr || "data-add";
+    if (state.compareIds.includes(key)) {
+      return '<span class="pill pill-compare is-done">In tray</span>';
+    }
+    if (compareTrayFull()) {
+      return '<span class="pill pill-compare is-done">Tray full</span>';
+    }
+    return (
+      '<button type="button" class="pill pill-compare" ' +
+      attr +
+      '="' +
+      escapeHtml(key) +
+      '">Compare</button>'
+    );
   }
 
   function removeFromCompare(id) {
@@ -1642,15 +1657,7 @@
       escapeHtml(s.basin) +
       "</p>";
     html += '<div class="pill-row">' + pillsFor(s);
-    const streamKey = pinKey("stream", s.id);
-    if (state.compareIds.includes(streamKey)) {
-      html += '<span class="pill pill-compare is-done">In tray</span>';
-    } else {
-      html +=
-        '<button type="button" class="pill pill-compare" data-compare-add="' +
-        escapeHtml(streamKey) +
-        '">Compare</button>';
-    }
+    html += compareActionHtml(pinKey("stream", s.id), "data-compare-add");
     html += "</div>";
     html += '<div class="insp-meta-row">';
     if (s.year) html += "<span>Sample year " + escapeHtml(String(s.year)) + "</span>";
@@ -2104,15 +2111,7 @@
       escapeHtml([s.country, s.basin, s.region].filter(Boolean).join(" · ")) +
       "</p>";
     html += '<div class="pill-row">' + pills.join("");
-    const siteKey = pinKey("site", s.id);
-    if (state.compareIds.includes(siteKey)) {
-      html += '<span class="pill pill-compare is-done">In tray</span>';
-    } else {
-      html +=
-        '<button type="button" class="pill pill-compare" data-compare-add="' +
-        escapeHtml(siteKey) +
-        '">Compare</button>';
-    }
+    html += compareActionHtml(pinKey("site", s.id), "data-compare-add");
     html += "</div></div>";
     if (s.notes) {
       html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
@@ -2185,15 +2184,7 @@
     if (s.role) {
       html += '<span class="pill pill-kind">' + escapeHtml(s.role) + "</span>";
     }
-    const hubKey = pinKey("hub", s.id);
-    if (state.compareIds.includes(hubKey)) {
-      html += '<span class="pill pill-compare is-done">In tray</span>';
-    } else {
-      html +=
-        '<button type="button" class="pill pill-compare" data-compare-add="' +
-        escapeHtml(hubKey) +
-        '">Compare</button>';
-    }
+    html += compareActionHtml(pinKey("hub", s.id), "data-compare-add");
     html += "</div></div>";
     if (s.notes) {
       html += '<p class="insp-blurb">' + escapeHtml(s.notes) + "</p>";
@@ -2244,15 +2235,7 @@
     if (s.operator) {
       html += '<span class="pill pill-kind">' + escapeHtml(s.operator) + "</span>";
     }
-    const plantKey = pinKey("refinery", s.id);
-    if (state.compareIds.includes(plantKey)) {
-      html += '<span class="pill pill-compare is-done">In tray</span>';
-    } else {
-      html +=
-        '<button type="button" class="pill pill-compare" data-compare-add="' +
-        escapeHtml(plantKey) +
-        '">Compare</button>';
-    }
+    html += compareActionHtml(pinKey("refinery", s.id), "data-compare-add");
     html += "</div></div>";
     if (s.capacity_kbd != null) {
       html += '<div class="quality-strip">';
@@ -2362,6 +2345,12 @@
       btn.addEventListener("click", () => removeFromCompare(btn.getAttribute("data-rm")));
     });
     el.btnOpenCompare.disabled = state.compareIds.length < 2;
+    if (el.btnAddStream) {
+      el.btnAddStream.disabled = compareTrayFull();
+      el.btnAddStream.title = compareTrayFull()
+        ? "Tray full — remove one to add another"
+        : "Add to compare";
+    }
   }
 
   function renderActiveChips() {
@@ -2794,7 +2783,7 @@
     const pins = state.compareIds
       .map((key) => {
         const s = getComparePin(key);
-        return s ? { s, kind: parsePinKey(key).kind } : null;
+        return s ? { s, kind: parsePinKey(key).kind, key: key } : null;
       })
       .filter(Boolean);
     const streams = pins.map((p) => p.s);
@@ -2804,31 +2793,51 @@
       return;
     }
 
+    const trayFull = compareTrayFull();
     let html = '<div class="compare-head">';
-    html += "<div><h2>Compare</h2><p style=\"margin:4px 0 0;color:var(--text-dim);font-size:13px\">";
-    html += streams.map((s) => escapeHtml(s.name)).join(" · ");
-    html += '</p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
-    html += '<button type="button" class="btn btn-ghost" id="cmp-add">+ Add</button>';
+    html += "<div><h2>Compare</h2>";
+    html += '<div class="compare-sel-chips">';
+    state.compareIds.forEach((key, i) => {
+      const s = getComparePin(key);
+      if (!s) return;
+      html +=
+        '<div class="compare-sel-chip"><span class="swatch-dot" style="background:' +
+        COMPARE_COLORS[i % COMPARE_COLORS.length] +
+        '"></span><span class="name">' +
+        escapeHtml(s.name) +
+        '</span><button type="button" class="rm" data-rm="' +
+        escapeHtml(key) +
+        '" aria-label="Remove ' +
+        escapeHtml(s.name) +
+        '">×</button></div>';
+    });
+    html += "</div></div>";
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    html +=
+      '<button type="button" class="btn btn-ghost" id="cmp-add"' +
+      (trayFull ? " disabled title=\"Tray full — remove one to add another\"" : "") +
+      ">+ Add</button>";
     html += '<a class="btn btn-ghost" href="/">Back to map</a></div></div>';
 
     html += '<div class="stream-cards-swipe">';
     pins.forEach((p, i) => {
       const s = p.s;
+      const place = comparePlaceBit(s, p.kind);
       html +=
         '<div class="swipe-card"><div class="swatch-item"><span class="swatch-dot" style="background:' +
         COMPARE_COLORS[i] +
         '"></span><strong>' +
         escapeHtml(s.name) +
-        "</strong></div>" +
+        '</strong><button type="button" class="rm compare-card-rm" data-rm="' +
+        escapeHtml(p.key) +
+        '" aria-label="Remove ' +
+        escapeHtml(s.name) +
+        '">×</button></div>' +
         '<div style="margin-top:8px;font-family:var(--mono);font-size:13px">' +
         (p.kind === "refinery"
-          ? "refinery · " +
-            escapeHtml(
-              [s.country, s.operator, refineryCapBit(s)].filter(Boolean).join(" · ")
-            )
+          ? "refinery" + (place ? " · " + escapeHtml(place) : "")
           : p.kind === "hub"
-            ? "hub · " +
-              escapeHtml([s.country, s.role].filter(Boolean).join(" · "))
+            ? "hub" + (place ? " · " + escapeHtml(place) : "")
             : (p.kind === "site" ? "site · " : "") +
               densityLabel(s.api) +
               " " +
@@ -2844,24 +2853,126 @@
     html += '<div class="compare-grid">';
     html += '<div class="compare-card"><h3>Origin locator</h3><div id="origin-map" class="origin-map"></div>';
     html += '<div class="compare-stream-swatches" style="margin-top:10px">';
-    streams.forEach((s, i) => {
+    pins.forEach((p, i) => {
+      const place = comparePlaceBit(p.s, p.kind);
       html +=
         '<div class="swatch-item"><span class="swatch-dot" style="background:' +
         COMPARE_COLORS[i] +
         '"></span>' +
-        escapeHtml(s.name) +
-        " · " +
-        escapeHtml(s.basin) +
-        "</div>";
+        escapeHtml(p.s.name) +
+        (place ? " · " + escapeHtml(place) : "") +
+        '<button type="button" class="rm compare-swatch-rm" data-rm="' +
+        escapeHtml(p.key) +
+        '" aria-label="Remove ' +
+        escapeHtml(p.s.name) +
+        '">×</button></div>';
     });
     html += "</div></div>";
 
-    html += '<div class="compare-card"><h3>Shared metrics</h3><div class="metric-bars">';
-    html += metricBarsBlock(streams, "api", "API gravity", (s) => s.api, (v) => densityLabel(v), densityUnit());
-    html += metricBarsBlock(streams, "sulfur", "Sulfur", (s) => s.sulfur_wt, (v) => sulfurLabel(v), sulfurUnit());
-    html += metricBarsBlock(streams, "resid", "Vacuum resid", (s) => s.resid_wt, (v) => fmtNum(v, 0), "wt%");
-    html += metricBarsBlock(streams, "v", "Vanadium", (s) => s.v_ppm, (v) => fmtNum(v, 0), "ppm");
-    html += "</div></div>";
+    const hasAssayPin = pins.some((p) => p.kind === "stream" || p.kind === "site");
+    const hasHubPin = pins.some((p) => p.kind === "hub");
+    const hasRefPin = pins.some((p) => p.kind === "refinery");
+    let metricsHtml = "";
+    if (hasAssayPin) {
+      metricsHtml += metricBarsBlock(
+        streams,
+        "api",
+        "API gravity",
+        (s, i) =>
+          pins[i].kind === "stream" || pins[i].kind === "site" ? s.api : null,
+        (v) => densityLabel(v),
+        densityUnit()
+      );
+      metricsHtml += metricBarsBlock(
+        streams,
+        "sulfur",
+        "Sulfur",
+        (s, i) =>
+          pins[i].kind === "stream" || pins[i].kind === "site" ? s.sulfur_wt : null,
+        (v) => sulfurLabel(v),
+        sulfurUnit()
+      );
+      /* Four-bin assay slate (same as inspector thermo) — Lights was only
+         naphtha+middle; show the full barrel split when comparing streams. */
+      const yieldBins = [
+        { key: "naphtha", label: "Naphtha" },
+        { key: "middle", label: "Middle distillate" },
+        { key: "vgo", label: "Gas oil / VGO" },
+        { key: "resid", label: "Resid" },
+      ];
+      for (const bin of yieldBins) {
+        metricsHtml += metricBarsBlock(
+          streams,
+          "y-" + bin.key,
+          bin.label,
+          (s, i) =>
+            pins[i].kind === "stream" && s.yields && s.yields[bin.key] != null
+              ? s.yields[bin.key]
+              : null,
+          (v) => fmtNum(v, 0),
+          "wt%"
+        );
+      }
+      metricsHtml += metricBarsBlock(
+        streams,
+        "resid",
+        "Vacuum resid",
+        (s, i) => (pins[i].kind === "stream" ? s.resid_wt : null),
+        (v) => fmtNum(v, 0),
+        "wt%"
+      );
+      metricsHtml += metricBarsBlock(
+        streams,
+        "v",
+        "Vanadium",
+        (s, i) => (pins[i].kind === "stream" ? s.v_ppm : null),
+        (v) => fmtNum(v, 0),
+        "ppm"
+      );
+    }
+    if (hasHubPin) {
+      metricsHtml += metricBarsBlock(
+        streams,
+        "related",
+        "Related streams",
+        (s, i) =>
+          pins[i].kind === "hub" && Array.isArray(s.related_ids)
+            ? s.related_ids.length
+            : null,
+        (v) => String(v),
+        "count"
+      );
+      const hubRoles = pins.filter((p) => p.kind === "hub" && p.s.role);
+      if (hubRoles.length) {
+        metricsHtml += '<div class="mb-group"><div class="mb-label">Hub role</div>';
+        pins.forEach((p, i) => {
+          if (p.kind !== "hub") return;
+          metricsHtml +=
+            '<div class="mb-row"><div class="mb-name">' +
+            escapeHtml(p.s.name) +
+            '</div><div class="mb-track mb-track-text"></div><div class="mb-val">' +
+            escapeHtml(p.s.role || "—") +
+            "</div></div>";
+        });
+        metricsHtml += "</div>";
+      }
+    }
+    if (hasRefPin) {
+      metricsHtml += metricBarsBlock(
+        streams,
+        "capacity",
+        "Capacity",
+        (s, i) => (pins[i].kind === "refinery" ? s.capacity_kbd : null),
+        (v) => capacityLabel(v),
+        "kb/d"
+      );
+    }
+    if (metricsHtml) {
+      html +=
+        '<div class="compare-card"><h3>Shared metrics</h3><div class="metric-bars">' +
+        metricsHtml +
+        "</div></div>";
+    }
 
     const withTbp = streams.filter((s) => s.distillation_curve && s.distillation_curve.length);
     if (withTbp.length) {
@@ -2885,7 +2996,11 @@
     html += '<p class="contrast-sentence">' + escapeHtml(contrastSentence(streams)) + "</p>";
 
     el.viewCompare.innerHTML = html;
-    $("cmp-add")?.addEventListener("click", openPicker);
+    const cmpAdd = $("cmp-add");
+    if (cmpAdd && !trayFull) cmpAdd.addEventListener("click", openPicker);
+    el.viewCompare.querySelectorAll("[data-rm]").forEach((btn) => {
+      btn.addEventListener("click", () => removeFromCompare(btn.getAttribute("data-rm")));
+    });
     setTimeout(() => {
       initOriginMap(streams);
       drawTbp(streams);
@@ -2893,12 +3008,19 @@
   }
 
   function metricBarsBlock(streams, key, label, getter, formatter, unit) {
-    const vals = streams.map((s) => ({ s, v: getter(s) })).filter((x) => x.v != null);
+    const vals = streams
+      .map((s, i) => ({ s, i, v: getter(s, i) }))
+      .filter((x) => x.v != null);
     if (!vals.length) return "";
     const max = Math.max(...vals.map((x) => x.v), 0.0001);
-    let html = '<div class="mb-group"><div class="mb-label">' + escapeHtml(label) + " (" + escapeHtml(unit) + ")</div>";
+    let html =
+      '<div class="mb-group"><div class="mb-label">' +
+      escapeHtml(label) +
+      " (" +
+      escapeHtml(unit) +
+      ")</div>";
     streams.forEach((s, i) => {
-      const v = getter(s);
+      const v = getter(s, i);
       if (v == null) {
         html +=
           '<div class="mb-row"><div class="mb-name">' +
@@ -3007,6 +3129,50 @@
     return sentence;
   }
 
+  /* Coincident compare pins (Hardisty / Guyana hubs, etc.): fan them in
+     pixel space so they stay readable at world zoom. */
+  function originStackLayout(streams) {
+    const buckets = new Map();
+    streams.forEach((s, i) => {
+      const k = Number(s.lat).toFixed(2) + "," + Number(s.lon).toFixed(2);
+      if (!buckets.has(k)) buckets.set(k, []);
+      buckets.get(k).push(i);
+    });
+    const layout = streams.map(() => ({ ox: 0, oy: 0, n: 1, slot: 0 }));
+    buckets.forEach((idxs) => {
+      if (idxs.length < 2) return;
+      idxs.forEach((i, slot) => {
+        const ang = (2 * Math.PI * slot) / idxs.length - Math.PI / 2;
+        layout[i] = {
+          ox: Math.round(11 * Math.cos(ang)),
+          oy: Math.round(11 * Math.sin(ang)),
+          n: idxs.length,
+          slot: slot,
+        };
+      });
+    });
+    return layout;
+  }
+
+  function originPinIcon(i, color, lay) {
+    const num = i + 1;
+    return L.divIcon({
+      className: "origin-marker-hit",
+      html:
+        '<div class="origin-marker" style="background:' +
+        color +
+        ";transform:translate(" +
+        lay.ox +
+        "px," +
+        lay.oy +
+        'px)">' +
+        num +
+        "</div>",
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    });
+  }
+
   function initOriginMap(streams) {
     const node = $("origin-map");
     if (!node || !window.L) return;
@@ -3015,36 +3181,35 @@
       state.originMap = null;
     }
     const map = L.map(node, {
-      zoomControl: false,
+      zoomControl: true,
       attributionControl: false,
-      dragging: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
+      dragging: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
       boxZoom: false,
       keyboard: false,
+      minZoom: 1,
+      maxZoom: 8,
+      worldCopyJump: true,
     });
     L.tileLayer(MAP_TILE_URL, {
       attribution: MAP_TILE_ATTR,
       subdomains: "abcd",
     }).addTo(map);
-    const latlngs = [];
+    /* Always start world-full — close hubs used to fitBounds into empty ocean. */
+    map.setView([20, 0], 1);
+    const layout = originStackLayout(streams);
     streams.forEach((s, i) => {
-      const ll = [s.lat, s.lon];
-      latlngs.push(ll);
-      L.circleMarker(ll, {
-        radius: 8,
-        color: COMPARE_COLORS[i],
-        fillColor: COMPARE_COLORS[i],
-        fillOpacity: 0.9,
-        weight: 2,
+      if (s.lat == null || s.lon == null) return;
+      L.marker([s.lat, s.lon], {
+        icon: originPinIcon(i, COMPARE_COLORS[i % COMPARE_COLORS.length], layout[i]),
+        keyboard: false,
       })
-        .bindTooltip(s.name, { permanent: false })
+        .bindTooltip(s.name, { permanent: false, direction: "top", offset: [0, -10] })
         .addTo(map);
     });
-    if (latlngs.length === 1) map.setView(latlngs[0], 4);
-    else map.fitBounds(L.latLngBounds(latlngs).pad(0.6));
     state.originMap = map;
-    setTimeout(() => map.invalidateSize(), 40);
+    setTimeout(() => map.invalidateSize({ pan: false }), 40);
   }
 
   function drawTbp(streams) {
@@ -3376,6 +3541,7 @@
   }
 
   function openPicker() {
+    if (compareTrayFull()) return;
     el.pickerModal.classList.remove("hidden");
     el.pickerSearch.value = "";
     renderPickerList("");
