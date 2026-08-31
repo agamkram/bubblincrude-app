@@ -38,10 +38,11 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v253";
+  const APP_VERSION = "v258";
   window.__APP_VERSION = APP_VERSION;
 
-  const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
+  /* Amber / blue / coral — pale gold used to sit next to amber and vanished on chips. */
+  const COMPARE_COLORS = ["#e8a838", "#7aa2ff", "#ff7a6e"];
   /* Four distinct hues — saturates/resins used to both read as amber. */
   const SARA_COLORS = {
     saturates: "#5ec8b0",

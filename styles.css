@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 253;
+  --bc-css: 258;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1792,12 +1792,12 @@ button.pill {
 .metric-bars {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 .mb-group .mb-label {
   font-size: 11px;
   color: var(--text-mute);
-  margin-bottom: 6px;
+  margin-bottom: 5px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -1806,7 +1806,7 @@ button.pill {
   grid-template-columns: 90px 1fr 56px;
   gap: 8px;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 .mb-name {
   font-size: 12px;
@@ -1816,14 +1816,16 @@ button.pill {
   white-space: nowrap;
 }
 .mb-track {
-  height: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 2px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0;
+  /* 1px on a 5px bar ≈ SARA’s 3px on 18px — soft corners, not a capsule. */
+  border-radius: 1px;
   overflow: hidden;
 }
 .mb-fill {
   height: 100%;
+  border-radius: 1px;
 }
 .mb-val {
   font-family: var(--mono);
