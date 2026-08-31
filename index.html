@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=250" />
+  <link rel="stylesheet" href="styles.css?v=253" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -109,9 +109,13 @@
           <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
           <a href="/products" data-nav="products" class="nav-link">Products</a>
           <a href="/about" data-nav="about" class="nav-link">About</a>
-          <button type="button" class="nav-link" id="btn-units" aria-haspopup="true" aria-expanded="false">
-            Units
-          </button>
+          <a
+            href="https://oilprice.com/oil-price-charts/#prices"
+            class="nav-link"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Oil price charts (opens oilprice.com)"
+          >Prices</a>
           <button type="button" class="nav-link" id="btn-search" title="Search" aria-pressed="false" aria-controls="search-input">Search</button>
         </nav>
 
@@ -267,6 +271,16 @@
         </div>
 
         <aside class="rail rail-inspector" id="inspector-rail" aria-label="Stream inspector">
+          <div class="insp-toolbar">
+            <button
+              type="button"
+              class="btn btn-text js-units-btn"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              Units
+            </button>
+          </div>
           <div id="inspector" class="inspector">
             <div class="inspector-empty" id="inspector-empty">
               <p class="empty-title">Select a stream</p>
@@ -312,11 +326,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=250"></script>
-  <script src="sites.js?v=250"></script>
-  <script src="hubs.js?v=250"></script>
-  <script src="refineries.js?v=250"></script>
-  <script src="app.js?v=250"></script>
+  <script src="data.js?v=253"></script>
+  <script src="sites.js?v=253"></script>
+  <script src="hubs.js?v=253"></script>
+  <script src="refineries.js?v=253"></script>
+  <script src="app.js?v=253"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -327,7 +341,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v250";
+    var EXPECTED = "v253";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

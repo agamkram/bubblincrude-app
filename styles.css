@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 250;
+  --bc-css: 253;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1090,6 +1090,27 @@ input[type="range"] {
   font-size: 13px;
 }
 
+.insp-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 8px;
+}
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 8px;
+}
+.page-head .page-title {
+  margin: 0;
+}
+.page-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
 .insp-header {
   margin-bottom: 8px;
 }
@@ -1698,7 +1719,6 @@ button.pill {
   max-width: 16ch;
 }
 .compare-sel-chip .rm,
-.compare-card-rm,
 .compare-swatch-rm {
   border: none;
   background: transparent;
@@ -1713,19 +1733,9 @@ button.pill {
   border-radius: 50%;
 }
 .compare-sel-chip .rm:hover,
-.compare-card-rm:hover,
 .compare-swatch-rm:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
-}
-.stream-cards-swipe .swatch-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.stream-cards-swipe .swatch-item strong {
-  flex: 1;
-  min-width: 0;
 }
 .compare-stream-swatches .swatch-item {
   display: flex;
@@ -1850,10 +1860,6 @@ button.pill {
   font-size: 15px;
   line-height: 1.5;
   color: var(--text);
-}
-
-.stream-cards-swipe {
-  display: none;
 }
 
 /* —— Page views —— */
@@ -2495,22 +2501,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   .view-page {
     padding: 14px calc(12px + env(safe-area-inset-right, 0px)) 32px
       calc(12px + env(safe-area-inset-left, 0px));
-  }
-  .stream-cards-swipe {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    margin-bottom: 16px;
-    padding-bottom: 4px;
-  }
-  .swipe-card {
-    flex: 0 0 78%;
-    scroll-snap-align: start;
-    padding: 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg-panel);
   }
   .mb-row {
     grid-template-columns: 72px 1fr 48px;

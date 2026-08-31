@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v250";
+  const APP_VERSION = "v253";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -2808,7 +2808,9 @@
     const streams = pins.map((p) => p.s);
     if (streams.length < 2) {
       el.viewCompare.innerHTML =
-        '<div class="compare-head"><div class="compare-head-top"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
+        '<div class="compare-head"><div class="compare-head-top"><h2>Compare</h2><div class="page-head-actions">' +
+        unitsBtnHtml() +
+        '<a class="btn btn-ghost" href="/">Back to map</a></div></div></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
       return;
     }
 
@@ -2816,8 +2818,10 @@
     let html = '<div class="compare-head">';
     html += '<div class="compare-head-top">';
     html += "<h2>Compare</h2>";
+    html += '<div class="page-head-actions">';
+    html += unitsBtnHtml();
     html += '<a class="btn btn-ghost" href="/">Back to map</a>';
-    html += "</div>";
+    html += "</div></div>";
     html += '<div class="compare-sel-row">';
     html += '<div class="compare-sel-chips">';
     state.compareIds.forEach((key, i) => {
@@ -2840,37 +2844,6 @@
       (trayFull ? " disabled title=\"Tray full — remove one to add another\"" : "") +
       ">+ Add</button>";
     html += "</div></div>";
-
-    html += '<div class="stream-cards-swipe">';
-    pins.forEach((p, i) => {
-      const s = p.s;
-      const place = comparePlaceBit(s, p.kind);
-      html +=
-        '<div class="swipe-card"><div class="swatch-item"><span class="swatch-dot" style="background:' +
-        COMPARE_COLORS[i] +
-        '"></span><strong>' +
-        escapeHtml(s.name) +
-        '</strong><button type="button" class="rm compare-card-rm" data-rm="' +
-        escapeHtml(p.key) +
-        '" aria-label="Remove ' +
-        escapeHtml(s.name) +
-        '">×</button></div>' +
-        '<div style="margin-top:8px;font-family:var(--mono);font-size:13px">' +
-        (p.kind === "refinery"
-          ? "refinery" + (place ? " · " + escapeHtml(place) : "")
-          : p.kind === "hub"
-            ? "hub" + (place ? " · " + escapeHtml(place) : "")
-            : (p.kind === "site" ? "site · " : "") +
-              densityLabel(s.api) +
-              " " +
-              densityUnit() +
-              " · " +
-              sulfurLabel(s.sulfur_wt) +
-              " " +
-              sulfurUnit()) +
-        "</div></div>";
-    });
-    html += "</div>";
 
     html += '<div class="compare-grid">';
     html += '<div class="compare-card"><h3>Origin locator</h3><div id="origin-map" class="origin-map"></div>';
@@ -3351,7 +3324,10 @@
 
   function renderCuts() {
     let html =
-      '<h2 class="page-title">Cuts</h2><p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. Streams and Sites tell <em>where oil comes from</em>; Cuts teach <em>how the still slices a barrel</em>; <a href="/products">Products</a> teach <em>what commerce takes from those slices</em>. Each card is one slice: temperature, carbon size, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
+      '<div class="page-head"><h2 class="page-title">Cuts</h2>' +
+      unitsBtnHtml() +
+      "</div>" +
+      '<p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. Streams and Sites tell <em>where oil comes from</em>; Cuts teach <em>how the still slices a barrel</em>; <a href="/products">Products</a> teach <em>what commerce takes from those slices</em>. Each card is one slice: temperature, carbon size, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
     html += '<div class="cut-grid">';
     for (const c of DATA.cuts) {
       html += '<article class="cut-card" id="cut-' + escapeHtml(c.id) + '">';
@@ -3571,7 +3547,9 @@
       return;
     }
     el.viewStream.innerHTML =
-      '<div style="margin-bottom:12px"><a class="btn btn-ghost" href="/">← Map</a></div>' +
+      '<div class="page-head" style="margin-bottom:12px"><a class="btn btn-ghost" href="/">← Map</a>' +
+      unitsBtnHtml() +
+      "</div>" +
       inspectorHtml(s);
     bindInspectorEvents(el.viewStream);
   }
@@ -3606,9 +3584,9 @@
     if (el.pickerSearch) {
       el.pickerSearch.value = "";
       el.pickerSearch.placeholder = pickerSearchHint();
+      /* Do not focus — iOS would open the keyboard. Tap search to type. */
     }
     renderPickerList("");
-    el.pickerSearch.focus();
   }
 
   function renderPickerSelected() {
@@ -3878,6 +3856,22 @@
     showView();
   }
 
+  function unitsBtnHtml() {
+    return (
+      '<button type="button" class="btn btn-text js-units-btn" aria-haspopup="true" aria-expanded="false">Units</button>'
+    );
+  }
+
+  function setUnitsPopoverOpen(open, anchor) {
+    const pop = el.unitsPopover;
+    if (!pop) return;
+    if (open) placePopover(pop, anchor);
+    pop.classList.toggle("hidden", !open);
+    document.querySelectorAll(".js-units-btn").forEach((btn) => {
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  }
+
   function syncUnitsUi() {
     const pop = el.unitsPopover;
     if (!pop) return;
@@ -4118,12 +4112,12 @@
       fitMapFull(true);
     });
 
-    $("btn-units")?.addEventListener("click", (e) => {
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".js-units-btn");
+      if (!btn) return;
       e.stopPropagation();
-      const open = !el.unitsPopover.classList.contains("hidden");
-      if (!open) placePopover(el.unitsPopover);
-      el.unitsPopover.classList.toggle("hidden", open);
-      $("btn-units").setAttribute("aria-expanded", open ? "false" : "true");
+      const open = el.unitsPopover && !el.unitsPopover.classList.contains("hidden");
+      setUnitsPopoverOpen(!open, btn);
     });
     el.unitsPopover.addEventListener("click", (e) => e.stopPropagation());
     el.unitsPopover.addEventListener("change", () => {
@@ -4136,12 +4130,24 @@
       render();
     });
 
-    function placePopover(pop) {
+    function placePopover(pop, anchor) {
       if (!pop) return;
+      const width = pop.offsetWidth || 260;
+      if (anchor) {
+        const r = anchor.getBoundingClientRect();
+        let left = r.right - width;
+        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+        pop.style.top = Math.ceil(r.bottom + 6) + "px";
+        pop.style.left = Math.round(left) + "px";
+        pop.style.right = "auto";
+        return;
+      }
       const tb = document.querySelector(".topbar");
       if (!tb) return;
       /* Use the real topbar bottom — --topbar-h is stale vs phone title/search. */
       pop.style.top = Math.ceil(tb.getBoundingClientRect().bottom) + "px";
+      pop.style.left = "";
+      pop.style.right = "16px";
     }
 
     $("btn-add-stream")?.addEventListener("click", openPicker);
@@ -4197,7 +4203,7 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closePicker();
-        el.unitsPopover.classList.add("hidden");
+        setUnitsPopoverOpen(false);
         setLegendHelpOpen(false);
       }
       if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -4210,9 +4216,11 @@
     });
 
     document.addEventListener("click", (e) => {
-      if (!e.target.closest("#units-popover") && !e.target.closest("#btn-units")) {
-        el.unitsPopover.classList.add("hidden");
-        $("btn-units")?.setAttribute("aria-expanded", "false");
+      if (
+        !e.target.closest("#units-popover") &&
+        !e.target.closest(".js-units-btn")
+      ) {
+        setUnitsPopoverOpen(false);
       }
       if (
         !e.target.closest(".topbar-tools") &&
