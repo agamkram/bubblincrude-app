@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=212" />
+  <link rel="stylesheet" href="styles.css?v=228" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -113,6 +113,7 @@
           <button type="button" class="nav-link" id="btn-units" aria-haspopup="true" aria-expanded="false">
             Units
           </button>
+          <button type="button" class="nav-link" id="btn-search" title="Search" aria-pressed="false" aria-controls="search-input">Search</button>
         </nav>
 
         <div class="topbar-tools" role="toolbar" aria-label="Map tools">
@@ -136,7 +137,6 @@
               ?
             </button>
           </div>
-          <button type="button" class="map-reset" id="btn-search" title="Search" aria-pressed="false" aria-controls="search-input">Search</button>
           <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
           <div class="topbar-search" id="topbar-search">
             <label class="sr-only" for="search-input">Search streams</label>
@@ -309,11 +309,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=212"></script>
-  <script src="sites.js?v=212"></script>
-  <script src="hubs.js?v=212"></script>
-  <script src="refineries.js?v=212"></script>
-  <script src="app.js?v=212"></script>
+  <script src="data.js?v=228"></script>
+  <script src="sites.js?v=228"></script>
+  <script src="hubs.js?v=228"></script>
+  <script src="refineries.js?v=228"></script>
+  <script src="app.js?v=228"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -324,7 +324,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v212";
+    var EXPECTED = "v228";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

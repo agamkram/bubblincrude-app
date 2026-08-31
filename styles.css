@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 212;
+  --bc-css: 228;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -238,6 +238,7 @@ html.pwa-standalone .app {
   display: block;
 }
 html:not(.app-home) #btn-search,
+html:not(.app-home) #btn-reset-view,
 html:not(.app-home) .topbar-search {
   display: none !important;
 }
@@ -371,7 +372,9 @@ html:not(.app-home) .topbar-search {
   background: var(--teal-dim);
 }
 .nav-link[aria-expanded="true"],
-.nav-link[aria-expanded="true"]:hover {
+.nav-link[aria-expanded="true"]:hover,
+.nav-link[aria-pressed="true"],
+.nav-link[aria-pressed="true"]:hover {
   color: var(--teal);
   background: var(--teal-dim);
 }
@@ -601,6 +604,26 @@ html:not(.app-home) .topbar-search {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
   cursor: grab;
+}
+/* Hubs and refineries have no gravity/sulfur — keep the row, gray it out. */
+.map-sliders.is-inert {
+  pointer-events: none;
+}
+.map-sliders.is-inert .filter-label,
+.map-sliders.is-inert .range-readout {
+  color: var(--text-mute);
+}
+.map-sliders.is-inert .dual-range-fill,
+.map-sliders.is-inert .solo-range-fill {
+  background: #6b7280;
+}
+.map-sliders.is-inert .dual-range input[type="range"]::-webkit-slider-thumb,
+.map-sliders.is-inert .solo-range input[type="range"]::-webkit-slider-thumb,
+.map-sliders.is-inert .dual-range input[type="range"]::-moz-range-thumb,
+.map-sliders.is-inert .solo-range input[type="range"]::-moz-range-thumb {
+  background: #8b929c;
+  cursor: default;
+  pointer-events: none;
 }
 .rail-inspector {
   grid-area: inspector;
@@ -910,7 +933,7 @@ input[type="range"] {
   .color-help:hover:not([aria-expanded="true"]) {
     color: var(--text);
   }
-  .nav-link:hover:not(.is-active):not([aria-expanded="true"]) {
+  .nav-link:hover:not(.is-active):not([aria-expanded="true"]):not([aria-pressed="true"]) {
     color: var(--text);
     background: var(--bg-hover);
   }
@@ -1002,7 +1025,6 @@ input[type="range"] {
   border-radius: 50%;
   border: 0;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.9);
-  transition: opacity 0.15s ease;
   pointer-events: none;
 }
 .stream-marker.is-selected {
@@ -1077,6 +1099,43 @@ input[type="range"] {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+}
+.insp-title-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: 2px;
+}
+.insp-expand {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin: -4px 0 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.insp-expand-icon {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 8px auto 0;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-135deg);
+}
+.view-home.is-insp-expanded .insp-expand-icon {
+  margin-top: 6px;
+  transform: rotate(45deg);
+}
+.insp-expand:hover,
+.insp-expand:focus-visible {
+  color: var(--text);
+  background: var(--bg-hover);
+  outline: none;
 }
 .insp-name {
   margin: 0;
@@ -1228,6 +1287,19 @@ button.pill {
 .flag-btn:focus-visible {
   border-color: var(--teal);
   color: var(--teal);
+}
+.flag-btn.is-word {
+  width: auto;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  text-transform: lowercase;
+}
+.pill-est {
+  color: var(--text-dim);
+  border-style: dashed;
 }
 
 .quality-strip {
@@ -1460,6 +1532,9 @@ button.pill {
 /* Mac / iPad: match slider row height + buffer under tray so the map
    stage is shorter and the belt fit sits flush (kills the slim top gap). */
 @media (min-width: 700px) {
+  .insp-expand {
+    display: none !important;
+  }
   .compare-tray {
     height: 34px;
     min-height: 34px;
@@ -2155,6 +2230,10 @@ html.pwa-standalone:not(.app-home) .view-page {
     min-height: 0;
     padding: 8px 10px;
     padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  .view-home.is-insp-expanded .map-stage,
+  .view-home.is-insp-expanded .map-sliders {
+    display: none !important;
   }
   .leaflet-control-zoom {
     display: none !important;

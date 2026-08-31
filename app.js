@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v212";
+  const APP_VERSION = "v228";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -64,6 +64,8 @@
     siteId: null,
     hubId: null,
     refineryId: null,
+    selectionCleared: false,
+    inspExpanded: false,
     compareIds: [],
     query: "",
     filters: defaultFilters(),
@@ -197,6 +199,7 @@
     el.sulfurMax = $("sulfur-max");
     el.sulfurFill = $("sulfur-fill");
     el.sulfurReadout = $("sulfur-readout");
+    el.mapSliders = $("map-sliders");
   }
 
   /* —— Units helpers —— */
@@ -687,6 +690,8 @@
 
   function ensureHomeSelection() {
     if (state.route !== "home") return;
+    /* × cleared the starter card — do not put WTI (etc.) back until a pin is picked. */
+    if (state.selectionCleared) return;
     if (state.layer === "sites") {
       if (getSite(state.siteId)) return;
       const id = pickDefaultSiteId();
@@ -764,6 +769,7 @@
   }
 
   function sizeMapToBelt() {
+    if (state.inspExpanded) return false;
     const mapEl = document.getElementById("map");
     const stage = document.querySelector(".map-stage") || document.getElementById("map-pane");
     const pane = document.getElementById("map-pane");
@@ -861,7 +867,7 @@
      beat later, the pane grows and leaves a slim empty strip until the next
      invalidate+fit (zoom/unzoom). Refit whenever the stage size is real. */
   function refitMapToPane() {
-    if (!state.map || state.route !== "home" || state._fittingFull) return;
+    if (!state.map || state.route !== "home" || state._fittingFull || state.inspExpanded) return;
     sizeMapToBelt();
     state.map.invalidateSize({ pan: false });
     const sz = state.map.getSize();
@@ -888,10 +894,10 @@
     let lastKey = "";
     let timer = null;
     state._mapSizeWatch = new ResizeObserver(() => {
-      if (!state.map || state.route !== "home" || state._fittingFull) return;
+      if (!state.map || state.route !== "home" || state._fittingFull || state.inspExpanded) return;
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (!state.map || state._fittingFull) return;
+        if (!state.map || state._fittingFull || state.inspExpanded) return;
         sizeMapToBelt();
         state.map.invalidateSize({ pan: false });
         const sz = state.map.getSize();
@@ -932,7 +938,7 @@
 
     state.map = map;
     state.markerLayer = L.layerGroup().addTo(map);
-    map.on("drag", stayInBelt);
+    map.on("drag", onBeltDrag);
     map.on("moveend", stayInBelt);
     map.on("zoomend", () => {
       if (!state.map || state._fittingFull) return;
@@ -945,6 +951,15 @@
     updateMarkers();
     ensureMapSizeWatch();
     scheduleMapFill();
+  }
+
+  /* Belt clamp at most once per frame while dragging — not on every pointer move. */
+  function onBeltDrag() {
+    if (state._beltDragRaf) return;
+    state._beltDragRaf = requestAnimationFrame(() => {
+      state._beltDragRaf = 0;
+      stayInBelt();
+    });
   }
 
   function makeIcon(s, selected, few) {
@@ -1086,6 +1101,41 @@
     );
   }
 
+  function ensurePinTooltip(marker, s) {
+    if (!marker || marker.getTooltip()) {
+      if (marker && marker.getTooltip() && !marker.isTooltipOpen()) marker.openTooltip();
+      return;
+    }
+    marker.bindTooltip(tipHtml(s), {
+      className: "stream-tip",
+      /* auto: Gippsland (and other belt-edge pins) used to open "top" and
+         hang half off the map pane. Leaflet picks the side with room. */
+      direction: "auto",
+      offset: [0, -6],
+      opacity: 1,
+      sticky: false,
+      interactive: true,
+    });
+    marker.on("tooltipopen", () => {
+      const tip = marker.getTooltip();
+      if (!tip) return;
+      const node = tip.getElement();
+      if (!node) return;
+      L.DomEvent.disableClickPropagation(node);
+      L.DomEvent.disableScrollPropagation(node);
+      const btn = node.querySelector("[data-add]");
+      if (btn) {
+        btn.onclick = (e) => {
+          L.DomEvent.stop(e);
+          addToCompare(btn.getAttribute("data-add"));
+          marker.closeTooltip();
+        };
+      }
+      requestAnimationFrame(() => keepTooltipInMap(node));
+    });
+    marker.openTooltip();
+  }
+
   /* Restyle selected pin without tearing down the layer. A full rebuild
      closes an open tip mid-tap — on iOS the tip often opens while our click
      handler never runs, so the inspector stayed empty under Compare. */
@@ -1132,37 +1182,13 @@
       const selected = s.id === selId;
       const marker = L.marker([s.lat, s.lon], {
         icon: makeIcon(s, selected, few),
-        title: s.name,
-        riseOnHover: true,
+        keyboard: false,
+        riseOnHover: false,
       });
       if (showTips) {
-        marker.bindTooltip(tipHtml(s), {
-          className: "stream-tip",
-          /* auto: Gippsland (and other belt-edge pins) used to open "top" and
-             hang half off the map pane. Leaflet picks the side with room. */
-          direction: "auto",
-          offset: [0, -6],
-          opacity: 1,
-          sticky: false,
-          interactive: true,
-        });
-        marker.on("tooltipopen", () => {
-          const tip = marker.getTooltip();
-          if (!tip) return;
-          const node = tip.getElement();
-          if (!node) return;
-          L.DomEvent.disableClickPropagation(node);
-          L.DomEvent.disableScrollPropagation(node);
-          const btn = node.querySelector("[data-add]");
-          if (btn) {
-            btn.onclick = (e) => {
-              L.DomEvent.stop(e);
-              addToCompare(btn.getAttribute("data-add"));
-              marker.closeTooltip();
-            };
-          }
-          requestAnimationFrame(() => keepTooltipInMap(node));
-        });
+        /* Bind on first hover — 755 interactive tips at create made pan/zoom pay
+           for hover machinery on every pin (worst on Refineries). */
+        marker.on("mouseover", () => ensurePinTooltip(marker, s));
       }
       marker.on("click", () => pickPin(s, false));
       if (!showTips) {
@@ -1261,6 +1287,7 @@
   }
 
   function selectStream(id, fly) {
+    state.selectionCleared = false;
     const prev = state.streamId;
     const same = prev === id && !state.siteId && !state.hubId && !state.refineryId;
     state.streamId = id;
@@ -1288,6 +1315,7 @@
   }
 
   function selectSite(id, fly) {
+    state.selectionCleared = false;
     const prev = state.siteId;
     const same = prev === id && !state.streamId && !state.hubId && !state.refineryId;
     state.siteId = id;
@@ -1311,6 +1339,7 @@
   }
 
   function selectHub(id, fly) {
+    state.selectionCleared = false;
     const prev = state.hubId;
     const same = prev === id && !state.streamId && !state.siteId && !state.refineryId;
     state.hubId = id;
@@ -1334,6 +1363,7 @@
   }
 
   function selectRefinery(id, fly) {
+    state.selectionCleared = false;
     const prev = state.refineryId;
     const same = prev === id && !state.streamId && !state.siteId && !state.hubId;
     state.refineryId = id;
@@ -1397,6 +1427,7 @@
       state.refineryId = null;
     }
     syncLayerSeg();
+    syncMapSliders();
     renderLegend();
     syncInspectorEmptyCopy();
     renderSearchResults();
@@ -1503,14 +1534,19 @@
 
   function flagBtn(flag, label) {
     const f = flag || "unknown";
+    const word = f === "estimated" || f === "typical" || f === "measured";
     return (
-      '<button type="button" class="flag-btn" data-glossary="quality-flags" title="' +
+      '<button type="button" class="flag-btn' +
+      (word ? " is-word" : "") +
+      '" data-glossary="quality-flags" title="' +
       escapeHtml(label || "Quality") +
       ": " +
       f +
       '" aria-label="Quality flag: ' +
       f +
-      '">i</button>'
+      '">' +
+      (word ? escapeHtml(f) : "i") +
+      "</button>"
     );
   }
 
@@ -1555,7 +1591,28 @@
     if (s.kind && s.kind !== "Conventional") {
       out.push('<span class="pill pill-kind">' + escapeHtml(s.kind) + "</span>");
     }
+    if ((s.flags || {}).yields === "estimated") {
+      out.push('<span class="pill pill-est">estimated</span>');
+    }
     return out.join("");
+  }
+
+  function inspTitleButtonsHtml() {
+    const expanded = !!state.inspExpanded;
+    const expand =
+      state.route === "home"
+        ? '<button type="button" class="insp-expand" data-insp-expand aria-label="' +
+          (expanded ? "Back to map" : "Expand inspector") +
+          '" aria-expanded="' +
+          (expanded ? "true" : "false") +
+          '"><span class="insp-expand-icon" aria-hidden="true"></span></button>'
+        : "";
+    return (
+      '<div class="insp-title-actions">' +
+      expand +
+      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>' +
+      "</div>"
+    );
   }
 
   function inspectorHtml(s) {
@@ -1567,8 +1624,7 @@
     html += '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html +=
-      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += inspTitleButtonsHtml();
     html += "</div>";
     if (s.aliases && s.aliases.length) {
       html +=
@@ -2030,8 +2086,7 @@
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html +=
-      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += inspTitleButtonsHtml();
     html += "</div>";
     html +=
       '<p class="insp-loc">' +
@@ -2109,8 +2164,7 @@
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html +=
-      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += inspTitleButtonsHtml();
     html += "</div>";
     html +=
       '<p class="insp-loc">' +
@@ -2168,8 +2222,7 @@
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html +=
-      '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>';
+    html += inspTitleButtonsHtml();
     html += "</div>";
     html +=
       '<p class="insp-loc">' +
@@ -2227,6 +2280,27 @@
         else clearSelection();
       });
     });
+    root.querySelectorAll("[data-insp-expand]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleInspExpand();
+      });
+    });
+  }
+
+  function syncInspExpand() {
+    el.viewHome?.classList.toggle("is-insp-expanded", !!state.inspExpanded);
+    document.querySelectorAll("[data-insp-expand]").forEach((btn) => {
+      const on = !!state.inspExpanded;
+      btn.setAttribute("aria-expanded", on ? "true" : "false");
+      btn.setAttribute("aria-label", on ? "Back to map" : "Expand inspector");
+    });
+  }
+
+  function toggleInspExpand() {
+    state.inspExpanded = !state.inspExpanded;
+    syncInspExpand();
+    if (!state.inspExpanded && state.map) scheduleMapFill();
   }
 
   function clearSelection() {
@@ -2234,11 +2308,15 @@
     state.siteId = null;
     state.hubId = null;
     state.refineryId = null;
+    state.selectionCleared = true;
+    const wasExpanded = !!state.inspExpanded;
+    state.inspExpanded = false;
     $("inspector-rail")?.classList.remove("is-drawer-open");
-    ensureHomeSelection();
+    syncInspExpand();
     updateMarkers();
     renderInspector();
     renderTray();
+    if (wasExpanded && state.map) scheduleMapFill();
     if (state.route === "home") history.replaceState(null, "", buildUrl());
   }
 
@@ -2407,6 +2485,17 @@
     });
     el.kindFilters.querySelectorAll("input").forEach((inp) => {
       inp.checked = state.filters.kinds.includes(inp.value);
+    });
+  }
+
+  function syncMapSliders() {
+    const inert = state.layer === "hubs" || state.layer === "refineries";
+    if (el.mapSliders) {
+      el.mapSliders.classList.toggle("is-inert", inert);
+      el.mapSliders.setAttribute("aria-disabled", inert ? "true" : "false");
+    }
+    [el.apiMin, el.apiMax, el.sulfurMax].forEach((inp) => {
+      if (inp) inp.disabled = inert;
     });
   }
 
@@ -3423,6 +3512,8 @@
     renderLegend();
     syncColorSeg();
     syncLayerSeg();
+    syncMapSliders();
+    syncInspExpand();
     syncInspectorEmptyCopy();
     syncUnitsUi();
     showView();
@@ -3769,9 +3860,9 @@
       if (window.innerWidth >= 1100) {
         $("inspector-rail")?.classList.remove("is-drawer-open");
       }
-      if (state.map) {
+      if (state.map && !state.inspExpanded) {
         setTimeout(() => {
-          if (!state.map) return;
+          if (!state.map || state.inspExpanded) return;
           sizeMapToBelt();
           state.map.invalidateSize({ pan: false });
           const sz = state.map.getSize();
