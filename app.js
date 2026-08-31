@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v229";
+  const APP_VERSION = "v230";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -3927,19 +3927,7 @@
     $("has-sara").checked = state.filters.hasSara;
     $("has-metals").checked = state.filters.hasMetals;
     render();
-    paintVersionBadge();
     pinShellViewport();
-  }
-
-  function paintVersionBadge() {
-    const node = document.getElementById("bc-ver");
-    if (!node) return;
-    const css = getComputedStyle(document.documentElement)
-      .getPropertyValue("--bc-css")
-      .trim();
-    const jsN = APP_VERSION.replace(/^v/, "");
-    node.textContent =
-      css && css !== jsN ? APP_VERSION + " / css" + css : APP_VERSION;
   }
 
   if (document.readyState === "loading") {
