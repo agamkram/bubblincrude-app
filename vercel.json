@@ -4,6 +4,7 @@
     { "source": "/stream/(.*)", "destination": "/index.html" },
     { "source": "/compare", "destination": "/index.html" },
     { "source": "/cuts", "destination": "/index.html" },
+    { "source": "/products", "destination": "/index.html" },
     { "source": "/molecules", "destination": "/index.html" },
     { "source": "/about", "destination": "/index.html" }
   ],

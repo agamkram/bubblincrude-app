@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 230;
+  --bc-css: 232;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1859,13 +1859,22 @@ button.pill {
   outline: 2px solid var(--teal);
   outline-offset: 2px;
 }
-.mol-filters {
+.chip-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.chip-link:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.prod-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   margin: 0 0 16px;
 }
-.mol-filter {
+.prod-filter {
   border: 1px solid var(--border);
   background: var(--bg-panel);
   color: var(--text-dim);
@@ -1876,83 +1885,126 @@ button.pill {
   border-radius: 999px;
   cursor: pointer;
 }
-.mol-filter.is-active {
-  border-color: var(--teal);
-  color: var(--teal);
-  background: var(--teal-dim);
+.prod-filter.is-active {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-dim);
 }
-.mol-section {
+.prod-section {
   margin: 0 0 22px;
 }
-.mol-section-title {
+.prod-section-title {
   margin: 0 0 4px;
   font-size: 15px;
 }
-.mol-section-lead {
+.prod-section-lead {
   margin: 0 0 10px;
   font-size: 13px;
   color: var(--text-dim);
   line-height: 1.4;
 }
-.mol-grid {
+.prod-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
 }
-.mol-card {
-  padding: 12px 14px;
+.prod-card {
+  padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-panel);
   min-width: 0;
 }
-.mol-card-top {
+.prod-card.is-target {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+.prod-card-top {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
 }
-.mol-card h4 {
+.prod-card h4 {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.25;
   min-width: 0;
 }
-.mol-formula {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--teal);
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-.mol-blurb {
-  margin: 0 0 8px;
-  font-size: 12px;
-  color: var(--text-dim);
-  line-height: 1.4;
-}
-.mol-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  margin: 0 0 8px;
+.prod-market {
   font-family: var(--mono);
   font-size: 11px;
+  color: var(--amber);
+  text-align: right;
+  line-height: 1.3;
+  flex: 0 1 auto;
+  max-width: 45%;
+}
+.prod-blurb {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.prod-section-block {
+  margin: 0 0 10px;
+}
+.prod-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--text-mute);
+  margin-bottom: 4px;
+}
+.prod-list {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.prod-list li + li {
+  margin-top: 2px;
+}
+.prod-signature {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.prod-sig-name {
+  font-size: 13px;
+  color: var(--text);
+}
+.prod-sig-formula {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--amber);
+  white-space: nowrap;
+}
+.prod-cut-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .found-chip {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--teal-dim);
-  color: var(--teal);
-  font-size: 11px;
+  background: var(--amber-dim);
+  color: var(--amber);
   text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.found-chip:hover {
+  outline: 1px solid var(--amber);
 }
 .about-block {
   max-width: 68ch;

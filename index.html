@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=230" />
+  <link rel="stylesheet" href="styles.css?v=232" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -107,7 +107,7 @@
         <nav class="topbar-nav" aria-label="Primary">
           <a href="/" data-nav="home" class="nav-link is-active">Crudes</a>
           <a href="/cuts" data-nav="cuts" class="nav-link">Cuts</a>
-          <a href="/molecules" data-nav="molecules" class="nav-link">Molecules</a>
+          <a href="/products" data-nav="products" class="nav-link">Products</a>
           <a href="/about" data-nav="about" class="nav-link">About</a>
           <button type="button" class="nav-link" id="btn-units" aria-haspopup="true" aria-expanded="false">
             Units
@@ -286,8 +286,8 @@
       <!-- Cuts -->
       <section id="view-cuts" class="view view-page hidden" aria-label="Cuts reference"></section>
 
-      <!-- Molecules -->
-      <section id="view-molecules" class="view view-page hidden" aria-label="Molecules"></section>
+      <!-- Products -->
+      <section id="view-products" class="view view-page hidden" aria-label="Products"></section>
 
       <!-- About -->
       <section id="view-about" class="view view-page hidden" aria-label="About"></section>
@@ -308,11 +308,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=230"></script>
-  <script src="sites.js?v=230"></script>
-  <script src="hubs.js?v=230"></script>
-  <script src="refineries.js?v=230"></script>
-  <script src="app.js?v=230"></script>
+  <script src="data.js?v=232"></script>
+  <script src="sites.js?v=232"></script>
+  <script src="hubs.js?v=232"></script>
+  <script src="refineries.js?v=232"></script>
+  <script src="app.js?v=232"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -323,7 +323,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v230";
+    var EXPECTED = "v232";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
