@@ -1,16 +1,16 @@
 /* BubblinCrude service worker — cache app shell + embedded JSON */
 /* Bump CACHE together with APP_VERSION in app.js and the ?v= query strings
    in index.html. Renaming the cache is what evicts the previous build. */
-const CACHE = "bubblincrude-v228";
+const CACHE = "bubblincrude-v229";
 const PRECACHE = [
   "./",
   "./index.html",
-  "./styles.css?v=228",
-  "./app.js?v=228",
-  "./data.js?v=228",
-  "./sites.js?v=228",
-  "./hubs.js?v=228",
-  "./refineries.js?v=228",
+  "./styles.css?v=229",
+  "./app.js?v=229",
+  "./data.js?v=229",
+  "./sites.js?v=229",
+  "./hubs.js?v=229",
+  "./refineries.js?v=229",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -52,6 +52,10 @@ self.addEventListener("fetch", (event) => {
   }
 
   const path = url.pathname;
+  // Vercel Web Analytics / Speed Insights are injected at the edge.
+  // Do not cache or rewrite them.
+  if (path.startsWith("/_vercel/")) return;
+
   const isNav =
     req.mode === "navigate" ||
     path === "/" ||
