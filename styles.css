@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 248;
+  --bc-css: 250;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1052,6 +1052,13 @@ input[type="range"] {
   color: var(--text-dim);
   font-size: 10px;
 }
+.tip-blurb {
+  margin-top: 4px;
+  max-width: 220px;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-dim);
+}
 .tip-pills {
   display: flex;
   flex-wrap: nowrap;
@@ -1542,7 +1549,7 @@ button.pill {
 .insp-blurb {
   margin: 0 0 12px;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-dim);
 }
 .insp-block {

@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v248";
+  const APP_VERSION = "v250";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -1050,6 +1050,10 @@
     if (s.sulfur_wt != null) metaBits.push(sulfurLabel(s.sulfur_wt) + " " + sulfurUnit());
     const key = pinKey("site", s.id);
     const action = compareActionHtml(key);
+    const blurb = (s.notes || "").trim();
+    const tipBlurb = blurb
+      ? '<div class="tip-blurb">' + escapeHtml(blurb.length > 140 ? blurb.slice(0, 137).trim() + "…" : blurb) + "</div>"
+      : "";
     return (
       '<div class="tip-name">' +
       escapeHtml(s.name) +
@@ -1057,6 +1061,7 @@
       '<div class="tip-meta">' +
       escapeHtml(metaBits.join(" · ")) +
       "</div>" +
+      tipBlurb +
       '<div class="tip-pills">' +
       pills.map((p) => '<span class="pill pill-kind">' + escapeHtml(p) + "</span>").join("") +
       action +

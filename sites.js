@@ -371,6 +371,222 @@
     Site({ id: 'el-furrial-field', name: 'El Furrial Field', country: 'Venezuela', basin: 'Eastern Venezuela', region: 'Latin America', lat: 9.55, lon: -63.45, year: 1986, kind: 'field', status: 'active', api: 25.0, sulfur_wt: 1.2, related_ids: ["el-furrial", "mesa-30"], notes: 'Giant eastern Venezuela field in Monagas; El Furrial crude source.' }),
   ];
 
+  /* Richer plain-language stories for landmarks and household-name places.
+     Overlay keeps the one-line Site() notes as fallbacks everywhere else. */
+  const SITE_STORIES = {
+    "drake-well":
+      "In 1859, Edwin Drake drilled the first commercial oil well in the United States near Titusville, Pennsylvania. It proved oil could be produced on purpose — not just skimmed from seeps — and kicked off the modern industry.",
+    spindletop:
+      "On January 10, 1901, the Lucas Gusher blew in at Spindletop hill near Beaumont, Texas, spraying oil hundreds of feet high. The boom that followed created Gulf Coast refining, new oil companies, and the template for the Texas industry.",
+    "lucas-gusher":
+      "Memorial ground for the Spindletop blowout — the 1901 gusher that turned a salt dome into overnight fortune and rewrote Texas history.",
+    "beaumont-tx":
+      "Quiet lumber town that exploded into an oil boomtown after Spindletop. Hotels, pipelines, and refineries followed the derricks within months.",
+    "east-texas-field":
+      "Dad Joiner’s 1930 Daisy Bradford well opened what became one of the largest oil fields in the Lower 48. It flooded the market, forced proration rules, and still produces nearly a century later.",
+    "east-texas-joiners":
+      "Site of Joiner’s Daisy Bradford No. 3 — the wildcat that unlocked the East Texas Field and changed US oil regulation overnight.",
+    "glenn-pool":
+      "A 1905 discovery south of Tulsa that helped turn Oklahoma into an oil capital. Pipelines and refining followed, and Tulsa’s boom years began here.",
+    "signal-hill":
+      "A small hill near Long Beach that erupted with derricks in the 1920s — so many that Signal Hill looked like a forest of steel. Classic California boomtown oil.",
+    "bradford-field":
+      "Pennsylvania Grade country: light, sweet crude that helped birth early US refining. Later it became a laboratory for waterflooding — pumping water to push more oil out.",
+    "lima-indiana":
+      "1880s Ohio–Indiana boom famous for stubborn sour crude. Refiners had to invent new treating methods — an early lesson that oil quality shapes the whole business.",
+    corsicana:
+      "Texas’s first real oil field (1894), years before Spindletop. It proved the state had oil and trained the drillers who later chased the big Gulf Coast gushers.",
+    "sour-lake":
+      "Spindletop-era salt-dome follow-on on the Texas Gulf Coast. Another early proof that the region’s domes could hide big oil.",
+    batson:
+      "Early Gulf Coast salt-dome field in the Spindletop generation — part of the scramble that built Southeast Texas oil.",
+    "humble-field":
+      "Named the Humble Oil company that later folded into today’s ExxonMobil lineage. A Gulf Coast landmark in both geology and corporate history.",
+    "goose-creek":
+      "Early Baytown-area field on Galveston Bay. Production and refining here helped seed the Houston Ship Channel energy corridor.",
+    "seminole-ok":
+      "1926 Oklahoma boom that briefly made Seminole one of the hottest oil towns in America and a top US producing district.",
+    "burkburnett":
+      "WWI-era North Texas boom so cinematic it fed Hollywood ‘Boom Town’ lore. Derricks crowded farm fields almost overnight.",
+    "ranger-tx":
+      "1917 West Texas boom that surged just as wartime fuel demand spiked — a classic short, intense oil rush.",
+    "mexia-tx":
+      "1920 Central Texas gusher town. Another reminder that mid-continent oil could transform a place in a season.",
+    desdemona:
+      "Short-lived 1918 boom near Ranger — a flash of West Texas excitement that faded as fast as it arrived.",
+    "electra-tx":
+      "Wichita County field that helped early Texas majors find their footing in North Texas oil.",
+    "petrolia-tx":
+      "Early North Texas oil and gas district — part of the pre-Spindletop and early-boom fabric of the state.",
+    leduc:
+      "Imperial’s 1947 Leduc discovery ended Canada’s long dry spell and launched modern Alberta oil. After Leduc, Calgary’s industry took off.",
+    "turner-valley":
+      "Alberta’s first major oil and gas field, west of Calgary. It proved the province’s potential long before the post-war Leduc rush.",
+    "golden-lane":
+      "Early Mexican Gulf Coast reef trend that produced spectacular wells in the 1900s–1910s. A founding chapter of Mexico’s oil story.",
+    "tupi-site":
+      "The Santos Basin well that proved Brazil’s deep pre-salt play. It opened a new offshore frontier under a thick salt layer.",
+    piper:
+      "North Sea platform disaster site (1988 Piper Alpha). The accident reshaped offshore safety rules worldwide.",
+    seria:
+      "Onshore discovery that built modern Brunei’s oil economy. Still a namesake blend and a Shell heritage landmark on Borneo’s coast.",
+    "prudhoe-bay":
+      "North America’s largest oil field, on Alaska’s North Slope. Its crude moves south by the Trans-Alaska Pipeline and shows up as ANS on the West Coast.",
+    ghawar:
+      "The largest conventional oil field on Earth, in Saudi Arabia’s Eastern Province. For decades it has been the backbone of global supply and Arab Light quality.",
+    safaniya:
+      "The world’s largest offshore oil field, in the Arabian Gulf. A Saudi cornerstone for long-life, large-volume production.",
+    burgan:
+      "Kuwait’s giant — often ranked second only to Ghawar among conventional fields. The heart of Kuwait’s export crude system.",
+    "kirkuk-field":
+      "Historic northern Iraq giant. Kirkuk crude helped define Middle East exports long before the southern baseload fields dominated headlines.",
+    cantarell:
+      "Mexico’s legendary offshore complex in the Bay of Campeche. Once among the world’s top producers; nitrogen injection kept it flowing as pressure fell.",
+    "permian-basin":
+      "West Texas and southeast New Mexico — now North America’s most prolific onshore oil province. Stacked shale and conventional pays feed a huge share of US growth.",
+    "midland-basin":
+      "Eastern half of the Permian. Horizontal drilling in Spraberry–Wolfcamp rock turned it into the engine of the US shale oil boom.",
+    permiandelaware:
+      "Western Permian deep basin (Delaware). Wolfcamp and Bone Spring horizontals made it one of the densest drilling fairways on the planet.",
+    spraberry:
+      "A vast Permian tight-oil play under the Midland area. Once dismissed as ‘too tight,’ it became the backbone of modern Permian growth.",
+    "midway-sunset":
+      "One of California’s giant heavy-oil fields in the San Joaquin Valley. Thick oil needs steam and careful operations — still producing after a century-plus.",
+    "kern-river":
+      "Classic California heavy oil near Bakersfield. A pioneer of steamflooding: heat thins the oil so it will flow to the well.",
+    "yates-field":
+      "Permian giant found in 1926 in West Texas. A landmark conventional field that still anchors the region’s oil story.",
+    "ekofisk-field":
+      "First North Sea giant (Norwegian chalk). It proved the North Sea could host world-class oil and built Stavanger’s offshore industry.",
+    "brent-field":
+      "Namesake of the Brent pricing complex in the UK North Sea. Even as the field ages, ‘Brent’ remains a global benchmark word.",
+    fortuna:
+      "Forties Field — a UK North Sea workhorse and namesake stream. One of the fields that made Aberdeen an oil city.",
+    "statfjord-field":
+      "Giant Norway–UK North Sea field. For years among Europe’s largest producers and a symbol of Norwegian offshore success.",
+    "awali":
+      "First oil find on the Arabian side of the Gulf (Bahrain, 1932). It proved the peninsula’s potential before the Saudi and UAE giants came in.",
+    abqaiq:
+      "Saudi processing and field hub east of Ghawar. A critical node where huge volumes are stabilized and moved to export.",
+    rumaila:
+      "Southern Iraq baseload giant near Basra. One of the world’s great producing fields and a core of Basrah export grades.",
+    "north-field-qatar":
+      "The world’s largest gas field (shared with Iran’s South Pars). It underwrites Qatar’s LNG leadership and condensate streams.",
+    "cpc-source":
+      "Tengiz Field in Kazakhstan — a sour, high-pressure giant. Oil moves to Black Sea ports via the CPC pipeline system.",
+    "kashagan-field":
+      "Giant Kashagan discovery in the Caspian. Harsh offshore conditions and complex sour oil made it one of the industry’s hardest megaprojects.",
+    samotlor:
+      "West Siberian giant that powered late-Soviet oil supply. Still a landmark name in Russian production history.",
+    "upper-zakum":
+      "Abu Dhabi’s giant offshore field — among the world’s largest. Artificial islands and long-reach wells developed a vast carbonate reservoir.",
+    "johan-sverdrup-field":
+      "Modern Norwegian North Sea giant. Low-cost, low-carbon-intensity barrels that refreshed Norway’s oil outlook in the 2010s–2020s.",
+
+    /* —— Batch 2: basins, plays, and stream-linked giants —— */
+    athabasca:
+      "Northern Alberta’s oil-sands country — one of the largest bitumen deposits on Earth. Mining and steam (SAGD) turn tar-like oil into diluted bitumen and synthetic crude that trade as WCS and related grades.",
+    "orinoco-belt":
+      "A vast extra-heavy oil belt across eastern Venezuela — often called the world’s largest oil accumulation by volume. Upgraders and diluent turn it into export grades such as Merey and Orinoco synthetics.",
+    "niger-delta":
+      "West Africa’s densest oil province: swamp, shallow water, and deepwater fields feeding Bonny, Forcados, Brass, and other Nigerian export streams. Politics and logistics matter here as much as geology.",
+    "gom-deepwater":
+      "US Gulf of Mexico deepwater — Mississippi Canyon, Walker Ridge, and neighbors. Mars, Thunder Horse, and kin showed that big oil could live under thousands of feet of water.",
+    "campos-basin":
+      "Brazil’s classic deepwater training ground, offshore Rio/Espírito Santo. Marlim and Roncador taught the industry how to produce big subsea fields before the pre-salt boom.",
+    "santos-basin":
+      "Brazil’s pre-salt super-province south of Campos. Lula, Búzios, and neighbors sit under a thick salt layer and now dominate Brazilian liquids growth.",
+    "lago-maracaibo":
+      "Lake Maracaibo and its shores — a century-scale Venezuelan oil province. Light and heavy streams from here helped define Latin American export crude for generations.",
+    "stabroek":
+      "Offshore Guyana block that rewrote Atlantic exploration. Liza and follow-ons turned a quiet margin into one of the decade’s biggest new oil stories.",
+    "sirtica":
+      "Libya’s primary oil province in the Sirte Basin. Es Sider, Amna, Brega and related streams built the country’s export system on desert and coastal fields.",
+    gippsland:
+      "Bass Strait oil and gas between Victoria and Tasmania. Kingfish and neighbors made Australia an oil producer and still feed Gippsland crude and condensate.",
+    "nws-hub":
+      "Australia’s North West Shelf — Carnarvon Basin gas and condensate that underwrite LNG cargoes and light liquids streams such as Northwest Shelf and Breeze.",
+    "powder-river":
+      "Wyoming’s Powder River Basin. Conventional oil and newer horizontal plays (Parkman, Turner, Niobrara) keep it on the US liquids map.",
+    "gulf-mexico-shelf":
+      "Federal and state shelf waters of the US Gulf — producing since the 1940s. The shallow-water ancestor of today’s deepwater boom.",
+    "neuquen-basin":
+      "Patagonian basin in Argentina that hosts Vaca Muerta shale. Medanito and Escalante quality sit alongside one of the world’s big unconventional oil plays.",
+    baram:
+      "NW Borneo oil province shared by Malaysia and Brunei. Labuan, Kimanis, and Seria heritage streams come from this delta and offshore fairway.",
+    "oriente-ecuador":
+      "Amazonian Ecuador oil province east of the Andes. Oriente and Napo crudes move over the mountains to Pacific export.",
+    "williston-basin":
+      "US–Canada basin under the Dakotas and Saskatchewan. Bakken–Three Forks shale remade North Dakota into a top US oil state.",
+    "uinta-basin":
+      "Northeast Utah basin famous for waxy, high-pour-point crude. Uinta barrels need heated handling — a reminder that ‘API’ is not the whole story.",
+    "dj-basin":
+      "Denver–Julesburg Basin on the Rockies front range. Niobrara and Codell horizontals turned it into a major US liquids growth area.",
+    "permian-central":
+      "The Central Basin Platform — the high that separates Midland from Delaware in the Permian. Conventional pays here are part of West Texas’s deep oil history.",
+    "oman-basin":
+      "Northern Oman carbonate oil country. Oman Blend and related streams come from long-life fields that made the sultanate a steady Gulf exporter outside OPEC’s biggest producers.",
+    "sureste":
+      "Southeast Mexico’s petroleum province (onshore and offshore). Olmeca and other newer streams sit in a region that also hosts historic Cantarell supply routes.",
+    chubut:
+      "Historic Patagonian oil province in Argentina. Escalante-quality crude and early 20th-century fields mark South America’s southern oil frontier.",
+    doba:
+      "Chad–Cameroon oil fairway. Doba crude moves by pipeline to the Atlantic — a landlocked African barrel that still reaches the water.",
+    "bakken-play":
+      "Williston Basin tight oil that remade North Dakota after 2008. Horizontal wells and fracture stimulation turned ‘resource’ rock into a US supply pillar.",
+    "eagle-ford":
+      "South Texas shale that flipped US liquids supply after 2008. Condensate-rich to oily windows feed Gulf Coast refining and export.",
+    "niobrara-play":
+      "Colorado–Wyoming chalk and shale liquids fairway in the DJ and Powder River region. A Rockies counterpart to the bigger Texas shale stories.",
+    carabobo:
+      "Orinoco Belt project division in Venezuela. Extra-heavy oil here is diluted or upgraded toward Merey-family export quality.",
+    junin:
+      "Orinoco Belt project division (Junín). Same extra-heavy story as Carabobo — vast resource, upgrading and diluent decide what leaves the country.",
+    "murban-source":
+      "Onshore Abu Dhabi fairway that sets Murban quality — the UAE’s flagship light sour crude and a key Asian pricing benchmark.",
+    dukhan:
+      "Qatar’s onshore backbone field. Together with offshore Qatar Marine, it feeds the country’s land and marine crude streams.",
+    "zubair-field":
+      "Southern Iraq mainstay near Basra. A core contributor to Basrah export grades and Iraq’s post-war production recovery.",
+    gachsaran:
+      "Historic southern Zagros giant in Iran. Long a pillar of Iranian Heavy — mountain-front carbonate oil on a world-class scale.",
+    azerbaijani:
+      "The Azeri–Chirag–Gunashli (ACG) complex in the Caspian. Backbone of Azeri Light / BTC Blend moving west by pipeline to Ceyhan.",
+    "lula-field":
+      "Pre-salt icon that opened Santos Basin scale. Lula (and related Tupi nomenclature) proved Brazil’s salt-layer giants were commercial.",
+    manifa:
+      "Saudi heavy offshore development reached by causeways in the Gulf. Built to sustain Arab Heavy volumes from a challenging shallow reservoir.",
+    zuluf:
+      "Northern Arabian Gulf offshore Saudi giant. A long-life contributor to Arab Medium and the kingdom’s offshore system.",
+    ahwaz:
+      "Onshore Khuzestan giant in Iran. Part of the cluster of fields that defined Iranian Light for decades.",
+    marun:
+      "Khuzestan workhorse beside Ahwaz and Aghajari. Another Zagros giant behind classic Iranian export grades.",
+    "lower-zakum":
+      "Deeper reservoirs of Abu Dhabi’s Zakum complex. Together with Upper Zakum, among the world’s great offshore carbonate developments.",
+    ummshaif:
+      "Early ADNOC offshore discovery in Abu Dhabi waters. Helped launch the UAE’s Gulf production story; oil moves via Das Island heritage routes.",
+    kingfish:
+      "Bass Strait giant off Victoria. One of the fields that made Gippsland Australia’s oil heartland.",
+    khurais:
+      "Major Saudi onshore increment tied into the Ghawar production system. Built to sustain Arab Light volumes from a vast carbonate reservoir.",
+    berri:
+      "Saudi offshore–onshore Extra Light contributor in the Gulf. Part of the quality ladder above Arab Light.",
+    "conroe-field":
+      "Major 1931 Montgomery County discovery north of Houston. A Gulf Coast giant of the East Texas generation, still in the region’s oil memory.",
+    "hastings-tx":
+      "Brazoria–Harris giant of the 1930s Gulf Coast boom. Another big Frio/Miocene field that fed Houston-area refining.",
+    "tom-oconnor":
+      "Refugio County giant on the Texas Coastal Bend. Long-life conventional production in the Corpus Christi supply shed.",
+    "el-furrial-field":
+      "Giant eastern Venezuela field in Monagas. Source of El Furrial and related medium sour streams from the Eastern Venezuela Basin.",
+  };
+
+  for (let i = 0; i < sites.length; i++) {
+    const story = SITE_STORIES[sites[i].id];
+    if (story) sites[i].notes = story;
+  }
+
   global.SITES_DATA = { sites: sites, SWEET_S_MAX: 0.5 };
 })(typeof window !== "undefined" ? window : globalThis);
 
