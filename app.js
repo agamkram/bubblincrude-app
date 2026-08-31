@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v243";
+  const APP_VERSION = "v248";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -190,8 +190,10 @@
     el.viewProducts = $("view-products");
     el.viewAbout = $("view-about");
     el.pickerModal = $("picker-modal");
+    el.pickerSelected = $("picker-selected");
     el.pickerList = $("picker-list");
     el.pickerSearch = $("picker-search");
+    el.pickerGoCompare = $("picker-go-compare");
     el.apiMin = $("api-min");
     el.apiMax = $("api-max");
     el.apiFill = $("api-fill");
@@ -389,6 +391,18 @@
     else {
       state.route = "home";
     }
+  }
+
+  /* Compare tray never survives refresh. A bare /compare is an empty board —
+     send the user to the opening map instead. */
+  function bounceEmptyCompareToHome() {
+    if (state.route !== "compare") return false;
+    if (state.compareIds.length >= 2) return false;
+    state.route = "home";
+    try {
+      history.replaceState(null, "", "/");
+    } catch (_) {}
+    return true;
   }
 
   function buildUrl(opts) {
@@ -2789,13 +2803,17 @@
     const streams = pins.map((p) => p.s);
     if (streams.length < 2) {
       el.viewCompare.innerHTML =
-        '<div class="compare-head"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
+        '<div class="compare-head"><div class="compare-head-top"><h2>Compare</h2><a class="btn btn-ghost" href="/">Back to map</a></div></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
       return;
     }
 
     const trayFull = compareTrayFull();
     let html = '<div class="compare-head">';
-    html += "<div><h2>Compare</h2>";
+    html += '<div class="compare-head-top">';
+    html += "<h2>Compare</h2>";
+    html += '<a class="btn btn-ghost" href="/">Back to map</a>';
+    html += "</div>";
+    html += '<div class="compare-sel-row">';
     html += '<div class="compare-sel-chips">';
     state.compareIds.forEach((key, i) => {
       const s = getComparePin(key);
@@ -2811,13 +2829,12 @@
         escapeHtml(s.name) +
         '">×</button></div>';
     });
-    html += "</div></div>";
-    html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    html += "</div>";
     html +=
       '<button type="button" class="btn btn-ghost" id="cmp-add"' +
       (trayFull ? " disabled title=\"Tray full — remove one to add another\"" : "") +
       ">+ Add</button>";
-    html += '<a class="btn btn-ghost" href="/">Back to map</a></div></div>';
+    html += "</div></div>";
 
     html += '<div class="stream-cards-swipe">';
     pins.forEach((p, i) => {
@@ -3554,16 +3571,95 @@
     bindInspectorEvents(el.viewStream);
   }
 
+  function pickerSearchHint() {
+    if (state.route === "compare") return "Search streams, sites, hubs, plants…";
+    if (state.layer === "sites") return "Search sites…";
+    if (state.layer === "hubs") return "Search hubs…";
+    if (state.layer === "refineries") return "Search plants…";
+    return "Search streams…";
+  }
+
+  function closePicker() {
+    if (el.pickerModal) el.pickerModal.classList.add("hidden");
+  }
+
+  function syncPickerGoCompare() {
+    const btn = el.pickerGoCompare;
+    if (!btn) return;
+    const n = state.compareIds.length;
+    const ready = n >= 2;
+    btn.disabled = !ready;
+    if (state.route === "compare") {
+      btn.textContent = ready ? "Done" : "Need 2 to compare";
+    } else {
+      btn.textContent = ready ? "Compare (" + n + ")" : "Compare";
+    }
+  }
+
   function openPicker() {
-    if (compareTrayFull()) return;
     el.pickerModal.classList.remove("hidden");
-    el.pickerSearch.value = "";
+    if (el.pickerSearch) {
+      el.pickerSearch.value = "";
+      el.pickerSearch.placeholder = pickerSearchHint();
+    }
     renderPickerList("");
     el.pickerSearch.focus();
   }
 
+  function renderPickerSelected() {
+    if (!el.pickerSelected) return;
+    syncPickerGoCompare();
+    if (!state.compareIds.length) {
+      el.pickerSelected.innerHTML =
+        '<p class="picker-selected-empty">Nothing selected yet — pick up to 3</p>';
+      return;
+    }
+    el.pickerSelected.innerHTML =
+      '<div class="picker-selected-label">Selected (' +
+      state.compareIds.length +
+      '/3)</div><div class="picker-selected-chips">' +
+      state.compareIds
+        .map((key, i) => {
+          const s = getComparePin(key);
+          if (!s) return "";
+          const kind = parsePinKey(key).kind;
+          const kindLabel =
+            kind === "site"
+              ? "site"
+              : kind === "hub"
+                ? "hub"
+                : kind === "refinery"
+                  ? "refinery"
+                  : "";
+          return (
+            '<div class="picker-sel-chip"><span class="swatch-dot" style="background:' +
+            COMPARE_COLORS[i % COMPARE_COLORS.length] +
+            '"></span><span class="name">' +
+            escapeHtml(s.name) +
+            (kindLabel
+              ? '<span class="meta"> ' + escapeHtml(kindLabel) + "</span>"
+              : "") +
+            '</span><button type="button" class="rm" data-picker-rm="' +
+            escapeHtml(key) +
+            '" aria-label="Remove ' +
+            escapeHtml(s.name) +
+            '">×</button></div>'
+          );
+        })
+        .join("") +
+      "</div>";
+    el.pickerSelected.querySelectorAll("[data-picker-rm]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        removeFromCompare(btn.getAttribute("data-picker-rm"));
+        renderPickerList(el.pickerSearch ? el.pickerSearch.value : "");
+      });
+    });
+  }
+
   function renderPickerList(q) {
+    renderPickerSelected();
     const qq = (q || "").toLowerCase();
+    const full = compareTrayFull();
     function hits(kind, list) {
       return list.filter((s) => {
         if (state.compareIds.includes(pinKey(kind, s.id))) return false;
@@ -3592,10 +3688,24 @@
     } else {
       items = hits("stream", filteredStreams());
     }
-    el.pickerList.innerHTML =
+    let html = "";
+    if (full) {
+      html +=
+        '<p class="picker-full-note">Tray full — remove one above to add another</p>';
+    }
+    html +=
       items
-        .map(
-          (item) =>
+        .map((item) => {
+          if (full) {
+            return (
+              '<div class="picker-item is-disabled" aria-disabled="true"><span><strong>' +
+              escapeHtml(item.s.name) +
+              '</strong><div class="sub">' +
+              escapeHtml(item.s.country) +
+              '</div></span><span class="sub">Full</span></div>'
+            );
+          }
+          return (
             '<button type="button" class="picker-item" data-pick="' +
             escapeHtml(item.key) +
             '"><span><strong>' +
@@ -3624,15 +3734,19 @@
                   densityLabel(item.s.api) +
                   " " +
                   densityUnit()) +
-            "</div></span><span class=\"sub\">Add</span></button>"
-        )
+            '</div></span><span class="sub">Add</span></button>'
+          );
+        })
         .join("") ||
-      '<p style="color:var(--text-mute);padding:12px">No matches in the current filter set.</p>';
+      (full
+        ? ""
+        : '<p style="color:var(--text-mute);padding:12px">No matches in the current filter set.</p>');
+    el.pickerList.innerHTML = html;
     el.pickerList.querySelectorAll("[data-pick]").forEach((btn) => {
       btn.addEventListener("click", () => {
         addToCompare(btn.getAttribute("data-pick"));
-        el.pickerModal.classList.add("hidden");
         if (state.route === "compare") renderCompare();
+        renderPickerList(el.pickerSearch ? el.pickerSearch.value : "");
       });
     });
   }
@@ -4029,7 +4143,13 @@
     $("btn-open-compare")?.addEventListener("click", () => navigate("compare"));
 
     document.querySelectorAll("[data-close-modal]").forEach((n) => {
-      n.addEventListener("click", () => el.pickerModal.classList.add("hidden"));
+      n.addEventListener("click", closePicker);
+    });
+
+    el.pickerGoCompare?.addEventListener("click", () => {
+      if (state.compareIds.length < 2) return;
+      closePicker();
+      if (state.route !== "compare") navigate("compare");
     });
 
     el.pickerSearch?.addEventListener("input", () => renderPickerList(el.pickerSearch.value));
@@ -4060,6 +4180,7 @@
 
     window.addEventListener("popstate", () => {
       parseUrl();
+      bounceEmptyCompareToHome();
       syncFilterControls();
       syncSweetSeg();
       syncCheckboxes();
@@ -4070,7 +4191,7 @@
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
-        el.pickerModal.classList.add("hidden");
+        closePicker();
         el.unitsPopover.classList.add("hidden");
         setLegendHelpOpen(false);
       }
@@ -4158,6 +4279,7 @@
     pinShellViewport();
     forgetStorage();
     parseUrl();
+    bounceEmptyCompareToHome();
     buildStaticFilters();
     wireFilterDom(document);
     wireGlobal();
