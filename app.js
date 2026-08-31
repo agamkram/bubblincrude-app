@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v239";
+  const APP_VERSION = "v243";
   window.__APP_VERSION = APP_VERSION;
 
   const COMPARE_COLORS = ["#e8a838", "#f0d78c", "#7aa2ff"];
@@ -3180,24 +3180,35 @@
       state.originMap.remove();
       state.originMap = null;
     }
+    /* Locked snapshot of the same no-wrap pin belt as the main map —
+       one world width, no repeating tiles left/right. */
+    const belt = WORLD_BOUNDS;
+    const mapW = node.clientWidth || node.offsetWidth || 320;
+    const beltH = Math.round(mapW / beltAspect());
+    node.style.height = Math.max(160, Math.min(beltH, 360)) + "px";
     const map = L.map(node, {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: false,
-      dragging: true,
-      scrollWheelZoom: true,
-      doubleClickZoom: true,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
       boxZoom: false,
       keyboard: false,
-      minZoom: 1,
-      maxZoom: 8,
-      worldCopyJump: true,
+      touchZoom: false,
+      tap: false,
+      minZoom: 0,
+      zoomSnap: 0,
+      worldCopyJump: false,
+      maxBounds: belt,
+      maxBoundsViscosity: 1.0,
     });
     L.tileLayer(MAP_TILE_URL, {
       attribution: MAP_TILE_ATTR,
       subdomains: "abcd",
+      maxZoom: 19,
+      noWrap: true,
+      bounds: belt,
     }).addTo(map);
-    /* Always start world-full — close hubs used to fitBounds into empty ocean. */
-    map.setView([20, 0], 1);
     const layout = originStackLayout(streams);
     streams.forEach((s, i) => {
       if (s.lat == null || s.lon == null) return;
@@ -3209,7 +3220,10 @@
         .addTo(map);
     });
     state.originMap = map;
-    setTimeout(() => map.invalidateSize({ pan: false }), 40);
+    setTimeout(() => {
+      map.invalidateSize({ pan: false });
+      map.fitBounds(belt, { animate: false, padding: [0, 0] });
+    }, 40);
   }
 
   function drawTbp(streams) {

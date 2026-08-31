@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 239;
+  --bc-css: 243;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1736,25 +1736,11 @@ button.pill {
 }
 
 .origin-map {
-  height: 220px;
+  height: 220px; /* JS overrides to belt aspect */
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   overflow: hidden;
   background: var(--bg);
-}
-.origin-map .leaflet-control-zoom {
-  margin: 8px;
-  border: 1px solid var(--border) !important;
-  box-shadow: none !important;
-}
-.origin-map .leaflet-control-zoom a {
-  background: var(--bg-panel) !important;
-  color: var(--text) !important;
-  border-bottom-color: var(--border) !important;
-  width: 26px;
-  height: 26px;
-  line-height: 26px;
-  font-size: 14px;
 }
 .origin-marker-hit {
   background: transparent;
