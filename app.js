@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v259";
+  const APP_VERSION = "v275";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -1562,6 +1562,113 @@
       .replace(/"/g, "&quot;");
   }
 
+  /** Open Google Maps app if present; else Apple Maps on iOS; else geo / Google on Android & desktop. */
+  function openInMaps(lat, lon, label) {
+    const la = Number(lat);
+    const lo = Number(lon);
+    if (!Number.isFinite(la) || !Number.isFinite(lo)) return;
+    const name = (label || la + ", " + lo).trim();
+    const q = encodeURIComponent(name);
+    const ll = la + "," + lo;
+    /* Labeled pin string — drop a pin; do not also pass center= (that triggers a
+       place-search that often toasts “Something went wrong” while the map is fine). */
+    const pinQ = encodeURIComponent(ll + " (" + name + ")");
+    const ua = navigator.userAgent || "";
+    const isiOS =
+      /iPad|iPhone|iPod/i.test(ua) ||
+      (navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1);
+    const isAndroid = /Android/i.test(ua);
+
+    if (isAndroid) {
+      window.location.href = "geo:" + la + "," + lo + "?q=" + pinQ;
+      return;
+    }
+
+    if (isiOS) {
+      const gmaps = "comgooglemaps://?q=" + pinQ + "&zoom=16";
+      const apple = "maps://?ll=" + ll + "&q=" + q;
+      let handedOff = false;
+      let timer = 0;
+      function cleanup() {
+        document.removeEventListener("visibilitychange", onHide);
+        window.removeEventListener("pagehide", onHide);
+        window.removeEventListener("blur", onHide);
+        if (timer) {
+          window.clearTimeout(timer);
+          timer = 0;
+        }
+      }
+      function onHide() {
+        handedOff = true;
+        cleanup();
+      }
+      document.addEventListener("visibilitychange", onHide);
+      window.addEventListener("pagehide", onHide);
+      window.addEventListener("blur", onHide);
+      window.location.href = gmaps;
+      timer = window.setTimeout(function () {
+        cleanup();
+        if (handedOff || document.hidden || document.visibilityState === "hidden") {
+          return;
+        }
+        window.location.href = apple;
+      }, 2200);
+      return;
+    }
+
+    window.open(
+      "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(ll),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  }
+
+  /* Sites/hubs/refineries are places. Basins and plays are region centroids. */
+  function mapsButtonAriaLabel(s) {
+    const kind = s && s.kind;
+    if (kind === "basin" || kind === "play") return "Open region in Maps";
+    return "Open in Maps";
+  }
+
+  function mapsButtonHtml(s) {
+    if (!s || s.lat == null || s.lon == null) return "";
+    const la = Number(s.lat);
+    const lo = Number(s.lon);
+    if (!Number.isFinite(la) || !Number.isFinite(lo)) return "";
+    const full = mapsButtonAriaLabel(s);
+    return (
+      '<button type="button" class="bc-maps-btn" data-open-maps' +
+      ' data-lat="' +
+      escapeHtml(String(la)) +
+      '" data-lon="' +
+      escapeHtml(String(lo)) +
+      '" data-label="' +
+      escapeHtml(s.name || "") +
+      '" title="' +
+      escapeHtml(full) +
+      '" aria-label="' +
+      escapeHtml(full) +
+      '">Maps</button>'
+    );
+  }
+
+  function bindOpenMaps(root) {
+    if (!root) return;
+    root.querySelectorAll("[data-open-maps]").forEach((btn) => {
+      if (btn._bcMapsBound) return;
+      btn._bcMapsBound = true;
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openInMaps(
+          btn.getAttribute("data-lat"),
+          btn.getAttribute("data-lon"),
+          btn.getAttribute("data-label") || ""
+        );
+      });
+    });
+  }
+
   function glossaryBtn(termId, label) {
     return (
       '<button type="button" class="flag-btn" data-glossary="' +
@@ -1639,7 +1746,13 @@
     return out.join("");
   }
 
-  function inspTitleButtonsHtml() {
+  function unitsToolBtnHtml() {
+    return (
+      '<button type="button" class="bc-tool-btn js-units-btn" aria-haspopup="true" aria-expanded="false">Units</button>'
+    );
+  }
+
+  function inspTitleButtonsHtml(place) {
     const expanded = !!state.inspExpanded;
     const expand =
       state.route === "home"
@@ -1649,10 +1762,17 @@
           (expanded ? "true" : "false") +
           '"><span class="insp-expand-icon" aria-hidden="true"></span></button>'
         : "";
+    const maps = place ? mapsButtonHtml(place) : "";
     return (
       '<div class="insp-title-actions">' +
+      '<div class="insp-title-actions-top">' +
       expand +
       '<button type="button" class="insp-clear" data-clear-selection aria-label="Clear selection">×</button>' +
+      "</div>" +
+      '<div class="insp-title-actions-tools">' +
+      maps +
+      unitsToolBtnHtml() +
+      "</div>" +
       "</div>"
     );
   }
@@ -1665,9 +1785,8 @@
     let html = "";
     html += '<div class="insp-header">';
     html += '<div class="insp-title-row">';
+    html += '<div class="insp-title-main">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html += inspTitleButtonsHtml();
-    html += "</div>";
     if (s.aliases && s.aliases.length) {
       html +=
         '<p class="insp-aliases">' + escapeHtml(s.aliases.join(" · ")) + "</p>";
@@ -1678,6 +1797,9 @@
       " / " +
       escapeHtml(s.basin) +
       "</p>";
+    html += "</div>";
+    html += inspTitleButtonsHtml();
+    html += "</div>";
     html += '<div class="pill-row">' + pillsFor(s);
     html += compareActionHtml(pinKey("stream", s.id), "data-compare-add");
     html += "</div>";
@@ -2125,13 +2247,15 @@
     }
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
+    html += '<div class="insp-title-main">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html += inspTitleButtonsHtml();
-    html += "</div>";
     html +=
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.basin, s.region].filter(Boolean).join(" · ")) +
       "</p>";
+    html += "</div>";
+    html += inspTitleButtonsHtml();
+    html += "</div>";
     html += '<div class="pill-row">' + pills.join("");
     html += compareActionHtml(pinKey("site", s.id), "data-compare-add");
     html += "</div></div>";
@@ -2195,13 +2319,15 @@
   function hubInspectorHtml(s) {
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
+    html += '<div class="insp-title-main">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html += inspTitleButtonsHtml();
-    html += "</div>";
     html +=
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.region].filter(Boolean).join(" · ")) +
       "</p>";
+    html += "</div>";
+    html += inspTitleButtonsHtml();
+    html += "</div>";
     html += '<div class="pill-row">';
     if (s.role) {
       html += '<span class="pill pill-kind">' + escapeHtml(s.role) + "</span>";
@@ -2245,13 +2371,15 @@
   function refineryInspectorHtml(s) {
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
+    html += '<div class="insp-title-main">';
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
-    html += inspTitleButtonsHtml();
-    html += "</div>";
     html +=
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.region].filter(Boolean).join(" · ")) +
       "</p>";
+    html += "</div>";
+    html += inspTitleButtonsHtml(s);
+    html += "</div>";
     html += '<div class="pill-row">';
     html += '<span class="pill pill-kind">refinery</span>';
     if (s.operator) {
@@ -2284,6 +2412,7 @@
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
     });
+    bindOpenMaps(root);
     bindGlossaryButtons(root);
     bindClearSelection(root);
   }
@@ -2663,7 +2792,9 @@
     const box = el.searchResults;
     if (!box) return;
     const q = state.query.trim();
-    if (!q || !state._searchFocused) {
+    /* Keep the list up after keyboard dismiss (iOS Done / blur) as long as
+       there is still a query — only clear/pick should hide it. */
+    if (!q) {
       box.classList.add("hidden");
       box.innerHTML = "";
       return;
@@ -2683,9 +2814,8 @@
         '<div class="search-results-empty">No ' + noun + " match “" + escapeHtml(q) + '”</div>';
       return;
     }
-    const shown = hits.slice(0, 8);
     let html = "";
-    for (const s of shown) {
+    for (const s of hits) {
       let meta;
       if (state.layer === "sites") {
         meta = [s.country, s.kind, s.year != null ? String(s.year) : ""].filter(Boolean).join(" · ");
@@ -2711,12 +2841,6 @@
         '</span><span class="search-hit-meta">' +
         escapeHtml(meta) +
         "</span></button>";
-    }
-    if (hits.length > shown.length) {
-      html +=
-        '<div class="search-results-empty">+' +
-        (hits.length - shown.length) +
-        " more on the map</div>";
     }
     box.innerHTML = html;
     box.classList.remove("hidden");
@@ -3869,13 +3993,58 @@
     );
   }
 
+  function placePopover(pop, anchor) {
+    if (!pop) return;
+    /* fixed + viewport rects — absolute was clipped by .app overflow when the
+       Units control sat lower in the inspector. */
+    pop.style.position = "fixed";
+    const width = Math.min(260, window.innerWidth - 16);
+    pop.style.width = width + "px";
+    if (anchor) {
+      const r = anchor.getBoundingClientRect();
+      const wasHidden = pop.classList.contains("hidden");
+      if (wasHidden) {
+        pop.style.visibility = "hidden";
+        pop.classList.remove("hidden");
+      }
+      const height = pop.offsetHeight || 280;
+      if (wasHidden) {
+        pop.classList.add("hidden");
+        pop.style.visibility = "";
+      }
+      let left = r.right - width;
+      left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+      const below = r.bottom + 6;
+      const above = r.top - height - 6;
+      const top =
+        below + height <= window.innerHeight - 8 ? below : Math.max(8, above);
+      pop.style.top = Math.round(top) + "px";
+      pop.style.left = Math.round(left) + "px";
+      pop.style.right = "auto";
+      return;
+    }
+    const tb = document.querySelector(".topbar");
+    if (!tb) return;
+    /* Use the real topbar bottom — --topbar-h is stale vs phone title/search. */
+    pop.style.top = Math.ceil(tb.getBoundingClientRect().bottom) + "px";
+    pop.style.left = "";
+    pop.style.right = "16px";
+  }
+
   function setUnitsPopoverOpen(open, anchor) {
     const pop = el.unitsPopover;
     if (!pop) return;
-    if (open) placePopover(pop, anchor);
-    pop.classList.toggle("hidden", !open);
+    if (open) {
+      placePopover(pop, anchor);
+      pop.classList.remove("hidden");
+    } else {
+      pop.classList.add("hidden");
+    }
     document.querySelectorAll(".js-units-btn").forEach((btn) => {
       btn.setAttribute("aria-expanded", open ? "true" : "false");
+      /* Closing via a second tap leaves :focus on the control — that looked
+         “stuck on.” Blur when closed so only aria-expanded drives the lit look. */
+      if (!open && document.activeElement === btn) btn.blur();
     });
   }
 
@@ -4136,26 +4305,6 @@
       history.replaceState(null, "", buildUrl());
       render();
     });
-
-    function placePopover(pop, anchor) {
-      if (!pop) return;
-      const width = pop.offsetWidth || 260;
-      if (anchor) {
-        const r = anchor.getBoundingClientRect();
-        let left = r.right - width;
-        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
-        pop.style.top = Math.ceil(r.bottom + 6) + "px";
-        pop.style.left = Math.round(left) + "px";
-        pop.style.right = "auto";
-        return;
-      }
-      const tb = document.querySelector(".topbar");
-      if (!tb) return;
-      /* Use the real topbar bottom — --topbar-h is stale vs phone title/search. */
-      pop.style.top = Math.ceil(tb.getBoundingClientRect().bottom) + "px";
-      pop.style.left = "";
-      pop.style.right = "16px";
-    }
 
     $("btn-add-stream")?.addEventListener("click", openPicker);
     $("btn-open-compare")?.addEventListener("click", () => navigate("compare"));

@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 259;
+  --bc-css: 275;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -288,7 +288,7 @@ html:not(.app-home) .topbar-search {
   right: 0;
   top: calc(100% + 4px);
   z-index: 95;
-  max-height: min(42vh, 320px);
+  max-height: min(60vh, 480px);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   background: var(--bg-panel);
@@ -1076,24 +1076,33 @@ input[type="range"] {
   height: 100%;
 }
 .inspector-empty {
-  padding: 24px 8px;
-  text-align: center;
+  padding: 12px 2px 20px;
+  text-align: left;
   color: var(--text-mute);
 }
 .empty-title {
   font-weight: 600;
   color: var(--text-dim);
   margin: 0 0 6px;
+  font-size: 15px;
 }
 .empty-body {
   margin: 0;
   font-size: 13px;
+  line-height: 1.4;
 }
 
-.insp-toolbar {
+.insp-empty-head {
   display: flex;
-  justify-content: flex-end;
-  margin: -4px 0 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+.insp-empty-head .empty-title {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .page-head {
   display: flex;
@@ -1118,12 +1127,34 @@ input[type="range"] {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  margin-bottom: 0;
+}
+.insp-title-main {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .insp-title-actions {
   display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin-top: -2px;
+}
+.insp-title-actions-top {
+  display: flex;
+  flex: 0 0 auto;
   align-items: flex-start;
   gap: 2px;
+}
+.insp-title-actions-tools {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  max-width: 148px;
 }
 .insp-expand {
   flex: 0 0 auto;
@@ -1158,8 +1189,6 @@ input[type="range"] {
 }
 .insp-name {
   margin: 0;
-  flex: 1 1 auto;
-  min-width: 0;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -1186,14 +1215,66 @@ input[type="range"] {
   outline: none;
 }
 .insp-aliases {
-  margin: 1px 0 0;
+  margin: 0;
   font-size: 11px;
   color: var(--text-mute);
 }
 .insp-loc {
-  margin: 3px 0 0;
+  margin: 1px 0 0;
   font-size: 11px;
   color: var(--text-dim);
+}
+.bc-maps-btn,
+.bc-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.bc-maps-btn:hover,
+.bc-maps-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+  outline: none;
+}
+.bc-tool-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: var(--bg-hover);
+}
+.bc-tool-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.bc-tool-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+.bc-maps-btn:active,
+.bc-tool-btn:active {
+  opacity: 0.88;
+}
+.btn-text.js-units-btn[aria-expanded="true"] {
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 .pill-row {
   display: flex;
@@ -2193,10 +2274,10 @@ html.pwa-standalone:not(.app-home) .view-page {
 
 /* —— Popover / modal / sheet / drawer —— */
 .popover {
-  position: absolute;
+  position: fixed;
   top: calc(var(--topbar-h) + var(--safe-t));
   right: 16px;
-  z-index: 80;
+  z-index: 120;
   width: 260px;
   padding: 14px;
   border: 1px solid var(--border-strong);

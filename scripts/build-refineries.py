@@ -43,11 +43,16 @@ SKIP_NAME = re.compile(
     r"fire dept|board of public utilities|bar and grill|"
     r"aesthetique|\bspa\b|biorefining|renewable diesel|"
     r"fuel gas line|training department|"
-    r"commemorative plaque|refinery fence|district pond",
+    r"commemorative plaque|refinery fence|district pond|"
+    r"\bmoochi\b|"  # NZ fashion store named "Moochi Refinery", not oil
+    r"chelsea refinery cottages|visitor centre|visitor center|"
+    r"refinery wharf|\bt-head\b|\bcottages\b|"
+    r"\bschool\b|\bhospital\b|blood bank|old refinery park|"
+    r"^refineries park$|marysville ethanol|gold refiners",
     re.I,
 )
 # OSM still has a pin. These are not operable crude CDUs.
-NOT_CRUDE = re.compile(r"^cheyenne refinery$", re.I)
+NOT_CRUDE = re.compile(r"^cheyenne refinery$|^fbr$", re.I)
 KEEP_NAME = re.compile(
     r"refiner|raffiner|rafiner|НПЗ|炼油|製油|kilang|pabrik minyak|"
     r"petroleum|petrobras|exxon|shell |bp |total|sinopec|saudi aramco|"
