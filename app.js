@@ -38,11 +38,13 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v258";
+  const APP_VERSION = "v259";
   window.__APP_VERSION = APP_VERSION;
 
-  /* Amber / blue / coral — pale gold used to sit next to amber and vanished on chips. */
-  const COMPARE_COLORS = ["#e8a838", "#7aa2ff", "#ff7a6e"];
+  /* Compare tray hard cap — UI readability, not a market rule. */
+  const COMPARE_MAX = 5;
+  /* Amber / blue / coral / teal / violet — five separable hues on dark UI. */
+  const COMPARE_COLORS = ["#e8a838", "#7aa2ff", "#ff7a6e", "#5ec8b0", "#c084fc"];
   /* Four distinct hues — saturates/resins used to both read as amber. */
   const SARA_COLORS = {
     saturates: "#5ec8b0",
@@ -421,7 +423,7 @@
   function navigate(route, opts) {
     opts = opts || {};
     if (opts.streamId) state.streamId = opts.streamId;
-    if (opts.compareIds) state.compareIds = opts.compareIds.slice(0, 3);
+    if (opts.compareIds) state.compareIds = opts.compareIds.slice(0, COMPARE_MAX);
     state.route = route;
     let url = buildUrl({ route, streamId: state.streamId });
     if (opts.hash) url += opts.hash.startsWith("#") ? opts.hash : "#" + opts.hash;
@@ -1510,7 +1512,7 @@
 
   function addToCompare(id) {
     if (state.compareIds.includes(id)) return;
-    if (state.compareIds.length >= 3) return;
+    if (state.compareIds.length >= COMPARE_MAX) return;
     state.compareIds.push(id);
     saveStorage();
     if (state.route === "home") history.replaceState(null, "", buildUrl());
@@ -1520,7 +1522,7 @@
   }
 
   function compareTrayFull() {
-    return state.compareIds.length >= 3;
+    return state.compareIds.length >= COMPARE_MAX;
   }
 
   /** Compare / In tray / Tray full pill for tips + inspector. */
@@ -2853,7 +2855,7 @@
       const place = comparePlaceBit(p.s, p.kind);
       html +=
         '<div class="swatch-item"><span class="swatch-dot" style="background:' +
-        COMPARE_COLORS[i] +
+        COMPARE_COLORS[i % COMPARE_COLORS.length] +
         '"></span>' +
         escapeHtml(p.s.name) +
         (place ? " · " + escapeHtml(place) : "") +
@@ -3595,13 +3597,17 @@
     syncPickerGoCompare();
     if (!state.compareIds.length) {
       el.pickerSelected.innerHTML =
-        '<p class="picker-selected-empty">Nothing selected yet — pick up to 3</p>';
+        '<p class="picker-selected-empty">Nothing selected yet — pick up to ' +
+        COMPARE_MAX +
+        "</p>";
       return;
     }
     el.pickerSelected.innerHTML =
       '<div class="picker-selected-label">Selected (' +
       state.compareIds.length +
-      '/3)</div><div class="picker-selected-chips">' +
+      "/" +
+      COMPARE_MAX +
+      ')</div><div class="picker-selected-chips">' +
       state.compareIds
         .map((key, i) => {
           const s = getComparePin(key);
