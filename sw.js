@@ -1,21 +1,22 @@
 /* BubblinCrude service worker — cache app shell + embedded JSON */
 /* Bump CACHE together with APP_VERSION in app.js and the ?v= query strings
    in index.html. Renaming the cache is what evicts the previous build. */
-const CACHE = "bubblincrude-v275";
+const CACHE = "bubblincrude-v276";
 const PRECACHE = [
   "./",
   "./index.html",
-  "./styles.css?v=275",
-  "./app.js?v=275",
-  "./data.js?v=275",
-  "./sites.js?v=275",
-  "./hubs.js?v=275",
-  "./refineries.js?v=275",
+  "./styles.css?v=276",
+  "./app.js?v=276",
+  "./data.js?v=276",
+  "./sites.js?v=276",
+  "./hubs.js?v=276",
+  "./refineries.js?v=276",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
   "./icon-maskable-512.png",
   "./apple-touch-icon.png",
+  "./oilprice-32.png",
 ];
 
 self.addEventListener("install", (event) => {
