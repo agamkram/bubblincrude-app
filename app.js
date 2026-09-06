@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v278";
+  const APP_VERSION = "v279";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -96,7 +96,6 @@
     },
     map: null,
     markers: new Map(),
-    clusterLayer: null,
     originMap: null,
     productGroup: "all",
   };
@@ -1533,7 +1532,10 @@
     if (state.route === "home") history.replaceState(null, "", buildUrl());
     renderTray();
     renderInspector();
-    updateMarkers();
+    /* Hover tips carry a compare badge and are bound once, so they go stale
+       when the tray changes; dropping the markers forces a fresh bind. Touch
+       builds no tips at all, so rebuilding 700+ pins there bought nothing. */
+    if (!L.Browser.touch) updateMarkers();
   }
 
   function compareTrayFull() {
@@ -1705,9 +1707,9 @@
       '" data-glossary="quality-flags" title="' +
       escapeHtml(label || "Quality") +
       ": " +
-      f +
+      escapeHtml(f) +
       '" aria-label="Quality flag: ' +
-      f +
+      escapeHtml(f) +
       '">' +
       (word ? escapeHtml(f) : "i") +
       "</button>"
@@ -1967,11 +1969,19 @@
   function yieldThermo(yields) {
     /* Assay yields stay four coarse bins; each row opens the representative
        teaching cut for that boiling window. */
+    /* Cut boundaries are stored in °C and rendered through tempLabel so the
+       Units panel reaches these rows too — they used to stay °C on °F. */
+    const band = (lo, hi) =>
+      lo == null
+        ? "<" + tempLabel(hi) + tempUnit()
+        : hi == null
+          ? ">" + tempLabel(lo) + tempUnit()
+          : tempLabel(lo) + "–" + tempLabel(hi) + tempUnit();
     const rows = [
-      { id: "heavy-naphtha", label: "Naphtha", sub: "<180°C", key: "naphtha" },
-      { id: "diesel", label: "Middle distillate", sub: "180–375°C", key: "middle" },
-      { id: "hvgo", label: "Gas oil / VGO", sub: "375–550°C", key: "vgo" },
-      { id: "vac-resid", label: "Resid", sub: ">550°C", key: "resid" },
+      { id: "heavy-naphtha", label: "Naphtha", sub: band(null, 180), key: "naphtha" },
+      { id: "diesel", label: "Middle distillate", sub: band(180, 375), key: "middle" },
+      { id: "hvgo", label: "Gas oil / VGO", sub: band(375, 550), key: "vgo" },
+      { id: "vac-resid", label: "Resid", sub: band(550, null), key: "resid" },
     ];
     let html = '<div class="thermo">';
     for (const r of rows) {
@@ -2522,20 +2532,30 @@
   function renderActiveChips() {
     const chips = [];
     const f = state.filters;
-    if (f.apiMin !== API_FLOOR || f.apiMax !== API_CEIL) {
-      chips.push(chipDismiss("API " + f.apiMin + "–" + f.apiMax, "api"));
-    }
-    if (f.sweetSour !== "all") {
-      chips.push(chipDismiss(f.sweetSour === "sweet" ? "Sweet" : "Sour", "ss"));
-    }
-    if (f.sulfurMax !== S_CEIL) {
-      chips.push(chipDismiss("S ≤ " + f.sulfurMax + "%", "smax"));
+    /* Same test syncMapSliders() uses to disable the sliders: hubs and
+       refineries carry no gravity or sulfur, so those chips mean nothing. */
+    const assayInert = state.layer === "hubs" || state.layer === "refineries";
+    if (!assayInert) {
+      if (f.apiMin !== API_FLOOR || f.apiMax !== API_CEIL) {
+        chips.push(chipDismiss("API " + f.apiMin + "–" + f.apiMax, "api"));
+      }
+      if (f.sweetSour !== "all") {
+        chips.push(chipDismiss(f.sweetSour === "sweet" ? "Sweet" : "Sour", "ss"));
+      }
+      if (f.sulfurMax !== S_CEIL) {
+        chips.push(chipDismiss("S ≤ " + f.sulfurMax + "%", "smax"));
+      }
     }
     for (const r of f.regions) chips.push(chipDismiss(r, "region:" + r));
-    for (const k of f.kinds) chips.push(chipDismiss(k, "kind:" + k));
-    if (f.hasDistill) chips.push(chipDismiss("Has distillation", "dist"));
-    if (f.hasSara) chips.push(chipDismiss("Has SARA", "sara"));
-    if (f.hasMetals) chips.push(chipDismiss("Has metals", "metals"));
+    /* Kind and assay-completeness only narrow streams; siteMatches/hubMatches
+       ignore them. Showing the chip on another layer claimed a filter was
+       active while every pin stayed on the map. */
+    if (state.layer === "streams") {
+      for (const k of f.kinds) chips.push(chipDismiss(k, "kind:" + k));
+      if (f.hasDistill) chips.push(chipDismiss("Has distillation", "dist"));
+      if (f.hasSara) chips.push(chipDismiss("Has SARA", "sara"));
+      if (f.hasMetals) chips.push(chipDismiss("Has metals", "metals"));
+    }
     if (state.query) chips.push(chipDismiss("“" + state.query + "”", "q"));
 
     if (!chips.length) {
