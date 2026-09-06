@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v276";
+  const APP_VERSION = "v278";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -53,12 +53,27 @@
     asphaltenes: "#c45c5c",
   };
 
-  /* Must match the api-min/api-max slider bounds in index.html. The ceiling
-     has to clear the lightest condensate (57°API) or it is unreachable.
+  /* Derived from the streams themselves, never hand-set: a hardcoded ceiling
+     silently strands anything above it. Adding condensates once pushed the
+     data to 83°API against a 60 ceiling, which hid ten streams from the map
+     AND from search. syncRangeBounds() pushes these onto the inputs so
+     index.html cannot drift from them either.
      Declared before `state`, which calls defaultFilters() during init. */
-  const API_FLOOR = 5;
-  const API_CEIL = 60;
-  const S_CEIL = 5.2;
+  function dataBounds() {
+    const api = DATA.streams.map((s) => s.api).filter((v) => v != null);
+    const sul = DATA.streams.map((s) => s.sulfur_wt).filter((v) => v != null);
+    const step = (v, by, up) =>
+      by * (up ? Math.ceil(v / by) : Math.floor(v / by));
+    return {
+      apiFloor: api.length ? step(Math.min(...api), 5, false) : 5,
+      apiCeil: api.length ? step(Math.max(...api), 5, true) : 60,
+      sCeil: sul.length ? Math.max(step(Math.max(...sul), 0.1, true), 0.1) : 5.2,
+    };
+  }
+  const BOUNDS = dataBounds();
+  const API_FLOOR = BOUNDS.apiFloor;
+  const API_CEIL = BOUNDS.apiCeil;
+  const S_CEIL = BOUNDS.sCeil;
 
   const state = {
     route: "home",
@@ -2579,7 +2594,19 @@
     onFiltersChanged();
   }
 
+  /* Range inputs clamp their own value to min/max, so the bounds must land
+     on the elements before any value is written. */
+  function syncRangeBounds() {
+    [el.apiMin, el.apiMax].forEach((inp) => {
+      if (!inp) return;
+      inp.min = String(API_FLOOR);
+      inp.max = String(API_CEIL);
+    });
+    if (el.sulfurMax) el.sulfurMax.max = String(S_CEIL);
+  }
+
   function syncFilterControls() {
+    syncRangeBounds();
     el.apiMin.value = state.filters.apiMin;
     el.apiMax.value = state.filters.apiMax;
     el.sulfurMax.value = state.filters.sulfurMax;
@@ -2725,9 +2752,43 @@
     return "The ramp runs 15° API (heavy) to 45°+ (light). Grey means no gravity in the record.";
   }
 
+  /* Every layer is a different pile of dots and the filters hide them
+     silently. Without a count, narrowing API/sulfur looks like the map is
+     broken rather than working. */
+  function layerTotal() {
+    if (state.layer === "sites") return SITES.sites.length;
+    if (state.layer === "hubs") return HUBS.hubs.length;
+    if (state.layer === "refineries") return REFINERIES.refineries.length;
+    return DATA.streams.length;
+  }
+
+  function layerNoun(n) {
+    if (state.layer === "sites") return n === 1 ? "site" : "sites";
+    if (state.layer === "hubs") return n === 1 ? "hub" : "hubs";
+    if (state.layer === "refineries") return n === 1 ? "refinery" : "refineries";
+    return n === 1 ? "stream" : "streams";
+  }
+
+  function legendCountHtml() {
+    const shown = activePins().length;
+    const total = layerTotal();
+    const filtered = shown < total;
+    const label = filtered
+      ? shown + " of " + total + " " + layerNoun(total)
+      : total + " " + layerNoun(total);
+    return (
+      '<span class="legend-count' +
+      (filtered ? " is-filtered" : "") +
+      (shown === 0 ? " is-empty" : "") +
+      '">' +
+      escapeHtml(label) +
+      "</span>"
+    );
+  }
+
   function renderLegend() {
     if (!el.legendScale) return;
-    el.legendScale.innerHTML = legendRampHtml();
+    el.legendScale.innerHTML = legendRampHtml() + legendCountHtml();
     if (el.legendHelp && !el.legendHelp.classList.contains("hidden")) {
       el.legendHelp.textContent = legendHelpText();
     }
@@ -2767,6 +2828,9 @@
     requestAnimationFrame(() => {
       state._markerRefreshQueued = false;
       updateMarkers();
+      /* Count rides the same frame budget as the pins so a slider swipe
+         cannot desync the number from what is drawn. */
+      renderLegend();
     });
   }
 

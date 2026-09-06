@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 276;
+  --bc-css: 278;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -975,6 +975,29 @@ input[type="range"] {
   width: auto;
   max-width: 100%;
   gap: 10px;
+}
+/* Sits in the legend row, which is the one strip present at every
+   breakpoint — the filters rail is not. */
+.legend-count {
+  flex: 0 0 auto;
+  margin-left: 10px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 14px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.legend-count.is-filtered {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+.legend-count.is-empty {
+  border-color: rgba(232, 93, 93, 0.4);
+  color: var(--danger);
 }
 .legend-role {
   display: inline-flex;
