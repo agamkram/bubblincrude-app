@@ -31,12 +31,13 @@ sulfur, volume-weighted yields. Honest limits in the card copy. Arab Light +
 Basrah Light at half-and-half is the teaching check against Dubai. TBP blending
 is not built. See `crude-blend-math`.
 
-## 3. Phone filters
+## 3. Phone filters — sheet on Compare-adjacent slider strip (v282)
 
-`styles.css` hides `.rail-filters` below 1100px with no JS fallback, so phone and
-tablet lose sulfur class, region, kind, completeness, and all four saved views.
-Put them in a bottom sheet. Note `sizeMapToBelt()` derives map height from *width*
-alone, so topbar changes cost inspector scroll, never map size.
+Below 1100px the left rail is a bottom sheet. Open from the **Filter** end-cap
+on the slider strip (same strip height; sliders lose width). Live apply, Done
+closes. Kind / completeness / saved views are streams-only; sulfur class hides
+on hubs and refineries. `#has-distill` now tests `distillation_curve` (211).
+`sizeMapToBelt()` still sizes the map from width alone.
 
 ## 4. Marker clustering
 
@@ -47,8 +48,8 @@ density, tap accuracy, and perf together.
 
 ## 5. Small items
 
-- `#has-distill` is a no-op: it tests `s.yields || s.distillation_curve` and all
-  334 have `yields`. Point it at `distillation_curve` only (211) or delete it.
+- `#has-distill` used to be a no-op (all 334 have `yields`). It now tests
+  `distillation_curve` only (211).
 - `applySavedView()` hardcodes per-id special cases duplicating the declarative
   `filters` in `data.js`, plus a `hasResid` branch matching no real filter key.
   Delete them so editing `data.js` alone works.

@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 281;
+  --bc-css: 282;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -497,13 +497,59 @@ html:not(.app-home) .topbar-search {
 .map-sliders {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px 19px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: stretch;
   padding: 4px 14px 5px;
   border-top: 1px solid var(--border);
   background: var(--bg-panel);
   z-index: 4;
+}
+.map-slider-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 19px;
+  align-items: center;
+  min-width: 0;
+}
+.btn-open-filters {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 52px;
+  margin: 0;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  cursor: pointer;
+  align-self: stretch;
+}
+.btn-open-filters-label,
+.btn-open-filters-count {
+  display: block;
+}
+.btn-open-filters-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.btn-open-filters.is-on,
+.btn-open-filters[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
 }
 .map-slider-block {
   display: grid;
@@ -608,8 +654,9 @@ html:not(.app-home) .topbar-search {
   pointer-events: auto;
   cursor: grab;
 }
-/* Hubs and refineries have no gravity/sulfur — keep the row, gray it out. */
-.map-sliders.is-inert {
+/* Hubs and refineries have no gravity/sulfur — keep the row, gray it out.
+   The Filter end-cap stays live so region filters still open. */
+.map-sliders.is-inert .map-slider-stack {
   pointer-events: none;
 }
 .map-sliders.is-inert .filter-label,
@@ -647,6 +694,17 @@ html:not(.app-home) .topbar-search {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+.rail-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.btn-filters-done {
+  display: none;
+}
+.filter-block.is-layer-hidden {
+  display: none;
 }
 .rail-head h2 {
   margin: 0;
@@ -2612,6 +2670,49 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .rail-filters {
     display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    width: auto;
+    max-height: none;
+    overflow: hidden;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .rail-filters.is-sheet-open {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .rail-filters.is-sheet-open::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  .filters-sheet-panel {
+    position: relative;
+    z-index: 1;
+    max-height: min(78vh, 640px);
+    overflow: auto;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border-strong);
+    border-radius: 12px 12px 0 0;
+    padding: 12px 14px max(12px, env(safe-area-inset-bottom, 0px));
+    box-shadow: var(--shadow);
+    -webkit-overflow-scrolling: touch;
+  }
+  .btn-filters-done {
+    display: inline-flex;
+  }
+  .map-sliders {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .btn-open-filters {
+    display: flex;
   }
   .rail-inspector {
     display: none;
@@ -2667,9 +2768,13 @@ html.pwa-standalone:not(.app-home) .view-page {
     flex: 0 0 auto;
   }
   .map-sliders {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    padding: 4px 14px 5px;
+  }
+  .map-slider-stack {
     grid-template-columns: 1fr;
     gap: 2px 0;
-    padding: 4px 14px 5px;
   }
   .rail-inspector {
     display: block;
@@ -2720,6 +2825,10 @@ html.pwa-standalone:not(.app-home) .view-page {
 @media (min-width: 700px) and (max-width: 1099px) {
   .map-pane {
     padding-bottom: max(17px, env(safe-area-inset-bottom, 0px));
+  }
+  /* One-line slider row — a count under Filter would grow the strip. */
+  .btn-open-filters-count {
+    display: none !important;
   }
 }
 

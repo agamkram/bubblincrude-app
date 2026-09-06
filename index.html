@@ -89,7 +89,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=281" />
+  <link rel="stylesheet" href="styles.css?v=282" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -189,13 +189,17 @@
       <!-- Map workspace -->
       <section id="view-home" class="view view-home" aria-label="Map workspace">
         <aside class="rail rail-filters" id="filters-rail" aria-label="Filters">
+          <div class="filters-sheet-panel">
           <div class="rail-head">
             <h2>Filters</h2>
-            <button type="button" class="btn btn-text" id="btn-reset-filters">Reset</button>
+            <div class="rail-head-actions">
+              <button type="button" class="btn btn-text" id="btn-reset-filters">Reset</button>
+              <button type="button" class="btn btn-text btn-filters-done" id="btn-filters-done">Done</button>
+            </div>
           </div>
           <div class="active-chips" id="active-chips" hidden></div>
 
-          <div class="filter-block">
+          <div class="filter-block" data-filter-group="sulfur-class">
             <div class="filter-label">Sulfur class</div>
             <div class="seg" role="group" aria-label="Sweet or sour">
               <button type="button" class="seg-btn" data-sweet="all" aria-pressed="true">All</button>
@@ -204,26 +208,27 @@
             </div>
           </div>
 
-          <div class="filter-block">
+          <div class="filter-block" data-filter-group="region">
             <div class="filter-label">Region</div>
             <div class="check-grid" id="region-filters"></div>
           </div>
 
-          <div class="filter-block">
+          <div class="filter-block" data-filter-group="kind">
             <div class="filter-label">Kind</div>
             <div class="check-grid" id="kind-filters"></div>
           </div>
 
-          <div class="filter-block">
+          <div class="filter-block" data-filter-group="completeness">
             <div class="filter-label">Completeness</div>
             <label class="check"><input type="checkbox" id="has-distill" /> Has distillation</label>
             <label class="check"><input type="checkbox" id="has-sara" /> Has SARA</label>
             <label class="check"><input type="checkbox" id="has-metals" /> Has metals</label>
           </div>
 
-          <div class="filter-block">
+          <div class="filter-block" data-filter-group="saved">
             <div class="filter-label">Saved views</div>
             <div class="saved-views" id="saved-views"></div>
+          </div>
           </div>
         </aside>
 
@@ -232,6 +237,7 @@
             <div id="map" class="map" role="application" aria-label="World map of crude streams"></div>
           </div>
           <div class="map-sliders" id="map-sliders" aria-label="Gravity and sulfur filters">
+            <div class="map-slider-stack">
             <div class="map-slider-block">
               <div class="filter-label" id="api-label">API</div>
               <div class="dual-range" id="api-range" role="group" aria-labelledby="api-label">
@@ -261,6 +267,17 @@
               </div>
               <div class="range-readout" id="sulfur-readout">≤ 5.2 wt%</div>
             </div>
+            </div>
+            <button
+              type="button"
+              class="btn-open-filters"
+              id="btn-open-filters"
+              aria-expanded="false"
+              aria-controls="filters-rail"
+            >
+              <span class="btn-open-filters-label">Filter</span>
+              <span class="btn-open-filters-count" id="filters-count" hidden></span>
+            </button>
           </div>
           <div class="compare-tray" id="compare-tray" aria-label="Compare tray">
             <div class="tray-chips" id="tray-chips"></div>
@@ -327,11 +344,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=281"></script>
-  <script src="sites.js?v=281"></script>
-  <script src="hubs.js?v=281"></script>
-  <script src="refineries.js?v=281"></script>
-  <script src="app.js?v=281"></script>
+  <script src="data.js?v=282"></script>
+  <script src="sites.js?v=282"></script>
+  <script src="hubs.js?v=282"></script>
+  <script src="refineries.js?v=282"></script>
+  <script src="app.js?v=282"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -342,7 +359,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v281";
+    var EXPECTED = "v282";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

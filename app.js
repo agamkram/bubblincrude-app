@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v281";
+  const APP_VERSION = "v282";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -222,6 +222,9 @@
     el.sulfurFill = $("sulfur-fill");
     el.sulfurReadout = $("sulfur-readout");
     el.mapSliders = $("map-sliders");
+    el.filtersRail = $("filters-rail");
+    el.btnOpenFilters = $("btn-open-filters");
+    el.filtersCount = $("filters-count");
   }
 
   /* —— Units helpers —— */
@@ -516,7 +519,8 @@
     if (s.sulfur_wt != null && s.sulfur_wt > f.sulfurMax) return false;
     if (f.regions.length && !f.regions.includes(s.region)) return false;
     if (f.kinds.length && !f.kinds.includes(s.kind)) return false;
-    if (f.hasDistill && !(s.yields || s.distillation_curve)) return false;
+    if (f.hasDistill && !(s.distillation_curve && s.distillation_curve.length))
+      return false;
     if (f.hasSara && !s.sara) return false;
     if (f.hasMetals && s.ni_ppm == null && s.v_ppm == null) return false;
     return true;
@@ -1456,6 +1460,7 @@
     }
     syncLayerSeg();
     syncMapSliders();
+    syncFilterLayerUi();
     renderLegend();
     syncInspectorEmptyCopy();
     renderSearchResults();
@@ -2562,7 +2567,9 @@
       if (f.hasSara) chips.push(chipDismiss("Has SARA", "sara"));
       if (f.hasMetals) chips.push(chipDismiss("Has metals", "metals"));
     }
+    const filterN = chips.length;
     if (state.query) chips.push(chipDismiss("“" + state.query + "”", "q"));
+    syncFiltersButton(filterN);
 
     if (!chips.length) {
       el.activeChips.hidden = true;
@@ -2696,11 +2703,59 @@
     const inert = state.layer === "hubs" || state.layer === "refineries";
     if (el.mapSliders) {
       el.mapSliders.classList.toggle("is-inert", inert);
-      el.mapSliders.setAttribute("aria-disabled", inert ? "true" : "false");
     }
+    const stack = el.mapSliders && el.mapSliders.querySelector(".map-slider-stack");
+    if (stack) stack.setAttribute("aria-disabled", inert ? "true" : "false");
     [el.apiMin, el.apiMax, el.sulfurMax].forEach((inp) => {
       if (inp) inp.disabled = inert;
     });
+  }
+
+  function filtersUseSheet() {
+    return window.matchMedia("(max-width: 1099px)").matches;
+  }
+
+  function syncFilterLayerUi() {
+    const layer = state.layer;
+    const assay = layer === "streams" || layer === "sites";
+    const streams = layer === "streams";
+    document.querySelectorAll("[data-filter-group]").forEach((block) => {
+      const g = block.getAttribute("data-filter-group");
+      let show = true;
+      if (g === "sulfur-class") show = assay;
+      else if (g === "kind" || g === "completeness" || g === "saved") show = streams;
+      block.classList.toggle("is-layer-hidden", !show);
+    });
+  }
+
+  function syncFiltersButton(n) {
+    const btn = el.btnOpenFilters;
+    if (!btn) return;
+    const on = n > 0;
+    btn.classList.toggle("is-on", on);
+    btn.setAttribute("aria-label", on ? "Filters, " + n + " on" : "Filters");
+    if (el.filtersCount) {
+      el.filtersCount.hidden = !on;
+      el.filtersCount.textContent = on ? String(n) : "";
+    }
+  }
+
+  function openFilterSheet() {
+    if (!filtersUseSheet() || !el.filtersRail) return;
+    el.filtersRail.classList.add("is-sheet-open");
+    el.filtersRail.setAttribute("role", "dialog");
+    el.filtersRail.setAttribute("aria-modal", "true");
+    el.btnOpenFilters?.setAttribute("aria-expanded", "true");
+  }
+
+  function closeFilterSheet() {
+    if (!el.filtersRail) return;
+    const wasOpen = el.filtersRail.classList.contains("is-sheet-open");
+    el.filtersRail.classList.remove("is-sheet-open");
+    el.filtersRail.removeAttribute("role");
+    el.filtersRail.removeAttribute("aria-modal");
+    el.btnOpenFilters?.setAttribute("aria-expanded", "false");
+    if (wasOpen && state.route === "home") el.btnOpenFilters?.focus();
   }
 
   function syncColorSeg() {
@@ -4320,6 +4375,7 @@
     document.documentElement.classList.toggle("app-home", onHome);
     const tray = $("compare-tray");
     if (tray) tray.hidden = !onHome;
+    if (!onHome) closeFilterSheet();
 
     pinShellViewport();
 
@@ -4358,6 +4414,7 @@
     syncColorSeg();
     syncLayerSeg();
     syncMapSliders();
+    syncFilterLayerUi();
     syncInspExpand();
     syncInspectorEmptyCopy();
     syncUnitsUi();
@@ -4631,6 +4688,21 @@
       clearSearch();
     });
 
+    el.btnOpenFilters?.addEventListener("click", () => {
+      if (el.filtersRail?.classList.contains("is-sheet-open")) closeFilterSheet();
+      else openFilterSheet();
+    });
+    $("btn-filters-done")?.addEventListener("click", closeFilterSheet);
+    el.filtersRail?.addEventListener("click", (e) => {
+      if (e.target === el.filtersRail) closeFilterSheet();
+    });
+    const sheetMq = window.matchMedia("(max-width: 1099px)");
+    const onSheetMq = (e) => {
+      if (!e.matches) closeFilterSheet();
+    };
+    if (sheetMq.addEventListener) sheetMq.addEventListener("change", onSheetMq);
+    else if (sheetMq.addListener) sheetMq.addListener(onSheetMq);
+
     document.querySelectorAll("[data-layer]").forEach((btn) => {
       btn.addEventListener("click", () => setLayer(btn.getAttribute("data-layer")));
     });
@@ -4736,6 +4808,7 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closePicker();
+        closeFilterSheet();
         setUnitsPopoverOpen(false);
         setLegendHelpOpen(false);
       }
@@ -4832,6 +4905,7 @@
     syncFilterControls();
     syncSweetSeg();
     syncCheckboxes();
+    syncFilterLayerUi();
     el.search.value = state.query;
     syncSearchClear();
     $("has-distill").checked = state.filters.hasDistill;
