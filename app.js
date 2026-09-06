@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v280";
+  const APP_VERSION = "v281";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -98,6 +98,8 @@
     markers: new Map(),
     originMap: null,
     productGroup: "all",
+    /* Volume fractions keyed by pin key (stream:id). Renormalized to 1. */
+    blendShare: {},
   };
 
   let lastFillKey = "";
@@ -226,6 +228,10 @@
   function apiToSg(api) {
     if (api == null) return null;
     return 141.5 / (api + 131.5);
+  }
+  function sgToApi(sg) {
+    if (sg == null || !(sg > 0)) return null;
+    return 141.5 / sg - 131.5;
   }
   function cToF(c) {
     if (c == null) return null;
@@ -3009,6 +3015,290 @@
     else selectStream(id, true);
   }
 
+  /* Volume blend of named streams. API is not linear — convert to SG, mix by
+     volume, convert back. Sulfur mixes by mass. Yields mix by volume. */
+  function blendableComparePins() {
+    return state.compareIds
+      .map((key, i) => {
+        const p = parsePinKey(key);
+        if (p.kind !== "stream") return null;
+        const s = getStream(p.id);
+        if (!s || s.api == null || s.sulfur_wt == null || !s.yields) return null;
+        return { key, s, colorIndex: i };
+      })
+      .filter(Boolean);
+  }
+
+  function syncBlendShares(keys) {
+    const prev = state.blendShare || {};
+    const keep = {};
+    let sum = 0;
+    for (const k of keys) {
+      const v = Number(prev[k]);
+      if (v > 0) {
+        keep[k] = v;
+        sum += v;
+      }
+    }
+    state.blendShare = {};
+    if (!keys.length) return;
+    if (sum <= 0 || Object.keys(keep).length !== keys.length) {
+      const eq = 1 / keys.length;
+      keys.forEach((k) => {
+        state.blendShare[k] = eq;
+      });
+      return;
+    }
+    keys.forEach((k) => {
+      state.blendShare[k] = keep[k] / sum;
+    });
+  }
+
+  function setBlendShare(key, frac) {
+    const keys = blendableComparePins().map((p) => p.key);
+    if (keys.indexOf(key) < 0) return;
+    const target = Math.max(0, Math.min(1, frac));
+    const rest = keys.filter((k) => k !== key);
+    const restSum = rest.reduce((a, k) => a + (state.blendShare[k] || 0), 0);
+    state.blendShare[key] = target;
+    const leftover = 1 - target;
+    if (!rest.length) return;
+    if (restSum <= 1e-6) {
+      rest.forEach((k) => {
+        state.blendShare[k] = leftover / rest.length;
+      });
+    } else {
+      rest.forEach((k) => {
+        state.blendShare[k] = ((state.blendShare[k] || 0) / restSum) * leftover;
+      });
+    }
+  }
+
+  function mixBlend(parts) {
+    let volSum = 0;
+    let sgSum = 0;
+    let mass = 0;
+    let massS = 0;
+    const yields = { naphtha: 0, middle: 0, vgo: 0, resid: 0 };
+    for (const { s, vol } of parts) {
+      if (!(vol > 0)) continue;
+      volSum += vol;
+      const sg = apiToSg(s.api);
+      sgSum += sg * vol;
+      const m = sg * vol;
+      mass += m;
+      massS += s.sulfur_wt * m;
+      for (const k of Object.keys(yields)) {
+        yields[k] += (s.yields[k] || 0) * vol;
+      }
+    }
+    if (!(volSum > 0)) return null;
+    for (const k of Object.keys(yields)) {
+      yields[k] /= volSum;
+    }
+    return {
+      api: sgToApi(sgSum / volSum),
+      sulfur_wt: mass > 0 ? massS / mass : null,
+      yields,
+    };
+  }
+
+  function nearestNamedGrade(mix, excludeIds) {
+    if (!mix || mix.api == null || mix.sulfur_wt == null) return null;
+    let best = null;
+    let bestD = Infinity;
+    for (const t of DATA.streams) {
+      if (excludeIds.has(t.id)) continue;
+      if (t.api == null || t.sulfur_wt == null) continue;
+      const da = (t.api - mix.api) / 8;
+      const ds = (t.sulfur_wt - mix.sulfur_wt) / 0.4;
+      const d = da * da + ds * ds;
+      if (d < bestD) {
+        bestD = d;
+        best = t;
+      }
+    }
+    if (!best || bestD > 1.2) return null;
+    return best;
+  }
+
+  function blendValidation(parts, mix) {
+    if (!mix || parts.length !== 2) return null;
+    const ids = parts.map((p) => p.s.id).sort();
+    if (ids[0] !== "arab-light" || ids[1] !== "basrah-light") return null;
+    const even = parts.every((p) => Math.abs(p.vol - 0.5) < 0.08);
+    if (!even) return null;
+    const dubai = getStream("dubai");
+    if (!dubai) return null;
+    return dubai;
+  }
+
+  function blendResultHtml(parts, mix) {
+    if (!mix) return "";
+    const exclude = new Set(parts.map((p) => p.s.id));
+    const near = nearestNamedGrade(mix, exclude);
+    const dubai = blendValidation(parts, mix);
+    let html = '<div class="blend-result" id="blend-result">';
+    html += '<div class="quality-strip blend-strip">';
+    html += metricTile("API", densityLabel(mix.api), densityUnit(), apiRampColor(mix.api), "api");
+    html += metricTile(
+      "Sulfur",
+      sulfurLabel(mix.sulfur_wt),
+      sulfurUnit(),
+      sulfurRampColor(mix.sulfur_wt),
+      "sulfur"
+    );
+    html += metricTile(
+      "Lights",
+      fmtNum((mix.yields.naphtha || 0) + (mix.yields.middle || 0), 0),
+      "wt%",
+      "mute",
+      "lights"
+    );
+    html += "</div>";
+    html += yieldThermo(mix.yields);
+    if (near) {
+      html +=
+        '<p class="blend-like">Closest named grade: <button type="button" class="linkish" data-blend-open="' +
+        escapeHtml(near.id) +
+        '">' +
+        escapeHtml(near.name) +
+        "</button> (" +
+        densityLabel(near.api) +
+        " " +
+        densityUnit() +
+        ", " +
+        sulfurLabel(near.sulfur_wt) +
+        " " +
+        sulfurUnit() +
+        ").</p>";
+    }
+    if (dubai) {
+      html +=
+        '<p class="blend-check">Arab Light + Basrah Light at half-and-half is a teaching check against ' +
+        '<button type="button" class="linkish" data-blend-open="dubai">Dubai</button>: mix ' +
+        densityLabel(mix.api) +
+        " " +
+        densityUnit() +
+        " / " +
+        sulfurLabel(mix.sulfur_wt) +
+        " " +
+        sulfurUnit() +
+        ", Dubai " +
+        densityLabel(dubai.api) +
+        " " +
+        densityUnit() +
+        " / " +
+        sulfurLabel(dubai.sulfur_wt) +
+        " " +
+        sulfurUnit() +
+        ".</p>";
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function blendCardHtml(pins) {
+    if (pins.length < 2) return "";
+    const keys = pins.map((p) => p.key);
+    syncBlendShares(keys);
+    const parts = pins.map((p) => ({
+      s: p.s,
+      vol: state.blendShare[p.key] || 0,
+    }));
+    const mix = mixBlend(parts);
+    let html =
+      '<div class="compare-card blend-card" id="blend-card" style="grid-column:1/-1">';
+    html += "<h3>Volume blend</h3>";
+    html +=
+      '<p class="blend-lead">Drag the cuts. Gravity mixes as specific gravity (not linear API), sulfur by mass, yields by volume. Viscosity, pour point, and asphaltene stability do not — some pairs will not stay mixed.</p>';
+    html += '<div class="blend-parts">';
+    pins.forEach((p) => {
+      const pct = Math.round((state.blendShare[p.key] || 0) * 100);
+      html +=
+        '<label class="blend-row"><span class="blend-name"><span class="swatch-dot" style="background:' +
+        COMPARE_COLORS[p.colorIndex % COMPARE_COLORS.length] +
+        '"></span>' +
+        escapeHtml(p.s.name) +
+        '</span><input type="range" min="0" max="100" step="1" value="' +
+        pct +
+        '" data-blend-key="' +
+        escapeHtml(p.key) +
+        '" aria-label="Volume percent ' +
+        escapeHtml(p.s.name) +
+        '" /><span class="blend-pct" data-blend-pct="' +
+        escapeHtml(p.key) +
+        '">' +
+        pct +
+        " vol%</span></label>";
+    });
+    html += "</div>";
+    html +=
+      '<button type="button" class="btn btn-ghost" id="blend-equal">Equal cut</button>';
+    html += blendResultHtml(parts, mix);
+    html += "</div>";
+    return html;
+  }
+
+  function refreshBlendCard() {
+    const pins = blendableComparePins();
+    const card = $("blend-card");
+    if (!card || pins.length < 2) return;
+    pins.forEach((p) => {
+      const pct = Math.round((state.blendShare[p.key] || 0) * 100);
+      const input = [...card.querySelectorAll("[data-blend-key]")].find(
+        (el) => el.getAttribute("data-blend-key") === p.key
+      );
+      const pctEl = [...card.querySelectorAll("[data-blend-pct]")].find(
+        (el) => el.getAttribute("data-blend-pct") === p.key
+      );
+      if (input && Number(input.value) !== pct) input.value = String(pct);
+      if (pctEl) pctEl.textContent = pct + " vol%";
+    });
+    const parts = pins.map((p) => ({ s: p.s, vol: state.blendShare[p.key] || 0 }));
+    const mix = mixBlend(parts);
+    const next = blendResultHtml(parts, mix);
+    const old = $("blend-result");
+    if (old) old.outerHTML = next;
+    bindBlendResultLinks(card);
+    bindGlossaryButtons($("blend-result"));
+    bindInspectorEvents($("blend-result"));
+  }
+
+  function bindBlendCard(root) {
+    const card = (root || document).querySelector("#blend-card");
+    if (!card) return;
+    card.querySelectorAll("[data-blend-key]").forEach((input) => {
+      input.addEventListener("input", () => {
+        setBlendShare(input.getAttribute("data-blend-key"), Number(input.value) / 100);
+        refreshBlendCard();
+      });
+    });
+    $("blend-equal")?.addEventListener("click", () => {
+      const keys = blendableComparePins().map((p) => p.key);
+      const eq = keys.length ? 1 / keys.length : 0;
+      state.blendShare = {};
+      keys.forEach((k) => {
+        state.blendShare[k] = eq;
+      });
+      refreshBlendCard();
+    });
+    bindBlendResultLinks(card);
+    bindGlossaryButtons(card);
+    bindInspectorEvents(card);
+  }
+
+  function bindBlendResultLinks(root) {
+    (root || document).querySelectorAll("[data-blend-open]").forEach((btn) => {
+      if (btn._bcBlendBound) return;
+      btn._bcBlendBound = true;
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-blend-open");
+        if (id) navigate("stream", { streamId: id });
+      });
+    });
+  }
+
   function renderCompare() {
     const pins = state.compareIds
       .map((key) => {
@@ -3180,6 +3470,8 @@
         "</div></div>";
     }
 
+    html += blendCardHtml(blendableComparePins());
+
     const withTbp = streams.filter((s) => s.distillation_curve && s.distillation_curve.length);
     if (withTbp.length) {
       html += '<div class="compare-card" style="grid-column:1/-1"><h3>True boiling point (cumulative)</h3>';
@@ -3202,6 +3494,7 @@
     html += '<p class="contrast-sentence">' + escapeHtml(contrastSentence(streams)) + "</p>";
 
     el.viewCompare.innerHTML = html;
+    bindBlendCard(el.viewCompare);
     const cmpAdd = $("cmp-add");
     if (cmpAdd && !trayFull) cmpAdd.addEventListener("click", openPicker);
     el.viewCompare.querySelectorAll("[data-rm]").forEach((btn) => {
@@ -3728,7 +4021,7 @@
       "<dt>Naphtha</dt><dd>Gasoline-range liquids from the first tower (here: light and heavy naphtha). Feed for gasoline, reforming, chemicals, and sometimes diluent.</dd>" +
       "<dt>VGO</dt><dd>Vacuum gas oil — LVGO and HVGO from the vacuum tower. Usually cracked into more gasoline and diesel, or used for lubricants on select crudes.</dd>" +
       "<dt>Assay</dt><dd>Lab characterization of a crude: gravity, sulfur, metals, yields, distillation, SARA, and related properties — the quality story behind which products a barrel can make well.</dd>" +
-      "<dt>Blend</dt><dd>A commercial stream mixed from more than one field or grade to meet a quality or logistics specification.</dd>" +
+      "<dt>Blend</dt><dd>A commercial stream mixed from more than one field or grade to meet a quality or logistics specification. The Compare board can mix streams by volume: gravity blends as specific gravity, sulfur by mass, yields by volume. Viscosity, pour point, and asphaltene stability do not mix that way.</dd>" +
       "<dt>Dilbit</dt><dd>Diluted bitumen — extra-heavy oil mixed with light diluent so it can flow in a pipeline.</dd>" +
       "<dt>SCO / synthetic</dt><dd>Synthetic crude oil from upgrading bitumen or heavy oil (e.g. Syncrude), usually lighter and sweeter than the feedstock.</dd>" +
       '<dt id="g-sara">SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil. Asphaltenes help explain why vacuum residue becomes asphalt and coke.</dd>' +

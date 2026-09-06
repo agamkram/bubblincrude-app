@@ -24,9 +24,12 @@ Still open: 199 plants with no kb/d, many without `operator`, and **none** have
 power pins and the five country errors (Panipat, Xinjiang, Isaac Sabbá, Soraz,
 CNPC Niger) were fixed in the TRACE rebuild.
 
-## 2. Blend calculator — data already supports it
+## 2. Blend calculator — on Compare (v281)
 
-See the `crude-blend-math` rule. 334/334 streams are blendable.
+Volume blend of ≥2 streams on the Compare board: SG-weighted gravity, mass-weighted
+sulfur, volume-weighted yields. Honest limits in the card copy. Arab Light +
+Basrah Light at half-and-half is the teaching check against Dubai. TBP blending
+is not built. See `crude-blend-math`.
 
 ## 3. Phone filters
 

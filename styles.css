@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 280;
+  --bc-css: 281;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1877,6 +1877,81 @@ button.pill {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-mute);
+}
+.blend-lead,
+.blend-like,
+.blend-check {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.blend-like,
+.blend-check {
+  margin-top: 10px;
+  margin-bottom: 0;
+}
+.blend-check {
+  color: var(--text);
+}
+.blend-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.blend-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 1.6fr) 64px;
+  gap: 8px;
+  align-items: center;
+}
+.blend-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+.blend-row input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.blend-pct {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: right;
+  white-space: nowrap;
+}
+.blend-strip {
+  margin: 12px 0 10px;
+}
+button.linkish {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+#blend-equal {
+  margin-bottom: 4px;
+}
+@media (max-width: 699px) {
+  .blend-row {
+    grid-template-columns: minmax(0, 1fr) 56px;
+    grid-template-areas:
+      "name pct"
+      "slider slider";
+  }
+  .blend-name { grid-area: name; }
+  .blend-row input[type="range"] { grid-area: slider; }
+  .blend-pct { grid-area: pct; }
 }
 
 .origin-map {
