@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v282";
+  const APP_VERSION = "v283";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -1461,6 +1461,7 @@
     syncLayerSeg();
     syncMapSliders();
     syncFilterLayerUi();
+    syncLayerAria();
     renderLegend();
     syncInspectorEmptyCopy();
     renderSearchResults();
@@ -2848,6 +2849,32 @@
     if (state.layer === "hubs") return n === 1 ? "hub" : "hubs";
     if (state.layer === "refineries") return n === 1 ? "refinery" : "refineries";
     return n === 1 ? "stream" : "streams";
+  }
+
+  function syncLayerAria() {
+    const noun =
+      state.layer === "sites"
+        ? "sites"
+        : state.layer === "hubs"
+          ? "hubs"
+          : state.layer === "refineries"
+            ? "refineries"
+            : "streams";
+    if (el.searchResults) {
+      el.searchResults.setAttribute("aria-label", "Matching " + noun);
+    }
+    const mapEl = document.getElementById("map");
+    if (mapEl) {
+      const label =
+        state.layer === "sites"
+          ? "World map of oil sites"
+          : state.layer === "hubs"
+            ? "World map of oil hubs"
+            : state.layer === "refineries"
+              ? "World map of refineries"
+              : "World map of crude streams";
+      mapEl.setAttribute("aria-label", label);
+    }
   }
 
   function legendCountHtml() {
@@ -4298,49 +4325,20 @@
   }
 
   function applySavedView(view) {
-    const f = defaultFilters();
     const src = view.filters || {};
-    Object.assign(f, {
-      apiMin: src.apiMin != null ? src.apiMin : API_FLOOR,
-      apiMax: src.apiMax != null ? src.apiMax : API_CEIL,
-      sweetSour: src.sweetSour || "all",
-      sulfurMax: src.sulfurMax != null ? src.sulfurMax : S_CEIL,
-      regions: src.region ? src.region.slice() : [],
-      kinds: src.kinds ? src.kinds.slice() : [],
-      hasDistill: !!src.hasDistill,
-      hasSara: !!src.hasSara,
-      hasMetals: !!src.hasMetals,
-    });
-    // coker feeds: heavies with resid
-    if (src.hasResid) {
-      f.apiMax = src.apiMax != null ? src.apiMax : 22.3;
-    }
+    const f = defaultFilters();
+    if (src.apiMin != null) f.apiMin = src.apiMin;
+    if (src.apiMax != null) f.apiMax = src.apiMax;
+    if (src.sweetSour) f.sweetSour = src.sweetSour;
+    if (src.sulfurMax != null) f.sulfurMax = src.sulfurMax;
+    if (src.region) f.regions = src.region.slice();
+    if (src.kinds) f.kinds = src.kinds.slice();
+    f.hasDistill = !!src.hasDistill;
+    f.hasSara = !!src.hasSara;
+    f.hasMetals = !!src.hasMetals;
     state.filters = f;
-    if (src.query) {
-      state.query = src.query;
-      el.search.value = src.query;
-    } else if (view.id === "orinoco-heavies") {
-      state.query = "Orinoco";
-      el.search.value = "Orinoco";
-      f.regions = ["Latin America"];
-      f.apiMax = 22.3;
-    } else if (view.id === "us-tight") {
-      state.query = "";
-      el.search.value = "";
-      // prefer bakken-like: filter will show NA light sweet; also nudge query empty
-    } else {
-      state.query = "";
-      el.search.value = "";
-    }
-    // Special: light sweet exporters
-    if (view.id === "light-sweet") {
-      f.apiMin = 31.1;
-      f.sweetSour = "sweet";
-      f.sulfurMax = 0.5;
-    }
-    if (view.id === "coker-feeds") {
-      f.apiMax = 22.3;
-    }
+    state.query = src.query || "";
+    if (el.search) el.search.value = state.query;
     syncFilterControls();
     syncSweetSeg();
     syncCheckboxes();
@@ -4415,6 +4413,7 @@
     syncLayerSeg();
     syncMapSliders();
     syncFilterLayerUi();
+    syncLayerAria();
     syncInspExpand();
     syncInspectorEmptyCopy();
     syncUnitsUi();

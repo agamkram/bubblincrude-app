@@ -39,26 +39,21 @@ closes. Kind / completeness / saved views are streams-only; sulfur class hides
 on hubs and refineries. `#has-distill` now tests `distillation_curve` (211).
 `sizeMapToBelt()` still sizes the map from width alone.
 
-## 4. Marker clustering
+## 4. Marker clustering — skipped
 
-Every pin is a `divIcon` (2 DOM nodes, 4px dot in a 28px hit box), all destroyed
-and rebuilt per filter change — ~1470 nodes on Refineries. Hit boxes overlap
-several deep in Europe, so precise tapping is impossible. Clustering fixes
-density, tap accuracy, and perf together.
+Leave pins on true lat/lon. Clustering (and spiderfy) would hide or offset
+dots at low zoom. If Europe tap collisions stay bad, disambiguate with a list
+of what was under the finger — do not move markers.
 
 ## 5. Small items
 
-- `#has-distill` used to be a no-op (all 334 have `yields`). It now tests
-  `distillation_curve` only (211).
-- `applySavedView()` hardcodes per-id special cases duplicating the declarative
-  `filters` in `data.js`, plus a `hasResid` branch matching no real filter key.
-  Delete them so editing `data.js` alone works.
-- Three `source` strings leak drafting notes: `brent` ("paste truncated"),
-  `harding` ("date not in paste"), `ea-blend` ("quality fair").
+- `#has-distill` tests `distillation_curve` only (211).
+- `applySavedView()` reads `filters` from `data.js` only (v283). `coker-feeds`
+  is heavy API (max 22.3); the phantom `hasResid` key is gone.
+- Source drafting notes scrubbed on `brent`, `harding`, `ea-blend`.
+- Search list and map `aria-label` follow the active layer.
 - 85 streams have `year: 2026` which is retrieval date, not sample date (67 are
   CrudeMonitor). Split retrieved vs sampled.
 - No `robots.txt`, `sitemap.xml`, or JSON-LD (the hub has JSON-LD; the app doesn't).
 - Hubs are 143/155 `loading` with only 4 `pricing`, so the role legend is nearly
   monochrome. **Midland is missing** despite WTI Midland joining Dated Brent in 2023.
-- `#search-results` aria-label is always "Matching streams" and `#map` is always
-  "World map of crude streams", regardless of active layer.
