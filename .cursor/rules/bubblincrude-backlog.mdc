@@ -1,0 +1,74 @@
+---
+description: BubblinCrude reviewed state and prioritized backlog (Sep 2026 audit)
+alwaysApply: true
+---
+
+# BubblinCrude — audited state and backlog
+
+Verified counts: **334 streams, 347 sites, 155 hubs, 736 refineries.**
+Streams are clean — zero broken `related_ids`/`site_ids`/`hub_ids`, no duplicate
+ids, yields sum to 100±10, TBP curves monotonic. Coverage: 100% api/sulfur/yields/
+notes, 88% TAN, 63% distillation+resid, 61% metals, 5% SARA. `cuts` and `products`
+are complete — do not "improve" them without a specific reason.
+
+Never hand-edit the version; use `scripts/bump-version.py` and `--check`.
+
+## 1. Refinery layer — weakest data, fix first
+
+630 of 736 have no `capacity_kbd`, 444 no `operator`, and **none** have
+`related_ids`, so refineries link to nothing else in the app.
+
+Fill capacity from **Climate TRACE v6** — free, CC BY 4.0, no API key, bulk CSV in
+the "fossil fuel operations" package (`oil and gas refining` subsector), ~728
+plants / 110 countries. Rebuild via `scripts/build-refineries.py`.
+
+Known-bad records to delete or correct:
+- **Not refineries** (OSM artifacts): `refinery-row*`, `refinery-drive*`,
+  `carretera-de-la-refiner-a*`, `ramal-a-refiner-a-dos-bocas*` (rail spurs),
+  `refiner-a-110-kv*` + `refiner-a-entrada-110-kv` (power lines),
+  `irr-dora-refinery-branch*` (rail), `club-deportivo-refiner-a-de-conc-n`,
+  `gas-station-38-refinery`, `subestaci-n-refiner-a`. ~31 total match a
+  road/rail/power/POI name pattern.
+- **Wrong country**: `Panipat Refinery` ×2 → India not Pakistan;
+  `塔中第二联合站` → China (Xinjiang) not Pakistan; `Refinaria Isaac Sabbá` →
+  Brazil (Manaus) not Venezuela; `CNPC Refinery` + `Soraz Oil Refinery` → Niger
+  not Nigeria.
+- 14 duplicate name+country pairs, 53 pin pairs within ~2 km.
+
+Attaching a real capacity to the wrong plant is worse than leaving it null — it
+launders a guess into a published-looking figure.
+
+## 2. Blend calculator — data already supports it
+
+See the `crude-blend-math` rule. 334/334 streams are blendable.
+
+## 3. Phone filters
+
+`styles.css` hides `.rail-filters` below 1100px with no JS fallback, so phone and
+tablet lose sulfur class, region, kind, completeness, and all four saved views.
+Put them in a bottom sheet. Note `sizeMapToBelt()` derives map height from *width*
+alone, so topbar changes cost inspector scroll, never map size.
+
+## 4. Marker clustering
+
+Every pin is a `divIcon` (2 DOM nodes, 4px dot in a 28px hit box), all destroyed
+and rebuilt per filter change — ~1470 nodes on Refineries. Hit boxes overlap
+several deep in Europe, so precise tapping is impossible. Clustering fixes
+density, tap accuracy, and perf together.
+
+## 5. Small items
+
+- `#has-distill` is a no-op: it tests `s.yields || s.distillation_curve` and all
+  334 have `yields`. Point it at `distillation_curve` only (211) or delete it.
+- `applySavedView()` hardcodes per-id special cases duplicating the declarative
+  `filters` in `data.js`, plus a `hasResid` branch matching no real filter key.
+  Delete them so editing `data.js` alone works.
+- Three `source` strings leak drafting notes: `brent` ("paste truncated"),
+  `harding` ("date not in paste"), `ea-blend` ("quality fair").
+- 85 streams have `year: 2026` which is retrieval date, not sample date (67 are
+  CrudeMonitor). Split retrieved vs sampled.
+- No `robots.txt`, `sitemap.xml`, or JSON-LD (the hub has JSON-LD; the app doesn't).
+- Hubs are 143/155 `loading` with only 4 `pricing`, so the role legend is nearly
+  monochrome. **Midland is missing** despite WTI Midland joining Dated Brent in 2023.
+- `#search-results` aria-label is always "Matching streams" and `#map` is always
+  "World map of crude streams", regardless of active layer.

@@ -1,0 +1,54 @@
+---
+description: Correct physics for blending crude streams (API, sulfur, yields, TBP)
+globs: app.js,data.js
+alwaysApply: false
+---
+
+# Crude blending — get the physics right
+
+A plausible-looking wrong answer here teaches false chemistry, which defeats the
+point of the app. All 334 streams carry `api`, `sulfur_wt` and `yields`, so no new
+data is needed; 211 also have `distillation_curve`.
+
+**API gravity does NOT blend linearly.** Convert to specific gravity, blend by
+volume, convert back. Sulfur blends by **mass**, not volume.
+
+```js
+const sg  = (api) => 141.5 / (api + 131.5);
+const api = (sg)  => 141.5 / sg - 131.5;
+
+// fa = volume fraction of stream a (fb = 1 - fa)
+function blend(a, b, fa) {
+  const fb = 1 - fa;
+  const sgMix = sg(a.api) * fa + sg(b.api) * fb;   // SG: volume-weighted
+  const mA = sg(a.api) * fa;                        // mass of each part
+  const mB = sg(b.api) * fb;
+  const sulfur = (a.sulfur_wt * mA + b.sulfur_wt * mB) / (mA + mB);
+  const yields = {};                                // volume-weighted
+  for (const k of Object.keys(a.yields)) {
+    yields[k] = a.yields[k] * fa + (b.yields[k] || 0) * fb;
+  }
+  return { api: api(sgMix), sulfur, yields };
+}
+```
+
+TBP curves blend by volume at each fraction point, same as yields.
+
+## Validate, don't assert
+
+Check output against real streams already in `data.js` rather than claiming
+accuracy. Arab Light + Basrah Light at 50/50 reproduces Dubai closely:
+
+```
+computed:     31.5 API, 2.2% S, yields 19.5 / 28.5 / 26 / 26
+dubai actual: 31   API, 2.0% S, yields 18   / 28   / 26 / 28
+```
+
+There are 105 `kind: "Blend"` streams and 13 `Dilbit` to test against. Surface a
+validation example in the UI so users can see the model is grounded.
+
+## Honest limits
+
+Blending is near-linear for gravity, sulfur and bulk yields, but **not** for
+viscosity, pour point, or asphaltene stability — incompatible crudes can flocculate
+asphaltenes. Say so rather than implying a blend is always physically fine.
