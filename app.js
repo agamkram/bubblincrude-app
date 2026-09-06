@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v279";
+  const APP_VERSION = "v280";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -2764,7 +2764,7 @@
       return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, pale loading, teal blend.";
     }
     if (state.layer === "refineries") {
-      return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026 — not invented. Other plants have no published figure here.";
+      return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026. Other kb/d is Climate TRACE (CC BY 4.0), attached only when the plant is a unique match — not invented.";
     }
     if (state.colorMode === "sulfur") {
       return "Sweet is ≤ 0.5 wt% S. The ramp runs 0% to 3%+. Grey means no sulfur in the record.";
@@ -3715,8 +3715,8 @@
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
       "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point on the Hubs map layer (Cushing, LOOP, Rotterdam). Geography and role — not an assay.</dd>" +
-      "<dt>Refinery</dt><dd>A plant that turns crude into products. The Refineries map layer is place, operator, and notes — not an assay. US plants may show published EIA atmospheric crude capacity (kb/d).</dd>" +
-      '<dt id="g-capacity">Capacity (kb/d)</dt><dd>Operable atmospheric crude distillation, thousand barrels per calendar day. US figures are EIA Form EIA-820 as of January 1, 2026. Omitted when no published number is on the record — not invented.</dd>' +
+      "<dt>Refinery</dt><dd>A plant that turns crude into products. The Refineries map layer is place, operator, notes, and published capacity when we have it — not an assay. US kb/d is EIA; other kb/d is Climate TRACE, attached only on a unique match.</dd>" +
+      '<dt id="g-capacity">Capacity (kb/d)</dt><dd>Atmospheric crude distillation, thousand barrels per calendar day. US figures are EIA Form EIA-820 as of January 1, 2026. Other figures are Climate TRACE (CC BY 4.0). Omitted when no published number is on the record — not invented.</dd>' +
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>" +
       "<dt>Play</dt><dd>A repeatable exploration/development concept within a basin (Eagle Ford shale, Bakken, Vaca Muerta).</dd>" +

@@ -48,7 +48,11 @@ SKIP_NAME = re.compile(
     r"chelsea refinery cottages|visitor centre|visitor center|"
     r"refinery wharf|\bt-head\b|\bcottages\b|"
     r"\bschool\b|\bhospital\b|blood bank|old refinery park|"
-    r"^refineries park$|marysville ethanol|gold refiners",
+    r"^refineries park$|marysville ethanol|gold refiners|"
+    # Roads, rails, power, sports clubs, filling stations tagged industrial=refinery.
+    r"\bdrive\b|\brow\b|carretera|\bramal\b|110.?k\s?v|subestaci|"
+    r"club deportivo|gas station|\bjetty\b|\bbranch\b|"
+    r"irr dora|entrada 110|multiboya",
     re.I,
 )
 # OSM still has a pin. These are not operable crude CDUs.
@@ -168,6 +172,7 @@ COUNTRIES = [
     ("Gabon", "Africa", -0.8, 11.6),
     ("Congo", "Africa", -0.2, 15.8),
     ("Sudan", "Africa", 12.9, 30.2),
+    ("Sudan", "Africa", 19.6, 37.2),  # Port Sudan
     ("Kenya", "Africa", 0.0, 37.9),
     ("Tanzania", "Africa", -6.4, 34.9),
     ("Zambia", "Africa", -13.1, 27.8),
@@ -215,6 +220,24 @@ COUNTRIES = [
     ("Myanmar", "Asia Pacific", 19.8, 96.1),
     ("Brunei", "Asia Pacific", 4.5, 114.7),
     ("Papua New Guinea", "Asia Pacific", -6.3, 143.9),
+    # Extra centroids so nearest-country doesn't dump inland plants on a neighbor.
+    ("Niger", "Africa", 17.6, 8.0),
+    ("Chad", "Africa", 15.5, 19.0),
+    ("Senegal", "Africa", 14.5, -14.5),
+    ("India", "Asia Pacific", 28.7, 77.2),  # Delhi / Haryana / Panipat
+    ("India", "Asia Pacific", 31.3, 75.0),  # Punjab / Bathinda
+    ("China", "Asia Pacific", 41.8, 84.9),  # Xinjiang
+    ("Brazil", "Latin America", -3.1, -60.0),  # Manaus
+    ("Albania", "Europe", 41.3, 19.8),
+    ("Bosnia and Herzegovina", "Europe", 44.2, 17.8),
+    ("North Macedonia", "Europe", 41.6, 21.7),
+    ("Dominican Republic", "Latin America", 18.7, -70.2),
+    ("El Salvador", "Latin America", 13.8, -88.9),
+    ("Nicaragua", "Latin America", 12.1, -85.2),
+    ("Curaçao", "Latin America", 12.2, -69.0),
+    ("Laos", "Asia Pacific", 18.0, 103.0),
+    ("Afghanistan", "Asia Pacific", 33.9, 66.0),
+    ("Martinique", "Latin America", 14.6, -61.0),
 ]
 
 CURATED = [
@@ -268,6 +291,31 @@ CURATED = [
     ("chs-mcpherson", "CHS McPherson Refinery", "United States", "North America", 38.34519, -97.67610, "CHS", "CHS McPherson."),
     ("suncor-commerce-city", "Suncor Commerce City Refinery", "United States", "North America", 39.80277, -104.94728, "Suncor", "Suncor Commerce City."),
     ("valero-wilmington-rfy", "Valero Wilmington Refinery", "United States", "North America", 33.77792, -118.23403, "Valero", "Valero Wilmington."),
+    ("tesoro-los-angeles-refinery", "Tesoro Los Angeles Refinery", "United States", "North America", 33.8186, -118.2367, "Tesoro", "Tesoro / Marathon Carson."),
+    # EIA plants this Overpass extract missed — keep the published US kb/d.
+    ("baytown-refinery", "Baytown Refinery", "United States", "North America", 29.74198, -95.02699, "ExxonMobil", "ExxonMobil Baytown."),
+    ("pemex-deer-park-refinery", "PEMEX Deer Park Refinery", "United States", "North America", 29.72344, -95.13096, "Pemex", "Pemex Deer Park."),
+    ("catlettsburg-refinery", "Catlettsburg Refinery", "United States", "North America", 38.37243, -82.59958, "Marathon Petroleum", "Marathon Catlettsburg."),
+    ("chevron-el-segundo-refinery", "Chevron El Segundo Refinery", "United States", "North America", 33.9158, -118.41901, "Chevron", "Chevron El Segundo."),
+    ("bayway-refinery", "Bayway Refinery", "United States", "North America", 40.62795, -74.2219, "Phillips 66", "Phillips 66 Bayway."),
+    ("lake-charles-refinery-2", "Lake Charles Refinery", "United States", "North America", 30.24195, -93.27438, "Phillips 66", "Phillips 66 Lake Charles (Westlake)."),
+    ("valero-mckee-refinery", "Valero McKee Refinery", "United States", "North America", 35.95714, -101.88249, "Valero", "Valero McKee (Sunray)."),
+    ("hollyfrontier-refinery", "HollyFrontier Refinery", "United States", "North America", 37.79732, -96.87141, "HF Sinclair", "HF Sinclair El Dorado."),
+    ("borger-refinery", "Borger Refinery", "United States", "North America", 35.69827, -101.36294, "Phillips 66", "WRB / Phillips 66 Borger."),
+    ("navajo-refinery", "Navajo Refinery", "United States", "North America", 32.84896, -104.39148, "HF Sinclair", "HF Sinclair Navajo (Artesia)."),
+    ("minnesota-refining-division-st-paul-park-refiner", "Minnesota Refining Division - St Paul Park Refiner", "United States", "North America", 44.852, -93.004, "", "St Paul Park refinery."),
+    ("ohio-refining-division-canton-refinery", "Ohio Refining Division - Canton Refinery", "United States", "North America", 40.798, -81.378, "Marathon Petroleum", "Marathon Canton."),
+    ("par-hawaii-refinery", "Par Hawaii Refinery", "United States", "North America", 21.31047, -158.11133, "Par Hawaii", "Par Hawaii Kapolei."),
+    ("three-rivers-refinery-oil-recieving", "Three Rivers Refinery Oil Recieving", "United States", "North America", 28.45512, -98.20225, "", "Valero Three Rivers."),
+    ("alon-big-spring-refinery", "Alon Big Spring Refinery", "United States", "North America", 32.27146, -101.416, "Alon", "Alon Big Spring."),
+    ("phillips-66-refinery", "Phillips 66 Refinery", "United States", "North America", 45.78013, -108.48944, "Phillips 66", "Phillips 66 Billings."),
+    ("exxonmobile-billings-refinery", "ExxonMobile Billings Refinery", "United States", "North America", 45.81095, -108.44113, "", "Par Montana / ExxonMobil Billings."),
+    ("laurel-refinery", "Laurel Refinery", "United States", "North America", 45.65807, -108.76909, "CHS", "CHS Laurel."),
+    ("tulsa-east-refinery", "Tulsa East Refinery", "United States", "North America", 36.11892, -95.99931, "HF Sinclair", "HF Sinclair Tulsa East."),
+    ("salt-lake-city-refinery", "Salt Lake City Refinery", "United States", "North America", 40.804, -111.914, "", "Tesoro / Marathon Salt Lake City."),
+    ("countrymark-refinery-2", "CountryMark Refinery", "United States", "North America", 37.94303, -87.90883, "CountryMark", "CountryMark Mount Vernon."),
+    ("axeon-specialty-products-refinery", "Axeon Specialty Products Refinery", "United States", "North America", 39.84654, -75.22802, "", "Paulsboro specialty products."),
+    ("nixon-refinery", "Nixon Refinery", "United States", "North America", 29.26038, -97.78829, "Lazarus Energy", "Lazarus Energy Nixon."),
 ]
 
 
@@ -321,9 +369,14 @@ ISO_TO_COUNTRY = {
     "QA": ("Qatar", "Middle East"),
     "BH": ("Bahrain", "Middle East"),
     "NG": ("Nigeria", "Africa"),
+    "NE": ("Niger", "Africa"),
     "DZ": ("Algeria", "Africa"),
     "EG": ("Egypt", "Africa"),
     "ZA": ("South Africa", "Africa"),
+    "IN": ("India", "Asia Pacific"),
+    "PK": ("Pakistan", "Asia Pacific"),
+    "CN": ("China", "Asia Pacific"),
+    "BR": ("Brazil", "Latin America"),
 }
 
 
@@ -532,7 +585,7 @@ def build(payloads):
             if d < 1.0:
                 drop = True
                 break
-            if d < 2.5 and _same_plant_name(r["name"], k["name"]):
+            if d < 4.0 and _same_plant_name(r["name"], k["name"]):
                 drop = True
                 break
         if not drop:
@@ -588,6 +641,8 @@ def build(payloads):
         out.append(r)
     attach_eia(out)
     out = prune_us_without_eia(out)
+    attach_trace(out)
+    out = add_trace_missing(out)
     return out
 
 
@@ -925,12 +980,350 @@ def attach_eia(rows):
         )
 
 
+TRACE_JSON = Path("/tmp/ct-refining.json")
+TRACE_API = (
+    "https://api.climatetrace.org/v7/sources"
+    "?year=2025&gas=co2e_100yr&subsectors=oil-and-gas-refining"
+)
+# Named match up to 12 km; unnamed same-yard match up to 2.5 km.
+TRACE_NAMED_KM = 12.0
+TRACE_YARD_KM = 2.5
+# A TRACE plant this far from every catalog pin is a hole, not a duplicate.
+TRACE_MISSING_KM = 12.0
+NAME_SKIP = {
+    "refinery",
+    "refining",
+    "oil",
+    "company",
+    "co",
+    "llc",
+    "the",
+    "plant",
+    "limited",
+    "ltd",
+    "inc",
+    "corporation",
+    "corp",
+    "complex",
+    "petroleum",
+    "petro",
+    "energy",
+}
+
+ISO3_TO_COUNTRY = {
+    "CHN": ("China", "Asia Pacific"),
+    "USA": ("United States", "North America"),
+    "RUS": ("Russia", "Russia & CIS"),
+    "IND": ("India", "Asia Pacific"),
+    "JPN": ("Japan", "Asia Pacific"),
+    "CAN": ("Canada", "North America"),
+    "DEU": ("Germany", "Europe"),
+    "IRQ": ("Iraq", "Middle East"),
+    "BRA": ("Brazil", "Latin America"),
+    "ITA": ("Italy", "Europe"),
+    "SAU": ("Saudi Arabia", "Middle East"),
+    "IRN": ("Iran", "Middle East"),
+    "KOR": ("South Korea", "Asia Pacific"),
+    "NGA": ("Nigeria", "Africa"),
+    "ESP": ("Spain", "Europe"),
+    "EGY": ("Egypt", "Africa"),
+    "IDN": ("Indonesia", "Asia Pacific"),
+    "ARG": ("Argentina", "Latin America"),
+    "ARE": ("United Arab Emirates", "Middle East"),
+    "FRA": ("France", "Europe"),
+    "MYS": ("Malaysia", "Asia Pacific"),
+    "MEX": ("Mexico", "Latin America"),
+    "THA": ("Thailand", "Asia Pacific"),
+    "DZA": ("Algeria", "Africa"),
+    "GBR": ("United Kingdom", "Europe"),
+    "UKR": ("Ukraine", "Russia & CIS"),
+    "NLD": ("Netherlands", "Europe"),
+    "TUR": ("Turkey", "Europe"),
+    "AUS": ("Australia", "Asia Pacific"),
+    "PER": ("Peru", "Latin America"),
+    "LBY": ("Libya", "Africa"),
+    "PAK": ("Pakistan", "Asia Pacific"),
+    "KWT": ("Kuwait", "Middle East"),
+    "BEL": ("Belgium", "Europe"),
+    "COL": ("Colombia", "Latin America"),
+    "KAZ": ("Kazakhstan", "Russia & CIS"),
+    "GRC": ("Greece", "Europe"),
+    "ROU": ("Romania", "Europe"),
+    "ZAF": ("South Africa", "Africa"),
+    "GHA": ("Ghana", "Africa"),
+    "SGP": ("Singapore", "Asia Pacific"),
+    "TWN": ("Taiwan", "Asia Pacific"),
+    "OMN": ("Oman", "Middle East"),
+    "VEN": ("Venezuela", "Latin America"),
+    "QAT": ("Qatar", "Middle East"),
+    "CHL": ("Chile", "Latin America"),
+    "SWE": ("Sweden", "Europe"),
+    "ECU": ("Ecuador", "Latin America"),
+    "UZB": ("Uzbekistan", "Russia & CIS"),
+    "CUB": ("Cuba", "Latin America"),
+    "ALB": ("Albania", "Europe"),
+    "POL": ("Poland", "Europe"),
+    "NOR": ("Norway", "Europe"),
+    "BRN": ("Brunei", "Asia Pacific"),
+    "PRT": ("Portugal", "Europe"),
+    "VNM": ("Vietnam", "Asia Pacific"),
+    "BLR": ("Belarus", "Russia & CIS"),
+    "ISR": ("Israel", "Middle East"),
+    "PHL": ("Philippines", "Asia Pacific"),
+    "DNK": ("Denmark", "Europe"),
+    "CZE": ("Czechia", "Europe"),
+    "HRV": ("Croatia", "Europe"),
+    "TKM": ("Turkmenistan", "Russia & CIS"),
+    "AGO": ("Angola", "Africa"),
+    "YEM": ("Yemen", "Middle East"),
+    "BOL": ("Bolivia", "Latin America"),
+    "MAR": ("Morocco", "Africa"),
+    "SDN": ("Sudan", "Africa"),
+    "BHR": ("Bahrain", "Middle East"),
+    "FIN": ("Finland", "Europe"),
+    "AUT": ("Austria", "Europe"),
+    "HUN": ("Hungary", "Europe"),
+    "SVK": ("Slovakia", "Europe"),
+    "LTU": ("Lithuania", "Europe"),
+    "AZE": ("Azerbaijan", "Russia & CIS"),
+    "BGR": ("Bulgaria", "Europe"),
+    "SRB": ("Serbia", "Europe"),
+    "CHE": ("Switzerland", "Europe"),
+    "CIV": ("Côte d'Ivoire", "Africa"),
+    "URY": ("Uruguay", "Latin America"),
+    "IRL": ("Ireland", "Europe"),
+    "LKA": ("Sri Lanka", "Asia Pacific"),
+    "JOR": ("Jordan", "Middle East"),
+    "PNG": ("Papua New Guinea", "Asia Pacific"),
+    "BGD": ("Bangladesh", "Asia Pacific"),
+    "BIH": ("Bosnia and Herzegovina", "Europe"),
+    "MKD": ("North Macedonia", "Europe"),
+    "JAM": ("Jamaica", "Latin America"),
+    "DOM": ("Dominican Republic", "Latin America"),
+    "AFG": ("Afghanistan", "Asia Pacific"),
+    "TUN": ("Tunisia", "Africa"),
+    "MTQ": ("Martinique", "Latin America"),
+    "SEN": ("Senegal", "Africa"),
+    "GAB": ("Gabon", "Africa"),
+    "SLV": ("El Salvador", "Latin America"),
+    "LAO": ("Laos", "Asia Pacific"),
+    "NIC": ("Nicaragua", "Latin America"),
+    "COG": ("Congo", "Africa"),
+    "TCD": ("Chad", "Africa"),
+    "NER": ("Niger", "Africa"),
+    "SUR": ("Suriname", "Latin America"),
+    "LBR": ("Liberia", "Africa"),
+    "PRY": ("Paraguay", "Latin America"),
+    "KEN": ("Kenya", "Africa"),
+    "CUW": ("Curaçao", "Latin America"),
+    "ZMB": ("Zambia", "Africa"),
+    "TTO": ("Trinidad and Tobago", "Latin America"),
+    "CRI": ("Costa Rica", "Latin America"),
+    "NZL": ("New Zealand", "Asia Pacific"),
+    "CMR": ("Cameroon", "Africa"),
+}
+
+
+def fetch_trace():
+    if TRACE_JSON.exists() and TRACE_JSON.stat().st_size > 10000:
+        print("using", TRACE_JSON, "bytes", TRACE_JSON.stat().st_size)
+        return json.loads(TRACE_JSON.read_text(encoding="utf-8"))
+    print("fetching Climate TRACE oil-and-gas-refining…")
+    rows = []
+    offset = 0
+    limit = 200
+    while True:
+        url = TRACE_API + "&limit=%d&offset=%d" % (limit, offset)
+        req = urllib.request.Request(url, headers={"User-Agent": "BubblinCrude/1.0"})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            chunk = json.loads(resp.read().decode())
+        if not chunk:
+            break
+        rows.extend(chunk)
+        if len(chunk) < limit:
+            break
+        offset += limit
+    TRACE_JSON.write_text(json.dumps(rows), encoding="utf-8")
+    return rows
+
+
+def _name_tokens(s):
+    s = (s or "").lower().replace("&", " and ")
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return {t for t in s.split() if t not in NAME_SKIP and len(t) >= 3}
+
+
+def _trace_kbd(t):
+    cap = t.get("capacity")
+    units = (t.get("capacityUnits") or "").lower()
+    if not cap or cap <= 0:
+        return None
+    if "bbl" not in units and "barrel" not in units:
+        return None
+    return round(cap / 1000.0, 1)
+
+
+def _trace_place(t):
+    hit = ISO3_TO_COUNTRY.get(t.get("country") or "")
+    if hit:
+        return hit
+    return country_of(t["centroid"]["latitude"], t["centroid"]["longitude"])
+
+
+def _trace_score(t, p):
+    c = t.get("centroid") or {}
+    if c.get("latitude") is None:
+        return None
+    d = haversine(c["latitude"], c["longitude"], p["lat"], p["lon"])
+    overlap = _name_tokens(t.get("name")) & (
+        _name_tokens(p.get("name")) | _name_tokens(p.get("operator"))
+    )
+    named = bool(overlap)
+    if d > TRACE_NAMED_KM:
+        return None
+    if not named and d > TRACE_YARD_KM:
+        return None
+    country, _region = _trace_place(t)
+    sc = max(0.0, 20.0 - d * 2.0)
+    if named:
+        sc += 8 + 4 * len(overlap)
+    if country == p.get("country"):
+        sc += 6
+    return sc, d, named
+
+
+def attach_trace(rows):
+    """Fill capacity on non-US pins from a unique Climate TRACE match.
+
+    Never overwrite EIA. Never attach when two TRACE plants or two pins
+    compete — a real number on the wrong plant is worse than a blank.
+    """
+    plants = fetch_trace()
+    used_pins = set()
+    used_trace = set()
+    matched = 0
+    skipped_us = 0
+    ambiguous = 0
+    for t in plants:
+        tid = t.get("id")
+        kbd = _trace_kbd(t)
+        if kbd is None:
+            continue
+        cands = []
+        for p in rows:
+            scored = _trace_score(t, p)
+            if not scored:
+                continue
+            sc, d, named = scored
+            cands.append((sc, d, named, p))
+        cands.sort(key=lambda x: -x[0])
+        if not cands:
+            continue
+        if len(cands) > 1 and cands[0][0] - cands[1][0] < 4:
+            ambiguous += 1
+            continue
+        pin = cands[0][3]
+        if pin["id"] in used_pins:
+            ambiguous += 1
+            continue
+        if pin.get("capacity_kbd") is not None:
+            # US EIA already filled this pin. Still take TRACE country if OSM
+            # nearest-centroid got it wrong, but only when named+close.
+            country, region = _trace_place(t)
+            if cands[0][2] and cands[0][1] < 5 and pin.get("country") != country:
+                pin["country"] = country
+                pin["region"] = region
+            skipped_us += 1
+            used_pins.add(pin["id"])
+            used_trace.add(tid)
+            continue
+        country, region = _trace_place(t)
+        pin["capacity_kbd"] = kbd
+        pin["country"] = country
+        pin["region"] = region
+        extra = (
+            "Climate TRACE atmospheric crude %s kb/d (CC BY 4.0)."
+            % (str(int(kbd)) if kbd == int(kbd) else kbd)
+        )
+        notes = (pin.get("notes") or "").strip()
+        if "Climate TRACE" not in notes:
+            pin["notes"] = (notes + " " + extra).strip() if notes else extra
+        used_pins.add(pin["id"])
+        used_trace.add(tid)
+        matched += 1
+    print(
+        "TRACE matched",
+        matched,
+        "new kb/d;",
+        "already-capped",
+        skipped_us,
+        "ambiguous",
+        ambiguous,
+        "of",
+        len(plants),
+    )
+    return used_trace
+
+
+def add_trace_missing(rows):
+    """Insert TRACE plants that OSM never mapped, far from every existing pin."""
+    plants = fetch_trace()
+    used = {r["id"] for r in rows}
+    added = 0
+    for t in plants:
+        kbd = _trace_kbd(t)
+        if kbd is None:
+            continue
+        c = t.get("centroid") or {}
+        if c.get("latitude") is None:
+            continue
+        lat, lon = float(c["latitude"]), float(c["longitude"])
+        country, region = _trace_place(t)
+        # US catalog is EIA. Do not invent a second US pin from TRACE.
+        if country == "United States":
+            continue
+        near = min((haversine(lat, lon, r["lat"], r["lon"]) for r in rows), default=1e9)
+        if near < TRACE_MISSING_KM:
+            continue
+        name = (t.get("name") or "").strip() or "Oil refinery"
+        sid = slug(name, t.get("id") or added)
+        base = sid
+        n = 2
+        while sid in used:
+            sid = "%s-%d" % (base, n)
+            n += 1
+        used.add(sid)
+        extra = (
+            "Climate TRACE atmospheric crude %s kb/d (CC BY 4.0)."
+            % (str(int(kbd)) if kbd == int(kbd) else kbd)
+        )
+        rows.append(
+            {
+                "id": sid,
+                "osm": "trace-%s" % t.get("id"),
+                "name": name,
+                "lat": round(lat, 5),
+                "lon": round(lon, 5),
+                "country": country,
+                "region": region,
+                "operator": "",
+                "notes": extra,
+                "capacity_kbd": kbd,
+            }
+        )
+        added += 1
+    rows.sort(key=lambda r: (r["region"], r["country"], r["name"].lower()))
+    print("TRACE added missing plants", added)
+    return rows
+
+
 def emit(rows):
     lines = [
         "/* BubblinCrude — crude oil refineries.",
-        "   Places from OpenStreetMap (ODbL). US kb/d from EIA-820 (Jan 1, 2026)",
-        "   operable atmospheric crude, barrels per calendar day — not invented.",
-        "   Rebuild with scripts/build-refineries.py */",
+        "   Places from OpenStreetMap (ODbL) plus Climate TRACE plants OSM missed.",
+        "   US kb/d from EIA-820 (Jan 1, 2026) operable atmospheric crude, barrels",
+        "   per calendar day. Other kb/d from Climate TRACE (CC BY 4.0) — attached",
+        "   only when the plant is a unique match. Rebuild: scripts/build-refineries.py */",
         "(function (global) {",
         '  "use strict";',
         "",
@@ -992,7 +1385,7 @@ def main():
         if r.get("capacity_kbd") is not None:
             cap += 1
     print("by region", by)
-    print("with EIA kb/d", cap)
+    print("with kb/d", cap)
 
 
 if __name__ == "__main__":
