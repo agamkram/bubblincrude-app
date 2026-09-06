@@ -5,7 +5,7 @@ alwaysApply: true
 
 # BubblinCrude — audited state and backlog
 
-Verified counts: **334 streams, 347 sites, 155 hubs, 773 refineries.**
+Verified counts: **334 streams, 347 sites, 156 hubs, 773 refineries.**
 Streams are clean — zero broken `related_ids`/`site_ids`/`hub_ids`, no duplicate
 ids, yields sum to 100±10, TBP curves monotonic. Coverage: 100% api/sulfur/yields/
 notes, 88% TAN, 63% distillation+resid, 61% metals, 5% SARA. `cuts` and `products`
@@ -52,8 +52,14 @@ of what was under the finger — do not move markers.
   is heavy API (max 22.3); the phantom `hasResid` key is gone.
 - Source drafting notes scrubbed on `brent`, `harding`, `ea-blend`.
 - Search list and map `aria-label` follow the active layer.
-- 85 streams have `year: 2026` which is retrieval date, not sample date (67 are
-  CrudeMonitor). Split retrieved vs sampled.
-- No `robots.txt`, `sitemap.xml`, or JSON-LD (the hub has JSON-LD; the app doesn't).
-- Hubs are 143/155 `loading` with only 4 `pricing`, so the role legend is nearly
-  monochrome. **Midland is missing** despite WTI Midland joining Dated Brent in 2023.
+- Sample year vs retrieved split (v284). `year` is assay/sample date; `retrieved`
+  is pull date. 83 records that said 2026 were retrieval (67 CrudeMonitor);
+  Njord and Norne keep sample year 2026. Factory default is `year: null`.
+- `robots.txt`, `sitemap.xml`, and JSON-LD WebApplication on the app (v284).
+- Midland hub `midland-tx` (pricing; WTI Midland vs Dated Brent 2023). Hardisty
+  recategorized to pricing (WCS). Loading markers are sand `#c4a882` so they
+  no longer read as pale gold next to pricing.
+
+## Still open
+
+Refineries: ~199 without kb/d, thin operators, zero `related_ids`.

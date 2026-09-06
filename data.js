@@ -44,7 +44,8 @@
       site_ids: [],
       hub_ids: [],
       source: "Typical published assay ranges",
-      year: 2020,
+      year: null,
+      retrieved: null,
       ...o,
       flags: flags({ api: T, sulfur_wt: T, ...(o.flags || {}) }),
     };
@@ -876,7 +877,7 @@
       yields: { naphtha: 32, middle: 34, vgo: 22, resid: 12 },
       notes: "Permian light sweet; Midland pricing hub grade.",
       related_ids: ["wti", "wts", "eagle-ford", "wti-houston", "wtl", "delaware"],
-      hub_ids: ["meh-houston"],
+      hub_ids: ["meh-houston", "midland-tx"],
       site_ids: ["spraberry"],
       source: "US published / typical WTI Midland assay",
       flags: { yields: E }
@@ -1073,7 +1074,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["syncrude-site"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -1109,7 +1110,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -1198,7 +1199,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -1234,7 +1235,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["christina-lake-site"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -5437,7 +5438,7 @@
       hub_ids: ["ceyhan"],
       site_ids: ["azerbaijani"],
       source: "ExxonMobil crude oil assay library (published table)",
-      year: 2026,
+      retrieved: 2026,
       flags: { yields: T }
     }),
     S({
@@ -6620,7 +6621,7 @@
       related_ids: ["lsb", "wti", "bakken", "syncrude"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -6654,7 +6655,7 @@
       related_ids: ["msw", "wcs", "bow-river"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -6688,7 +6689,7 @@
       related_ids: ["lloydminster", "wcs", "lsb"],
       hub_ids: ["hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -6722,7 +6723,7 @@
       related_ids: ["bow-river", "wcs", "cold-lake"],
       hub_ids: ["hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -6793,7 +6794,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -6846,7 +6847,7 @@
       hub_ids: ["whiffen-head"],
       site_ids: ["hebron-field"],
       source: "ExxonMobil crude oil assay (dated download)",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -7327,7 +7328,7 @@
       related_ids: ["spr-bayou-choctaw-sour", "lls", "hls", "spr-west-hackberry-sweet"],
       hub_ids: ["st-james"],
       source: "DOE SPR crude oil stream assays",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -7363,7 +7364,7 @@
       related_ids: ["spr-bayou-choctaw-sweet", "mars", "isthmus", "maya"],
       hub_ids: ["st-james"],
       source: "DOE SPR crude oil stream assays",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -7435,7 +7436,7 @@
       related_ids: ["spr-big-hill-sweet", "mars", "southern-green-canyon", "wts"],
       hub_ids: ["meh-houston"],
       source: "DOE SPR crude oil stream assays",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -7507,7 +7508,7 @@
       related_ids: ["spr-bryan-mound-sweet", "mars", "maya", "basrah-light"],
       hub_ids: ["meh-houston"],
       source: "DOE SPR crude oil stream assays",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -7601,7 +7602,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7621,7 +7622,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7641,7 +7642,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7661,7 +7662,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7682,7 +7683,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["pembina"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7702,7 +7703,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7722,7 +7723,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: U, yields: T },
     }),
     S({
@@ -7755,7 +7756,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -7788,7 +7789,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -7821,7 +7822,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -7855,7 +7856,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["pembina"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -7888,7 +7889,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -7921,7 +7922,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -7955,7 +7956,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -7988,7 +7989,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8022,7 +8023,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8055,7 +8056,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8089,7 +8090,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton", "hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8123,7 +8124,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8157,7 +8158,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8190,7 +8191,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8224,7 +8225,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton", "hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8258,7 +8259,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8293,7 +8294,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8327,7 +8328,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8360,7 +8361,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8393,7 +8394,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8426,7 +8427,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8459,7 +8460,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8492,7 +8493,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8524,7 +8525,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8556,7 +8557,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8590,7 +8591,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8622,7 +8623,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8656,7 +8657,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8688,7 +8689,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: U, v_ppm: U, tan: U, resid_wt: M, yields: M },
     }),
     S({
@@ -8722,7 +8723,7 @@
       related_ids: ["wcs"],
       hub_ids: ["hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8756,7 +8757,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton", "hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8790,7 +8791,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8824,7 +8825,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8858,7 +8859,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton", "hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8892,7 +8893,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8926,7 +8927,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton", "hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8960,7 +8961,7 @@
       related_ids: ["wcs"],
       hub_ids: ["edmonton", "hardisty"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -8995,7 +8996,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9030,7 +9031,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9065,7 +9066,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9100,7 +9101,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9135,7 +9136,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9170,7 +9171,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9205,7 +9206,7 @@
       hub_ids: ["westridge"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9240,7 +9241,7 @@
       hub_ids: ["westridge"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9275,7 +9276,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9310,7 +9311,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9345,7 +9346,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9380,7 +9381,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9415,7 +9416,7 @@
       hub_ids: ["hardisty"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
     S({
@@ -9450,7 +9451,7 @@
       hub_ids: ["edmonton"],
       site_ids: ["athabasca"],
       source: "CrudeMonitor",
-      year: 2026,
+      retrieved: 2026,
       flags: { api: M, sulfur_wt: M, ni_ppm: M, v_ppm: M, tan: M, resid_wt: M, yields: M },
     }),
 
@@ -9606,7 +9607,7 @@
       related_ids: ["lula", "buzios"],
       hub_ids: ["angra-tebig"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9626,7 +9627,7 @@
       related_ids: ["minas", "duri"],
       hub_ids: ["banyu-urip-load"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9646,7 +9647,7 @@
       related_ids: ["saharan-blend"],
       hub_ids: ["coral-sul"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9666,7 +9667,7 @@
       related_ids: ["bonny-light", "qua-iboe"],
       hub_ids: ["ebok-fpso"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9687,7 +9688,7 @@
       hub_ids: ["stabroek-fpso"],
       site_ids: ["stabroek"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9707,7 +9708,7 @@
       related_ids: ["northwest-shelf", "ichthys"],
       hub_ids: ["barrow-gorgon"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9727,7 +9728,7 @@
       related_ids: ["mars", "hls", "lls"],
       hub_ids: ["loop"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9747,7 +9748,7 @@
       related_ids: ["hungo", "saxi-batuque"],
       hub_ids: ["kizomba-load"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9768,7 +9769,7 @@
       hub_ids: ["stabroek-fpso"],
       site_ids: ["payara"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
     S({
@@ -9788,7 +9789,7 @@
       related_ids: ["tapis"],
       hub_ids: ["kertih"],
       source: "ExxonMobil assay library",
-      year: 2026,
+      retrieved: 2026,
       flags: {api: "typical", sulfur_wt: "typical", yields: M },
     }),
 

@@ -31,6 +31,18 @@
       related_ids: ["wti", "wts", "scoop-stack"],
       notes: "Pipeline crossroads and WTI futures delivery point; US storage capital.",
     }),
+    /* id midland-tx — must not collide with stream id "midland". */
+    Hub({
+      id: "midland-tx",
+      name: "Midland",
+      country: "United States",
+      region: "North America",
+      lat: 31.997,
+      lon: -102.078,
+      role: "pricing",
+      related_ids: ["midland"],
+      notes: "Permian gathering hub. WTI Midland joined Dated Brent’s marker basket in 2023.",
+    }),
     Hub({
       id: "meh-houston",
       name: "Magellan East Houston",
@@ -71,7 +83,7 @@
       region: "North America",
       lat: 52.67,
       lon: -111.31,
-      role: "blend",
+      role: "pricing",
       related_ids: ["wcs", "cold-lake", "access-western-blend", "christina-lake", "bow-river", "lloydminster", "kearl", "surmont", "peace-river", "conventional-heavy", "premium-conventional-heavy", "synbit-blend", "bow-river-south", "clearwater-heavy", "seal-heavy", "wabasca-heavy", "western-canadian-blend", "borealis-heavy-blend", "canadian-natural-high-tan", "fort-hills-dilbit", "leismer-corner-blend", "long-lake-heavy-dilbit", "western-canada-dilbit", "long-lake-heavy", "petrochina-blend", "statoil-cheecham-synbit", "surmont-heavy-blend", "surmont-mix-a"],
       notes: "Alberta heavy-oil aggregation and WCS pricing/blend point.",
     }),

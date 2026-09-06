@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v283";
+  const APP_VERSION = "v284";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -374,7 +374,7 @@
     if (state.layer === "hubs") {
       if (s.role === "pricing") return "#e8a838";
       if (s.role === "storage") return "#4a8fd4";
-      if (s.role === "loading") return "#f0d78c";
+      if (s.role === "loading") return "#c4a882";
       if (s.role === "blend") return "#5ec8b0";
       return "#e8a838"; /* accent */
     }
@@ -1493,7 +1493,7 @@
     } else if (state.layer === "hubs") {
       title.textContent = "Select a hub";
       body.textContent =
-        "Tap a pricing, storage, or loading hub — or search Cushing, LOOP, Rotterdam…";
+        "Tap a pricing, storage, or loading hub — or search Cushing, Midland, LOOP, Rotterdam…";
     } else if (state.layer === "refineries") {
       title.textContent = "Select a refinery";
       body.textContent =
@@ -1728,6 +1728,13 @@
     );
   }
 
+  function citationLine(s) {
+    let t = s.source || "Published assay";
+    if (s.year) t += " (" + s.year + ")";
+    if (s.retrieved && s.retrieved !== s.year) t += "; retrieved " + s.retrieved;
+    return t;
+  }
+
   function sourceChip(text, year) {
     const full = text || "Published assay";
     /* Sample year already sits to the left — drop a trailing "(22 Oct 2020)"
@@ -1834,6 +1841,9 @@
     html += "</div>";
     html += '<div class="insp-meta-row">';
     if (s.year) html += "<span>Sample year " + escapeHtml(String(s.year)) + "</span>";
+    if (s.retrieved && s.retrieved !== s.year) {
+      html += "<span>Retrieved " + escapeHtml(String(s.retrieved)) + "</span>";
+    }
     html += sourceChip(s.source || "Published assay", s.year);
     html += "</div></div>";
 
@@ -2151,8 +2161,7 @@
     html += "</tbody></table>";
     html +=
       '<p style="margin:8px 0 0;font-size:11px;color:var(--text-mute)">Citation: ' +
-      escapeHtml(s.source) +
-      (s.year ? " (" + s.year + ")" : "") +
+      escapeHtml(citationLine(s)) +
       "</p>";
     return html;
   }
@@ -2803,7 +2812,7 @@
         '<div class="legend-ramp legend-ramp-roles" aria-label="Hubs by commercial role">' +
         legendRoleTick("#e8a838", "price") +
         legendRoleTick("#4a8fd4", "store") +
-        legendRoleTick("#f0d78c", "load") +
+        legendRoleTick("#c4a882", "load") +
         legendRoleTick("#5ec8b0", "blend") +
         "</div>"
       );
@@ -2823,7 +2832,7 @@
 
   function legendHelpText() {
     if (state.layer === "hubs") {
-      return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, pale loading, teal blend.";
+      return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, sand loading, teal blend.";
     }
     if (state.layer === "refineries") {
       return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026. Other kb/d is Climate TRACE (CC BY 4.0), attached only when the plant is a unique match — not invented.";
@@ -4089,7 +4098,7 @@
       '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (wt%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>' +
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>" +
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery location on the Sites map layer. May link to related commercial streams.</dd>" +
-      "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point on the Hubs map layer (Cushing, LOOP, Rotterdam). Geography and role — not an assay.</dd>" +
+      "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point on the Hubs map layer (Cushing, Midland, LOOP, Rotterdam). Geography and role — not an assay.</dd>" +
       "<dt>Refinery</dt><dd>A plant that turns crude into products. The Refineries map layer is place, operator, notes, and published capacity when we have it — not an assay. US kb/d is EIA; other kb/d is Climate TRACE, attached only on a unique match.</dd>" +
       '<dt id="g-capacity">Capacity (kb/d)</dt><dd>Atmospheric crude distillation, thousand barrels per calendar day. US figures are EIA Form EIA-820 as of January 1, 2026. Other figures are Climate TRACE (CC BY 4.0). Omitted when no published number is on the record — not invented.</dd>' +
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — e.g. Ghawar, Prudhoe Bay, East Texas.</dd>" +
@@ -4120,7 +4129,7 @@
       "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>" +
       "</ul></div>" +
       '<div class="about-block"><h3>Independent axes</h3><p>Sweet/sour is sulfur (sweet ≤ 0.5 wt% S). Light/heavy is API gravity. Filters treat them separately. Map color modes paint stream and site pins on a continuous ramp by API or sulfur — the scale sits under the map buttons. Hub pins are painted by commercial role. Refinery pins are a single plant color — place, not assay.</p></div>' +
-      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. Site locations are approximate centroids for education, not lease maps. Refinery locations are from OpenStreetMap (ODbL) plus a short curated list of well-known plants OSM missed. US refinery kb/d is EIA Refinery Capacity Report (Form EIA-820), operable atmospheric crude as of January 1, 2026.</p></div>' +
+      '<div class="about-block"><h3>Sources</h3><p>Curated from publicly discussed assay compilations and producer summaries (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, CrudeMonitor, Platts assay notes, and academic/refining handbooks). Each stream card shows its source chip. <strong>Sample year</strong> is the assay date when known. <strong>Retrieved</strong> is when the record was pulled — not when the oil was sampled. Site locations are approximate centroids for education, not lease maps. Refinery locations are from OpenStreetMap (ODbL) plus a short curated list of well-known plants OSM missed. US refinery kb/d is EIA Refinery Capacity Report (Form EIA-820), operable atmospheric crude as of January 1, 2026.</p></div>' +
       '<div class="about-block"><h3>Offline</h3><p>After the first visit, the app shell and embedded JSON are cached by the service worker. Map tiles still need network.</p></div>' +
       '<div class="about-block"><h3>Map</h3><p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter (no labels), built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a> data. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>.</p></div>';
   }

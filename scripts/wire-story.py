@@ -35,7 +35,7 @@ HUB_BY_STREAM = {
     "wti": ["cushing"],
     "wts": ["cushing"],
     "wti-houston": ["meh-houston"],
-    "midland": ["meh-houston"],
+    "midland": ["meh-houston", "midland-tx"],
     "wtl": ["meh-houston"],
     "delaware": ["meh-houston"],
     "eagle-ford": ["meh-houston"],

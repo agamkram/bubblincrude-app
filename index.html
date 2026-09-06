@@ -74,6 +74,19 @@
   />
   <meta name="twitter:image" content="https://bubblincrude.markmaga.com/icon-512.png" />
   <title>BubblinCrude — crude oil explorer | Mark Maga</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "BubblinCrude",
+      "url": "https://bubblincrude.markmaga.com/",
+      "description": "Explore commercial crude oil streams on a world map — filter, assay, and compare WTI, Merey-16, Boscan, and more.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "author": { "@type": "Person", "name": "Mark Maga", "url": "https://markmaga.com/" },
+      "isAccessibleForFree": true
+    }
+  </script>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" href="icon-192.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -89,7 +102,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=283" />
+  <link rel="stylesheet" href="styles.css?v=284" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -344,11 +357,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=283"></script>
-  <script src="sites.js?v=283"></script>
-  <script src="hubs.js?v=283"></script>
-  <script src="refineries.js?v=283"></script>
-  <script src="app.js?v=283"></script>
+  <script src="data.js?v=284"></script>
+  <script src="sites.js?v=284"></script>
+  <script src="hubs.js?v=284"></script>
+  <script src="refineries.js?v=284"></script>
+  <script src="app.js?v=284"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -359,7 +372,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v283";
+    var EXPECTED = "v284";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
