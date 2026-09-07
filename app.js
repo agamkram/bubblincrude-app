@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v305";
+  const APP_VERSION = "v306";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -2645,7 +2645,7 @@
       el.btnAddStream.disabled = compareTrayFull();
       el.btnAddStream.title = compareTrayFull()
         ? "Tray full — remove one to add another"
-        : "Add to compare";
+        : "Pick another from the catalog";
     }
   }
 

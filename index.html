@@ -106,7 +106,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="/styles.css?v=305" />
+  <link rel="stylesheet" href="/styles.css?v=306" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -317,7 +317,7 @@
           <div class="compare-tray" id="compare-tray" aria-label="Compare tray">
             <div class="tray-chips" id="tray-chips"></div>
             <div class="tray-actions">
-              <button type="button" class="btn btn-tray" id="btn-add-stream">+ Add</button>
+              <button type="button" class="btn btn-tray" id="btn-add-stream">Pick</button>
               <button type="button" class="btn btn-tray btn-tray-go" id="btn-open-compare" disabled>Compare</button>
             </div>
           </div>
@@ -379,11 +379,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="/data.js?v=305"></script>
-  <script src="/sites.js?v=305"></script>
-  <script src="/hubs.js?v=305"></script>
-  <script src="/refineries.js?v=305"></script>
-  <script src="/app.js?v=305"></script>
+  <script src="/data.js?v=306"></script>
+  <script src="/sites.js?v=306"></script>
+  <script src="/hubs.js?v=306"></script>
+  <script src="/refineries.js?v=306"></script>
+  <script src="/app.js?v=306"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -394,7 +394,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v305";
+    var EXPECTED = "v306";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
