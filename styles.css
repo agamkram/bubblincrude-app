@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 296;
+  --bc-css: 298;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1351,6 +1351,27 @@ input[type="range"] {
 .insp-expand:focus-visible {
   color: var(--text);
   background: var(--bg-hover);
+  outline: none;
+}
+.insp-back {
+  display: block;
+  margin: 0 0 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+  max-width: 100%;
+}
+.insp-back:hover,
+.insp-back:focus-visible,
+.insp-back:active {
+  color: var(--accent);
   outline: none;
 }
 .insp-name {

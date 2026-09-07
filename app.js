@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v296";
+  const APP_VERSION = "v298";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -100,6 +100,8 @@
     productGroup: "all",
     /* Last Barrel inner page so World ↔ Barrel restores Cuts or Products. */
     lastBarrelRoute: "cuts",
+    /* Pin hops from inspector chips. Last entry is the named ← back. */
+    pinTrail: [],
     /* Volume fractions keyed by pin key (stream:id). Renormalized to 1. */
     blendShare: {},
   };
@@ -661,17 +663,79 @@
     html += "</div></div>";
     return html;
   }
-  function goToLayerPin(layer, id) {
+  function pinKindFromLayer(layer) {
+    if (layer === "sites") return "site";
+    if (layer === "hubs") return "hub";
+    if (layer === "refineries") return "refinery";
+    return "stream";
+  }
+  function pinLayerFromKind(kind) {
+    if (kind === "site") return "sites";
+    if (kind === "hub") return "hubs";
+    if (kind === "refinery") return "refineries";
+    return "streams";
+  }
+  function pinRecord(kind, id) {
+    if (kind === "site") return getSite(id);
+    if (kind === "hub") return getHub(id);
+    if (kind === "refinery") return getRefinery(id);
+    return getStream(id);
+  }
+  function currentPin() {
+    if (state.layer === "sites" && state.siteId)
+      return { kind: "site", id: state.siteId };
+    if (state.layer === "hubs" && state.hubId)
+      return { kind: "hub", id: state.hubId };
+    if (state.layer === "refineries" && state.refineryId)
+      return { kind: "refinery", id: state.refineryId };
+    if (state.streamId) return { kind: "stream", id: state.streamId };
+    return null;
+  }
+  function samePin(a, b) {
+    return !!(a && b && a.kind === b.kind && a.id === b.id);
+  }
+  function clearPinTrail() {
+    if (state.pinTrail.length) state.pinTrail = [];
+  }
+  function pushPinTrail() {
+    const cur = currentPin();
+    if (!cur || !pinRecord(cur.kind, cur.id)) return;
+    const last = state.pinTrail[state.pinTrail.length - 1];
+    if (samePin(last, cur)) return;
+    state.pinTrail.push(cur);
+    if (state.pinTrail.length > 8) state.pinTrail.shift();
+  }
+  function followPin(kind, id, how) {
+    how = how || "jump";
+    if (!id) return;
+    const dest = { kind: kind, id: id };
+    if (!pinRecord(kind, id)) return;
+    if (samePin(currentPin(), dest)) return;
+    if (how === "fresh") clearPinTrail();
+    else if (how === "jump") pushPinTrail();
+    const layer = pinLayerFromKind(kind);
+    if (kind === "stream" && state.route === "stream") {
+      navigate("stream", { streamId: id });
+      return;
+    }
     if (state.route !== "home") {
       state.route = "home";
       history.pushState(null, "", "/");
       render();
     }
     if (state.layer !== layer) setLayer(layer);
-    if (layer === "sites") selectSite(id, true);
-    else if (layer === "hubs") selectHub(id, true);
-    else if (layer === "refineries") selectRefinery(id, true);
+    if (kind === "site") selectSite(id, true);
+    else if (kind === "hub") selectHub(id, true);
+    else if (kind === "refinery") selectRefinery(id, true);
     else selectStream(id, true);
+  }
+  function goPinTrailBack() {
+    const prev = state.pinTrail.pop();
+    if (!prev) return;
+    followPin(prev.kind, prev.id, "back");
+  }
+  function goToLayerPin(layer, id) {
+    followPin(pinKindFromLayer(layer), id);
   }
 
   /* Stream / site / hub ids can collide. Compare keys are namespaced so a
@@ -1201,6 +1265,8 @@
   }
 
   function pickPin(s, fly) {
+    const kind = pinKindFromLayer(state.layer);
+    if (!samePin(currentPin(), { kind: kind, id: s.id })) clearPinTrail();
     if (state.layer === "sites") selectSite(s.id, fly);
     else if (state.layer === "hubs") selectHub(s.id, fly);
     else if (state.layer === "refineries") selectRefinery(s.id, fly);
@@ -1798,6 +1864,20 @@
     );
   }
 
+  function inspBackHtml() {
+    const prev = state.pinTrail[state.pinTrail.length - 1];
+    if (!prev) return "";
+    const rec = pinRecord(prev.kind, prev.id);
+    if (!rec || !rec.name) return "";
+    return (
+      '<button type="button" class="insp-back" data-pin-back aria-label="Back to ' +
+      escapeHtml(rec.name) +
+      '">← ' +
+      escapeHtml(rec.name) +
+      "</button>"
+    );
+  }
+
   function inspTitleButtonsHtml(place) {
     const expanded = !!state.inspExpanded;
     const expand =
@@ -1832,6 +1912,7 @@
     html += '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<div class="insp-title-main">';
+    html += inspBackHtml();
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
     if (s.aliases && s.aliases.length) {
       html +=
@@ -2193,11 +2274,7 @@
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
     });
     root.querySelectorAll("[data-select]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-select");
-        if (state.route === "stream") navigate("stream", { streamId: id });
-        else selectStream(id, true);
-      });
+      btn.addEventListener("click", () => followPin("stream", btn.getAttribute("data-select")));
     });
     root.querySelectorAll("[data-goto-site]").forEach((btn) => {
       btn.addEventListener("click", () => goToLayerPin("sites", btn.getAttribute("data-goto-site")));
@@ -2304,6 +2381,7 @@
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<div class="insp-title-main">';
+    html += inspBackHtml();
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
     html +=
       '<p class="insp-loc">' +
@@ -2367,11 +2445,7 @@
 
   function bindSiteInspectorEvents(root) {
     root.querySelectorAll("[data-goto-stream]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-goto-stream");
-        setLayer("streams");
-        selectStream(id, true);
-      });
+      btn.addEventListener("click", () => followPin("stream", btn.getAttribute("data-goto-stream")));
     });
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
@@ -2384,6 +2458,7 @@
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<div class="insp-title-main">';
+    html += inspBackHtml();
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
     html +=
       '<p class="insp-loc">' +
@@ -2419,11 +2494,7 @@
 
   function bindHubInspectorEvents(root) {
     root.querySelectorAll("[data-goto-stream]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-goto-stream");
-        setLayer("streams");
-        selectStream(id, true);
-      });
+      btn.addEventListener("click", () => followPin("stream", btn.getAttribute("data-goto-stream")));
     });
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
@@ -2436,6 +2507,7 @@
     let html = '<div class="insp-header">';
     html += '<div class="insp-title-row">';
     html += '<div class="insp-title-main">';
+    html += inspBackHtml();
     html += '<h2 class="insp-name">' + escapeHtml(s.name) + "</h2>";
     html +=
       '<p class="insp-loc">' +
@@ -2482,6 +2554,12 @@
   }
 
   function bindClearSelection(root) {
+    root.querySelectorAll("[data-pin-back]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        goPinTrailBack();
+      });
+    });
     root.querySelectorAll("[data-clear-selection]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -2513,6 +2591,7 @@
   }
 
   function clearSelection() {
+    clearPinTrail();
     state.streamId = null;
     state.siteId = null;
     state.hubId = null;
@@ -3106,6 +3185,7 @@
   }
 
   function pickSearchHit(id) {
+    clearPinTrail();
     state._searchFocused = false;
     state.query = "";
     if (el.search) {
@@ -4901,7 +4981,11 @@
     else if (sheetMq.addListener) sheetMq.addListener(onSheetMq);
 
     document.querySelectorAll("[data-layer]").forEach((btn) => {
-      btn.addEventListener("click", () => setLayer(btn.getAttribute("data-layer")));
+      btn.addEventListener("click", () => {
+        const layer = btn.getAttribute("data-layer");
+        if (state.layer !== layer) clearPinTrail();
+        setLayer(layer);
+      });
     });
 
     document.querySelectorAll("[data-color]").forEach((btn) => {
