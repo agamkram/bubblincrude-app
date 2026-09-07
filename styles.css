@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 291;
+  --bc-css: 292;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -2768,14 +2768,24 @@ html.pwa-standalone:not(.app-home) .view-page {
     padding: 6px 8px;
     font-size: 12px;
   }
-  /* The belt is roughly 2:1, so a full-width world map cannot also be tall.
-     The map element is sized to the belt in JS; the inspector takes the rest
-     rather than leaving a dead slab where the poles used to be. */
+  /* The belt is Mercator ~1.304:1 (BELT_SOUTH −72.5 / BELT_NORTH 84).
+     Reserve that height in CSS so first paint is already map+card.
+     JS sizeMapToBelt() only tightens pixels after Leaflet is up. */
   .view-home {
     grid-template-rows: auto minmax(0, 1fr);
     grid-template-areas:
       "map"
       "inspector";
+  }
+  .map-pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .map-stage {
+    flex: 0 0 auto;
+    width: 100%;
+    aspect-ratio: 1.304 / 1;
   }
   .map-pane.is-belt-cut {
     display: flex;
@@ -2784,6 +2794,7 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .is-belt-cut .map-stage {
     flex: 0 0 auto;
+    aspect-ratio: auto;
   }
   .is-belt-cut .map {
     position: relative;
