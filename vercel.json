@@ -1,7 +1,7 @@
 {
   "framework": null,
   "rewrites": [
-    { "source": "/stream/(.*)", "destination": "/index.html" },
+    { "source": "/stream/:id([^/.]+)", "destination": "/index.html" },
     { "source": "/compare", "destination": "/index.html" },
     { "source": "/cuts", "destination": "/index.html" },
     { "source": "/products", "destination": "/index.html" },

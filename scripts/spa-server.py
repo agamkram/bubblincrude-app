@@ -15,7 +15,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = (self.path or "/").split("?", 1)[0]
         if path != "/" and not Path(ROOT, path.lstrip("/")).exists():
-            if not path.startswith("/api"):
+            if not path.startswith("/api") and "." not in Path(path).name:
                 self.path = "/index.html"
         return super().do_GET()
 
