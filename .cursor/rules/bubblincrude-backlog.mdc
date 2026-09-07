@@ -5,7 +5,7 @@ alwaysApply: true
 
 # BubblinCrude — audited state and backlog
 
-Verified counts: **334 streams, 347 sites, 156 hubs, 700 refineries.**
+Verified counts: **334 streams, 347 sites, 156 hubs, 696 refineries.**
 Streams are clean — zero broken `related_ids`/`site_ids`/`hub_ids`, no duplicate
 ids, yields sum to 100±10, TBP curves monotonic. Coverage: 100% api/sulfur/yields/
 notes, 88% TAN, 63% distillation+resid, 61% metals, 5% SARA. `cuts` and `products`
@@ -15,7 +15,7 @@ Never hand-edit the version; use `scripts/bump-version.py` and `--check`.
 
 ## 1. Refinery layer — capacity filled from Climate TRACE; keep matching conservative
 
-601 of 700 have `capacity_kbd` (US from EIA-820, others from Climate TRACE v7
+600 of 696 have `capacity_kbd` (US from EIA-820, others from Climate TRACE v7
 `oil-and-gas-refining`, CC BY 4.0). Rebuild via `scripts/build-refineries.py`.
 Attaching a real capacity to the wrong plant is worse than leaving it null.
 OSM junk (gas plants, sugar, chem, mining, South Pars, one-word company pins)
@@ -28,8 +28,14 @@ Paraguaná, Mina Al-Ahmadi, Kirishi, Basrah, SATORP Jubail). Operator filled
 from a known company in the plant name when the name is more than that
 company word.
 
-Still open: ~99 plants with no kb/d, ~336 without `operator`, and **none** have
+Still open: 96 plants with no kb/d, 334 without `operator`, and **none** have
 `related_ids`, so refineries still do not link to streams.
+
+Honesty pass (v289): yield bins and TBP labeled vol% to match volume blend;
+`S()` no longer flags a present value as unknown; four non-CDU pins dropped
+(Nafoora field, Tazhong gathering station, Senegal/Mauritania “Old Refinery”,
+inland SAMIR). Named condensates are `kind: "Condensate"`. Saved views renamed
+to the filter they actually apply.
 
 ## 2. Blend calculator — on Compare (v281)
 
@@ -56,7 +62,7 @@ of what was under the finger — do not move markers.
 
 - `#has-distill` tests `distillation_curve` only (211).
 - `applySavedView()` reads `filters` from `data.js` only (v283). `coker-feeds`
-  is heavy API (max 22.3); the phantom `hasResid` key is gone.
+  is labeled “Heavies (API ≤ 22.3)”; `us-tight` is “North America light sweet”.
 - Source drafting notes scrubbed on `brent`, `harding`, `ea-blend`.
 - Search list and map `aria-label` follow the active layer.
 - Sample year vs retrieved split (v284). `year` is assay/sample date; `retrieved`
@@ -69,5 +75,5 @@ of what was under the finger — do not move markers.
 
 ## Still open
 
-Refineries: ~99 without kb/d, ~336 without operator, zero `related_ids`.
+Refineries: 96 without kb/d, 334 without operator, zero `related_ids`.
 US EIA holes closed (v287): 14 curated yards; 7 non-CDU/same-yard rows still skipped.

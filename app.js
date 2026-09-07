@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v288";
+  const APP_VERSION = "v289";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -610,10 +610,16 @@
     }
     return out;
   }
-  /* Stream card uses the ids on the stream. Site/hub cards also pick up
-     streams that point back, so a field that names WTI still shows it. */
+  /* Stream card also picks up sites that name this stream, so a Permian
+     field that lists WTI still appears on WTI. Hub cards already work
+     both ways; stream cards stay hub_ids-only so import ports do not
+     pile onto every Middle East grade. */
   function sitesForStream(s) {
-    return uniqueById((s.site_ids || []).map(getSite).filter(Boolean));
+    const ids = new Set(s.site_ids || []);
+    for (const site of SITES.sites) {
+      if ((site.related_ids || []).indexOf(s.id) >= 0) ids.add(site.id);
+    }
+    return uniqueById([...ids].map(getSite).filter(Boolean));
   }
   function hubsForStream(s) {
     return uniqueById((s.hub_ids || []).map(getHub).filter(Boolean));
@@ -1865,7 +1871,7 @@
     html += metricTile(
       "Lights",
       lights == null ? "—" : fmtNum(lights, 0),
-      "wt%",
+      "vol%",
       "mute",
       "lights"
     );
@@ -2019,7 +2025,7 @@
         '</span></span><span class="thermo-track"><span class="thermo-fill" style="width:' +
         w +
         '%"></span></span><span class="thermo-val">' +
-        (v == null ? "—" : fmtNum(v, 0) + "%") +
+        (v == null ? "—" : fmtNum(v, 0) + " vol%") +
         "</span></button>";
     }
     html += "</div>";
@@ -2142,7 +2148,7 @@
       ["Vanadium", s.v_ppm == null ? "—" : fmtNum(s.v_ppm, 0), "ppm", s.flags.v_ppm],
       ["TAN", s.tan == null ? "—" : fmtNum(s.tan, 2), "mg KOH/g", s.flags.tan],
       ["Resid (wt)", s.resid_wt == null ? "—" : fmtNum(s.resid_wt, 0), "wt%", s.flags.resid_wt],
-      ["Resid (vol)", s.resid_vol == null ? "—" : fmtNum(s.resid_vol, 0), "vol%", s.flags.resid_wt],
+      ["Resid (vol)", s.resid_vol == null ? "—" : fmtNum(s.resid_vol, 0), "vol%", s.flags.resid_vol],
     ];
     let html =
       '<table class="assay-table"><thead><tr><th>Field</th><th>Value</th><th>Unit</th><th>Flag</th></tr></thead><tbody>';
@@ -2331,6 +2337,14 @@
       null
     );
     html += "</div>";
+    if (s.api != null || s.sulfur_wt != null) {
+      html +=
+        '<p class="insp-blurb" style="margin-top:8px">Typical field values for map color and filters — not a commercial assay. ' +
+        flagBtn((s.flags || {}).api, "API") +
+        " " +
+        flagBtn((s.flags || {}).sulfur_wt, "Sulfur") +
+        "</p>";
+    }
     const related = streamsForSite(s);
     if (related.length) {
       html += '<div class="insp-block"><h3>Related streams</h3><div class="related-list">';
@@ -3322,7 +3336,7 @@
     html += metricTile(
       "Lights",
       fmtNum((mix.yields.naphtha || 0) + (mix.yields.middle || 0), 0),
-      "wt%",
+      "vol%",
       "mute",
       "lights"
     );
@@ -3578,7 +3592,7 @@
               ? s.yields[bin.key]
               : null,
           (v) => fmtNum(v, 0),
-          "wt%"
+          "vol%"
         );
       }
       metricsHtml += metricBarsBlock(
@@ -3973,7 +3987,7 @@
       H / 2 +
       '" fill="#6b7382" font-size="10" text-anchor="middle" transform="rotate(-90 12 ' +
       H / 2 +
-      ')">Cumulative yield wt%</text>';
+      ')">Cumulative yield vol%</text>';
 
     for (const item of withCurve) {
       const pts = item.curve
@@ -4202,21 +4216,29 @@
     el.viewAbout.innerHTML = [
       '<h2 class="page-title">About</h2>',
       '<div class="about-block"><p>BubblinCrude is a world map of <strong>named commercial crude streams</strong> — WTI, Brent, Merey-16, Boscan — and the geography around them: fields and basins, pricing and loading hubs, and the refineries that turn oil into fuels and materials.</p>',
-      "<p>The catalog is 334 streams, 347 sites, 156 hubs, and 700 plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p></div>",
+      "<p>The catalog is " +
+      DATA.streams.length +
+      " streams, " +
+      SITES.sites.length +
+      " sites, " +
+      HUBS.hubs.length +
+      " hubs, and " +
+      REFINERIES.refineries.length +
+      " plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
       "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay.</p>",
-      "<p>Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Saved views (light sweet exporters, Orinoco heavies, coker feeds, US tight oils) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
-      "<p>Pins sit on true coordinates. They are not clustered, so two nearby plants stay two plants. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
+      "<p>Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
+      "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
       "<p>Each stream card cites a source. <strong>Sample year</strong> is the assay date when we know it. <strong>Retrieved</strong> is when the record was pulled — not when the oil was sampled.</p>",
-      "<p>Small labels on metrics are quality flags. <strong>measured</strong> comes from a cited lab report for that stream. <strong>typical</strong> is a widely published representative value for the grade. <strong>estimated</strong> is inferred from related assays — treat it as approximate. <strong>unknown</strong> shows as “—” and is left out of compare charts. It is not filled in.</p>",
+      "<p>Small labels on metrics are quality flags. <strong>measured</strong> comes from a cited lab report for that stream. <strong>typical</strong> is a widely published representative value for the grade. <strong>estimated</strong> is inferred from related assays — treat it as approximate. <strong>unknown</strong> means the field is not on the record: the card shows “—” and Compare skips it. A number on the card is never flagged unknown.</p>",
       "<p>Every stream has API, sulfur, and a yield slate. Distillation, metals, TAN, and SARA appear only when a published value exists. 211 streams have a true boiling-point curve. The rest do not get a fake one.</p></div>",
       '<div class="about-block"><h3>Mixing crudes</h3>',
       "<p>On Compare, add two or more streams and drag the volume cuts. The board computes a <strong>volume blend</strong> of those assays — a teaching calculator, not a pipeline nomination.</p>",
       "<ul>",
       "<li><strong>Gravity.</strong> API does not average. Each stream is converted to specific gravity, mixed by volume, then converted back. A half-and-half of a light and a heavy is not the midpoint on the API scale.</li>",
       "<li><strong>Sulfur.</strong> Mixed by mass. Heavier barrels carry more mass per barrel, so they pull sulfur more than their volume share.</li>",
-      "<li><strong>Yields.</strong> Naphtha, middle distillate, gas oil, and resid mix by volume.</li>",
+      "<li><strong>Yields.</strong> Naphtha, middle distillate, gas oil, and resid are liquid volume fractions (vol%) and mix by volume.</li>",
       "<li><strong>Distillation (TBP).</strong> When every selected stream has a curve, a dashed line is the mix: at each distilled percent, temperature is the volume-weighted average of the parents. If any selected stream has no curve, there is no mix line — points are not invented.</li>",
       "</ul>",
       "<p>Viscosity, pour point, and asphaltene stability do not mix this way. Some pairs will not stay mixed in a tank. The calculator does not claim they will.</p>",
@@ -4233,7 +4255,7 @@
       "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons, typically field or plant pentanes-plus from gas streams. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit). Distinct from light sweet crude.</dd>",
       '<dt id="g-sulfur">Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to treat. This app’s sweet cutoff is ≤0.5 wt% S.</dd>',
       "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher. Independent of light/heavy (API).</dd>",
-      '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (wt%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>',
+      '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (vol%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>',
       "<dt>Stream</dt><dd>A named commercial crude grade that trades and is assayed as a product (WTI, Brent, Merey-16) — not a single well.</dd>",
       "<dt>Site</dt><dd>A field, basin, play, or historic discovery on the Sites layer. May link to related commercial streams.</dd>",
       "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point (Cushing, Midland, LOOP, Rotterdam). Geography and role — not an assay.</dd>",
@@ -4255,7 +4277,7 @@
       "<dt>SCO / synthetic</dt><dd>Synthetic crude oil from upgrading bitumen or heavy oil (e.g. Syncrude), usually lighter and sweeter than the feedstock.</dd>",
       '<dt id="g-sara">SARA</dt><dd>Saturates, Aromatics, Resins, Asphaltenes — a bulk chemical breakdown of the oil. Asphaltenes help explain why vacuum residue becomes asphalt and coke.</dd>',
       "<dt>HHV</dt><dd>Higher heating value — heat released when a fuel burns completely, per kilogram. HHV counts the heat you get if water vapor in the exhaust is cooled back to liquid; LHV leaves that out. More hydrogen per carbon means higher HHV, so light cuts run hotter per kg than heavy residue.</dd>",
-      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises. That curve is what the Cuts page turns into named slices. On Compare, a dashed mix line is the volume-weighted temperature at each distilled fraction — only when every selected stream has a curve.</dd>",
+      "<dt>Distillation / TBP</dt><dd>True boiling point curve: how much of the crude boils off as temperature rises, as liquid volume percent. That curve is what the Cuts page turns into named slices. On Compare, a dashed mix line is the volume-weighted temperature at each distilled fraction — only when every selected stream has a curve.</dd>",
       "<dt>Residue (resid)</dt><dd>The leftover bottoms after distillation. Atmospheric residue is first-tower bottoms; vacuum residue is what’s left after light and heavy VGO are taken — asphalt, coke, heavy fuel, or further upgrading.</dd>",
       "<dt>Metals (Ni, V)</dt><dd>Nickel and vanadium in the oil. They poison refining catalysts and rise with heavier, sourer crudes — part of why some barrels prefer coking and asphalt paths.</dd>",
       "<dt>TAN</dt><dd>Total acid number — organic acidity. Higher TAN can mean corrosion risk in refining equipment.</dd>",
@@ -4264,7 +4286,7 @@
       "<li><strong>measured</strong> — from a cited assay sample or lab report for that stream.</li>",
       "<li><strong>typical</strong> — widely published representative value for the commercial grade.</li>",
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>",
-      "<li><strong>unknown</strong> — not fabricated. Renders as “—” and is omitted from compare charts.</li>",
+      "<li><strong>unknown</strong> — not on the record. Renders as “—” and is omitted from compare charts. A shown number is measured, typical, or estimated.</li>",
       "</ul></div>",
     ].join("");
   }

@@ -73,11 +73,20 @@ SKIP_NAME = re.compile(
     r"harwich refinery|petroplus coryton|d[eé]p[oô]t rouen|"
     r"p[oô]le industriel du malambas|"
     r"оргсинтез|оргхим|\bппсн\b|\bуппн\b|\bцпс\b|"
-    r"рафинерија гаса|محطة عزل غاز",
+    r"рафинерија гаса|محطة عزل غاز|"
+    r"联合站|حقل النافورة",
     re.I,
 )
 # OSM still has a pin. These are not operable crude CDUs.
-NOT_CRUDE = re.compile(r"^cheyenne refinery$|^fbr$", re.I)
+NOT_CRUDE = re.compile(r"^cheyenne refinery$|^fbr$|^old refinery$", re.I)
+# Catalog ids that must never re-enter: oil field, gathering station, wrong
+# country, or a closed inland SAMIR site next to the real Mohammedia pin.
+SKIP_IDS = {
+    "osm-node-8997288576",  # Nafoora field, Libya
+    "osm-way-365447982",  # Tazhong No.2 gathering station
+    "old-refinery",  # SNIM Nouadhibou, tagged Senegal
+    "raffinerie-de-p-trole-la-samir",  # inland / Sidi Kacem, not Mohammedia
+}
 KEEP_NAME = re.compile(
     r"refiner|raffiner|rafiner|НПЗ|炼油|製油|kilang|pabrik minyak|"
     r"petroleum|petrobras|exxon|shell |bp |total|sinopec|saudi aramco|"
@@ -715,6 +724,7 @@ def build(payloads):
     out = collapse_duplicates(out)
     attach_trace_named(out)
     fill_operators(out)
+    out = [r for r in out if r.get("id") not in SKIP_IDS]
     return out
 
 

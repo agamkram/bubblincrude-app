@@ -385,7 +385,7 @@
       lat: 35.5,
       lon: 129.4,
       role: "loading",
-      related_ids: [],
+      related_ids: ["arab-light", "murban", "oman", "dubai", "basrah-light", "espo"],
       notes: "Major NE Asia refining port receiving Middle East and Far East crudes.",
     }),
     Hub({
@@ -396,7 +396,7 @@
       lat: 29.95,
       lon: 122.1,
       role: "loading",
-      related_ids: [],
+      related_ids: ["espo", "arab-light", "oman", "dubai", "murban", "basrah-light"],
       notes: "China’s largest crude import port complex.",
     }),
     Hub({

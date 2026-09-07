@@ -3,7 +3,7 @@
   "use strict";
 
   function Site(o) {
-    return Object.assign({
+    const rec = Object.assign({
       kind: "field",
       status: "active",
       year: null,
@@ -17,6 +17,14 @@
       related_ids: [],
       notes: "",
     }, o);
+    rec.flags = Object.assign(
+      {
+        api: rec.api != null ? "typical" : "unknown",
+        sulfur_wt: rec.sulfur_wt != null ? "typical" : "unknown",
+      },
+      o.flags || {}
+    );
+    return rec;
   }
 
   const sites = [

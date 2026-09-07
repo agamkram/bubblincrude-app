@@ -9,7 +9,7 @@
   const E = "estimated";
   const U = "unknown";
 
-  function flags(partial) {
+  function flags(partial, rec) {
     const keys = [
       "api",
       "sulfur_wt",
@@ -17,17 +17,35 @@
       "v_ppm",
       "tan",
       "resid_wt",
+      "resid_vol",
       "sara",
       "yields",
     ];
+    const val = {
+      api: rec && rec.api,
+      sulfur_wt: rec && rec.sulfur_wt,
+      ni_ppm: rec && rec.ni_ppm,
+      v_ppm: rec && rec.v_ppm,
+      tan: rec && rec.tan,
+      resid_wt: rec && rec.resid_wt,
+      resid_vol: rec && rec.resid_vol,
+      sara: rec && rec.sara,
+      yields: rec && rec.yields,
+    };
     const out = {};
-    for (const k of keys) out[k] = partial[k] || U;
+    for (const k of keys) {
+      const asked = partial[k] || (k === "resid_vol" ? partial.resid_wt : null);
+      const has = val[k] != null && val[k] !== "";
+      if (has) out[k] = asked && asked !== U ? asked : T;
+      else out[k] = asked || U;
+    }
     return out;
   }
 
-  /** Compact stream factory — defaults unknowns; API/S assumed typical unless overridden. */
+  /** Compact stream factory — defaults unknowns; API/S assumed typical unless overridden.
+      A number on the record is never flagged unknown: missing flag → typical. */
   function S(o) {
-    return {
+    const rec = {
       aliases: [],
       kind: "Conventional",
       ni_ppm: null,
@@ -47,8 +65,12 @@
       year: null,
       retrieved: null,
       ...o,
-      flags: flags({ api: T, sulfur_wt: T, ...(o.flags || {}) }),
     };
+    if (!o.kind && /condensate|diluent/i.test(String(o.name || ""))) {
+      rec.kind = "Condensate";
+    }
+    rec.flags = flags({ api: T, sulfur_wt: T, ...(o.flags || {}) }, rec);
+    return rec;
   }
 
   const streams = [
@@ -7592,7 +7614,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.71,
       lon: -113.21,
       api: 83.4,
@@ -7612,7 +7634,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.55,
       lon: -113.49,
       api: 58.5,
@@ -7632,7 +7654,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.71,
       lon: -113.21,
       api: 74.9,
@@ -7652,7 +7674,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.55,
       lon: -113.49,
       api: 55.0,
@@ -7672,7 +7694,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.55,
       lon: -113.49,
       api: 55.4,
@@ -7693,7 +7715,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.55,
       lon: -113.49,
       api: 56.4,
@@ -7713,7 +7735,7 @@
       country: "Canada",
       basin: "Western Canada diluent",
       region: "North America",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 53.55,
       lon: -113.49,
       api: 81.7,
@@ -9637,7 +9659,7 @@
       country: "Mozambique",
       basin: "",
       region: "Africa",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: -10.9,
       lon: 40.7,
       api: 52.8,
@@ -9698,7 +9720,7 @@
       country: "Australia",
       basin: "",
       region: "Asia Pacific",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: -20.6,
       lon: 115.5,
       api: 57.0,
@@ -10236,6 +10258,7 @@
 
   const kinds = [
     "Conventional",
+    "Condensate",
     "Blend",
     "Dilbit",
     "Synthetic/upgraded",
@@ -10264,12 +10287,12 @@
     },
     {
       id: "coker-feeds",
-      label: "Coker feeds",
+      label: "Heavies (API ≤ 22.3)",
       filters: { apiMax: 22.3 },
     },
     {
       id: "us-tight",
-      label: "US tight oils",
+      label: "North America light sweet",
       filters: { region: ["North America"], apiMin: 38, sweetSour: "sweet" },
     },
   ];
