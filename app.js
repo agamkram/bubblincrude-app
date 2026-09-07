@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v299";
+  const APP_VERSION = "v300";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -4307,10 +4307,10 @@
       " hubs, and " +
       REFINERIES.refineries.length +
       " plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p>",
-      "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products.</p></div>",
+      "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products. This page is the circled <strong>i</strong>.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
       "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay.</p>",
-      "<p>Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
+      "<p>Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
       "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
       "<p>Each stream card cites a source. <strong>Sample year</strong> is the assay date when we know it. <strong>Retrieved</strong> is when the record was pulled — not when the oil was sampled.</p>",
