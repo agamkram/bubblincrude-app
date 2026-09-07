@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 298;
+  --bc-css: 299;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -391,6 +391,15 @@ html:not(.app-barrel) .barrel-units {
 }
 .mode-toggle .nav-link + .nav-link {
   border-left: 1px solid var(--border);
+}
+
+.barrel-exit {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .nav-link {
@@ -2862,6 +2871,12 @@ html.pwa-standalone:not(.app-home) .view-page {
   .nav-link {
     padding: 6px 8px;
     font-size: 12px;
+  }
+  .barrel-exit {
+    min-height: 24px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 600;
   }
   .mode-toggle .nav-link {
     padding: 6px 12px;
