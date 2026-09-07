@@ -102,7 +102,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=290" />
+  <link rel="stylesheet" href="styles.css?v=291" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -257,10 +257,10 @@
                 <div class="dual-range-track" aria-hidden="true">
                   <div class="dual-range-fill" id="api-fill"></div>
                 </div>
-                <input type="range" id="api-min" min="5" max="60" step="0.1" value="5" aria-label="Minimum API gravity" />
-                <input type="range" id="api-max" min="5" max="60" step="0.1" value="60" aria-label="Maximum API gravity" />
+                <input type="range" id="api-min" min="5" max="85" step="0.1" value="5" aria-label="Minimum API gravity" />
+                <input type="range" id="api-max" min="5" max="85" step="0.1" value="85" aria-label="Maximum API gravity" />
               </div>
-              <div class="range-readout" id="api-readout">5 – 60 °API</div>
+              <div class="range-readout" id="api-readout">5 – 85 °API</div>
             </div>
             <div class="map-slider-block">
               <div class="filter-label" id="sulfur-label">Sulfur</div>
@@ -357,11 +357,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=290"></script>
-  <script src="sites.js?v=290"></script>
-  <script src="hubs.js?v=290"></script>
-  <script src="refineries.js?v=290"></script>
-  <script src="app.js?v=290"></script>
+  <script src="data.js?v=291"></script>
+  <script src="sites.js?v=291"></script>
+  <script src="hubs.js?v=291"></script>
+  <script src="refineries.js?v=291"></script>
+  <script src="app.js?v=291"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -372,7 +372,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v290";
+    var EXPECTED = "v291";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
