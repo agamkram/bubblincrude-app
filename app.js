@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v301";
+  const APP_VERSION = "v302";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -4310,12 +4310,12 @@
       "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products. This page is the circled <strong>i</strong>.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
       "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay.</p>",
-      "<p>Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
+      "<p>World opens on <strong>WTI</strong> so the inspector is a real card — Drake Well, Cushing, and Motiva Port Arthur on the other layers. Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
       "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
       "<p>Each stream card cites a source. <strong>Sample year</strong> is the assay date when we know it. <strong>Retrieved</strong> is when the record was pulled — not when the oil was sampled.</p>",
-      "<p>Small labels on metrics are quality flags. <strong>measured</strong> comes from a cited lab report for that stream. <strong>typical</strong> is a widely published representative value for the grade. <strong>estimated</strong> is inferred from related assays — treat it as approximate. <strong>unknown</strong> means the field is not on the record: the card shows “—” and Compare skips it. A number on the card is never flagged unknown.</p>",
-      "<p>Every stream has API, sulfur, and a yield slate. Distillation, metals, TAN, and SARA appear only when a published value exists. 211 streams have a true boiling-point curve. The rest do not get a fake one.</p></div>",
+      "<p>Small labels on metrics are quality flags. <strong>measured</strong> comes from a cited lab report for that stream. <strong>typical</strong> is a widely published representative value for the grade. <strong>estimated</strong> is inferred from related assays — treat it as approximate. <strong>unknown</strong> means the field is not on the record. The card shows “—” and Compare skips it. A shown number is never flagged unknown. Trust the dash: Resid (vol) can still read “—” when Resid (wt) is typical.</p>",
+      "<p>Every stream has API, sulfur, and yields. Distillation, metals, TAN, and SARA appear only when a published value exists. 211 streams have a true boiling-point curve. The rest do not get a fake one. Eagle Ford’s published cut table does not split VGO from resid, so that VGO cell is “—” and the 370°C+ sits in resid.</p></div>",
       '<div class="about-block"><h3>Mixing crudes</h3>',
       "<p>On Compare, add two or more streams and drag the volume cuts. The board computes a <strong>volume blend</strong> of those assays — a teaching calculator, not a pipeline nomination.</p>",
       "<ul>",
@@ -4369,7 +4369,7 @@
       "<li><strong>measured</strong> — from a cited assay sample or lab report for that stream.</li>",
       "<li><strong>typical</strong> — widely published representative value for the commercial grade.</li>",
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>",
-      "<li><strong>unknown</strong> — not on the record. Renders as “—” and is omitted from compare charts. A shown number is measured, typical, or estimated.</li>",
+      "<li><strong>unknown</strong> — not on the record. Renders as “—” and is omitted from compare charts. A shown number is measured, typical, or estimated. A dash is still a blank if a sibling field is typical.</li>",
       "</ul></div>",
     ].join("");
   }
