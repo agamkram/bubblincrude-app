@@ -106,7 +106,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="/styles.css?v=306" />
+  <link rel="stylesheet" href="/styles.css?v=307" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -178,18 +178,18 @@
           </div>
           <button type="button" class="map-reset" id="btn-reset-view" title="Reset map view">Reset</button>
           <div class="topbar-search" id="topbar-search">
-            <label class="sr-only" for="search-input">Search streams</label>
+            <label class="sr-only" for="search-input">Search streams, sites, hubs, and plants</label>
             <input
               id="search-input"
               type="search"
-              placeholder="Search streams…"
+              placeholder="Search…"
               autocomplete="off"
               enterkeyhint="search"
               aria-autocomplete="list"
               aria-controls="search-results"
             />
             <button type="button" id="search-clear" class="search-clear hidden" aria-label="Clear search">×</button>
-            <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams"></div>
+            <div id="search-results" class="search-results hidden" role="listbox" aria-label="Matching streams, sites, hubs, and plants"></div>
           </div>
           <div class="legend-scale" id="legend-scale" role="status"></div>
           <div class="legend-help hidden" id="legend-help" role="note"></div>
@@ -379,11 +379,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="/data.js?v=306"></script>
-  <script src="/sites.js?v=306"></script>
-  <script src="/hubs.js?v=306"></script>
-  <script src="/refineries.js?v=306"></script>
-  <script src="/app.js?v=306"></script>
+  <script src="/data.js?v=307"></script>
+  <script src="/sites.js?v=307"></script>
+  <script src="/hubs.js?v=307"></script>
+  <script src="/refineries.js?v=307"></script>
+  <script src="/app.js?v=307"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -394,7 +394,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v306";
+    var EXPECTED = "v307";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
