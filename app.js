@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v302";
+  const APP_VERSION = "v305";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -1630,7 +1630,7 @@
     return state.compareIds.length >= COMPARE_MAX;
   }
 
-  /** Compare / In tray / Tray full pill for tips + inspector. */
+  /** Add / In tray / Tray full pill for tips + inspector. */
   function compareActionHtml(key, attr) {
     attr = attr || "data-add";
     if (state.compareIds.includes(key)) {
@@ -1644,7 +1644,7 @@
       attr +
       '="' +
       escapeHtml(key) +
-      '">Compare</button>'
+      '">Add</button>'
     );
   }
 
@@ -1655,6 +1655,8 @@
       history.replaceState(null, "", buildUrl());
     }
     renderTray();
+    renderInspector();
+    if (!L.Browser.touch) updateMarkers();
     if (state.route === "compare") renderCompare();
   }
 
@@ -3581,7 +3583,7 @@
       el.viewCompare.innerHTML =
         '<div class="compare-head"><div class="compare-head-top"><h2>Compare</h2><div class="page-head-actions">' +
         unitsBtnHtml() +
-        '<a class="btn btn-ghost" href="/">Back to map</a></div></div></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
+        '<a class="btn btn-ghost" href="/">Back</a></div></div></div><p style="color:var(--text-dim)">Select at least two from the map tray — streams, sites, hubs, refineries, or mix.</p>';
       return;
     }
 
@@ -3591,7 +3593,7 @@
     html += "<h2>Compare</h2>";
     html += '<div class="page-head-actions">';
     html += unitsBtnHtml();
-    html += '<a class="btn btn-ghost" href="/">Back to map</a>';
+    html += '<a class="btn btn-ghost" href="/">Back</a>';
     html += "</div></div>";
     html += '<div class="compare-sel-row">';
     html += '<div class="compare-sel-chips">';
