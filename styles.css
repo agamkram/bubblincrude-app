@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 292;
+  --bc-css: 293;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -182,6 +182,30 @@ html.pwa-standalone .app {
   min-width: 0;
 }
 
+.brand-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-mute);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1;
+  text-decoration: none;
+}
+.brand-info.is-active,
+.brand-info.is-active:hover {
+  color: var(--teal);
+  border-color: var(--teal);
+  background: var(--teal-dim);
+}
+
 /* Integer font metrics: fractional title height made the topbar 111.727px tall,
    which put the map — and every marker — on a subpixel row. */
 .brand-title {
@@ -229,8 +253,10 @@ html.pwa-standalone .app {
   display: block;
 }
 html:not(.app-home) #btn-search,
-html:not(.app-home) #btn-reset-view,
-html:not(.app-home) .topbar-search {
+html:not(.app-home) .topbar-tools,
+.topbar-tools[hidden],
+html:not(.app-barrel) .barrel-tools,
+.barrel-tools[hidden] {
   display: none !important;
 }
 
@@ -342,7 +368,25 @@ html:not(.app-home) .topbar-search {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
   gap: 4px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(14, 17, 22, 0.92);
+  overflow: hidden;
+}
+.mode-toggle .nav-link {
+  padding: 6px 14px;
+  border-radius: 0;
+  font-weight: 600;
+}
+.mode-toggle .nav-link + .nav-link {
+  border-left: 1px solid var(--border);
 }
 
 .nav-link {
@@ -912,7 +956,8 @@ input[type="range"] {
   line-height: 32px !important;
 }
 
-.topbar-tools {
+.topbar-tools,
+.barrel-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -922,7 +967,8 @@ input[type="range"] {
   width: 100%;
 }
 .layer-toggle,
-.color-toggle {
+.color-toggle,
+.barrel-toggle {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--border);
@@ -932,12 +978,25 @@ input[type="range"] {
   overflow: hidden;
 }
 .layer-toggle .color-btn + .color-btn,
+.barrel-toggle .color-btn + .color-btn,
 .color-btn + .color-btn,
 .color-help {
   border-left: 1px solid var(--border);
 }
 .layer-toggle .color-btn {
   padding: 0 6px;
+}
+.barrel-toggle .color-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  text-decoration: none;
+}
+.barrel-toggle .color-btn.is-active,
+.barrel-toggle .color-btn.is-active:hover {
+  background: var(--teal-dim);
+  color: var(--teal);
 }
 .color-btn,
 .color-help,
@@ -997,6 +1056,17 @@ input[type="range"] {
   .nav-link:hover:not(.is-active):not([aria-expanded="true"]):not([aria-pressed="true"]) {
     color: var(--text);
     background: var(--bg-hover);
+  }
+  .mode-toggle .nav-link:hover:not(.is-active):not([aria-expanded="true"]):not([aria-pressed="true"]) {
+    background: transparent;
+    color: var(--text);
+  }
+  .brand-info:hover:not(.is-active) {
+    color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .barrel-toggle .color-btn:hover:not(.is-active) {
+    color: var(--text);
   }
 }
 .legend-scale {
@@ -2766,6 +2836,14 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .nav-link {
     padding: 6px 8px;
+    font-size: 12px;
+  }
+  .mode-toggle .nav-link {
+    padding: 6px 12px;
+  }
+  .brand-info {
+    width: 18px;
+    height: 18px;
     font-size: 12px;
   }
   /* The belt is Mercator ~1.304:1 (BELT_SOUTH −72.5 / BELT_NORTH 84).

@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v292";
+  const APP_VERSION = "v293";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -98,6 +98,8 @@
     markers: new Map(),
     originMap: null,
     productGroup: "all",
+    /* Last Barrel inner page so World ↔ Barrel restores Cuts or Products. */
+    lastBarrelRoute: "cuts",
     /* Volume fractions keyed by pin key (stream:id). Renormalized to 1. */
     blendShare: {},
   };
@@ -225,6 +227,9 @@
     el.filtersRail = $("filters-rail");
     el.btnOpenFilters = $("btn-open-filters");
     el.filtersCount = $("filters-count");
+    el.topbarTools = document.querySelector(".topbar-tools");
+    el.barrelTools = document.querySelector(".barrel-tools");
+    el.barrelNav = document.querySelector("[data-nav='barrel']");
   }
 
   /* —— Units helpers —— */
@@ -4048,7 +4053,7 @@
       '<div class="page-head"><h2 class="page-title">Cuts</h2>' +
       unitsBtnHtml() +
       "</div>" +
-      '<p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. Streams and Sites tell <em>where oil comes from</em>; Cuts teach <em>how the still slices a barrel</em>; <a href="/products">Products</a> teach <em>what commerce takes from those slices</em>. Each card is one slice: temperature, carbon size, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
+      '<p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. <strong>World</strong> is <em>where the oil is</em>. <strong>Barrel</strong> is this story: Cuts teach <em>how the still slices a barrel</em>; <a href="/products">Products</a> teach <em>what commerce takes from those slices</em>. Each card is one slice: temperature, carbon size, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
     html += '<div class="cut-grid">';
     for (const c of DATA.cuts) {
       html += '<article class="cut-card" id="cut-' + escapeHtml(c.id) + '">';
@@ -4111,7 +4116,7 @@
     );
 
     let html =
-      '<h2 class="page-title">Products</h2><p class="page-lead">The hydrocarbon barrel is not taken to the dump — it is sold, burned for plant heat, or upgraded. <strong>Cuts</strong> are how the still slices the oil; <strong>Products</strong> are what the world takes away. The <strong>All</strong> list reads light → heavy like the tower (fuel gas and treating recoveries at the top; asphalt and coke at the bottom). Filters regroup by market. Each card names a market, what you already know it as, which cuts feed it, and one signature molecule for teaching.</p>';
+      '<h2 class="page-title">Products</h2><p class="page-lead">The hydrocarbon barrel is not taken to the dump — it is sold, burned for plant heat, or upgraded. <strong>Cuts</strong> are how the still slices the oil; <strong>Products</strong> are what commerce takes away — the two steps of Barrel. The <strong>All</strong> list reads light → heavy like the tower (fuel gas and treating recoveries at the top; asphalt and coke at the bottom). Filters regroup by market. Each card names a market, what you already know it as, which cuts feed it, and one signature molecule for teaching.</p>';
     html += '<div class="prod-filters" role="toolbar" aria-label="Product groups">';
     for (const g of groups) {
       html +=
@@ -4224,7 +4229,8 @@
       HUBS.hubs.length +
       " hubs, and " +
       REFINERIES.refineries.length +
-      " plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p></div>",
+      " plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p>",
+      "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
       "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay.</p>",
       "<p>Tap a pin, search the active layer, or add streams to <strong>Compare</strong>. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
@@ -4244,7 +4250,7 @@
       "<p>Viscosity, pour point, and asphaltene stability do not mix this way. Some pairs will not stay mixed in a tank. The calculator does not claim they will.</p>",
       "<p>A check you can run: <strong>Arab Light + Basrah Light</strong> at half-and-half against <strong>Dubai</strong>. Gravity, sulfur, and yields land close. The board surfaces that so you can see the model against a named grade, not as a promise of lab accuracy. It also names the closest catalog grade to whatever mix is on the sliders.</p></div>",
       '<div class="about-block"><h3>Cuts and products</h3>',
-      "<p><a href=\"/cuts\">Cuts</a> is how a still slices a barrel by boiling range — first at atmospheric pressure, then the heavy bottoms again under vacuum so they can be split without burning. <a href=\"/products\">Products</a> is what commerce takes from those slices: fuels, chemicals, asphalt, coke, wax, sulfur. Nothing in that slate is trash. Rich/poor notes on cut cards are typical patterns, not measured yields for every stream.</p></div>",
+      "<p><a href=\"/cuts\">Cuts</a> is how a still slices a barrel by boiling range — first at atmospheric pressure, then the heavy bottoms again under vacuum so they can be split without burning. <a href=\"/products\">Products</a> is what commerce takes from those slices: fuels, chemicals, asphalt, coke, wax, sulfur. Together they are <strong>Barrel</strong>. Nothing in that slate is trash. Rich/poor notes on cut cards are typical patterns, not measured yields for every stream.</p></div>",
       '<div class="about-block"><h3>Refinery capacity</h3>',
       "<p>Capacity is atmospheric crude distillation, thousand barrels per calendar day, when a published figure is on the pin. US numbers are EIA Form EIA-820, operable crude as of 1 January 2026. Other numbers are Climate TRACE (CC BY 4.0), attached only when one plant and one published row clearly agree. A missing kb/d means we do not have a number we trust on that yard. Wrong barrels on the wrong plant is worse than a blank. Plants are not yet linked to the crudes they run.</p></div>",
       '<div class="about-block"><h3>Sources and map</h3>',
@@ -4527,19 +4533,43 @@
     Object.values(map).forEach((v) => v.classList.add("hidden"));
     map[state.route]?.classList.remove("hidden");
 
-    document.querySelectorAll(".nav-link").forEach((a) => {
+    const onHome = state.route === "home";
+    const onBarrel = state.route === "cuts" || state.route === "products";
+    const onWorld =
+      onHome || state.route === "stream" || state.route === "compare";
+    const onAbout = state.route === "about";
+    if (onBarrel) state.lastBarrelRoute = state.route;
+
+    document.querySelectorAll(".nav-link, .brand-info, .barrel-toggle [data-nav]").forEach((a) => {
       const nav = a.getAttribute("data-nav");
       const active =
-        (nav === "home" && (state.route === "home" || state.route === "stream" || state.route === "compare")) ||
+        (nav === "home" && onWorld) ||
+        (nav === "barrel" && onBarrel) ||
         nav === state.route;
       a.classList.toggle("is-active", active);
     });
 
-    const onHome = state.route === "home";
+    if (el.barrelNav) {
+      el.barrelNav.setAttribute(
+        "href",
+        state.lastBarrelRoute === "products" ? "/products" : "/cuts"
+      );
+    }
+
     document.documentElement.classList.toggle("app-home", onHome);
+    document.documentElement.classList.toggle("app-barrel", onBarrel);
+    document.documentElement.classList.toggle("app-about", onAbout);
+    if (el.topbarTools) el.topbarTools.hidden = !onHome;
+    if (el.barrelTools) el.barrelTools.hidden = !onBarrel;
     const tray = $("compare-tray");
     if (tray) tray.hidden = !onHome;
-    if (!onHome) closeFilterSheet();
+    if (!onHome) {
+      closeFilterSheet();
+      if (state._searchFocused) {
+        state._searchFocused = false;
+        syncSearchOpen();
+      }
+    }
 
     pinShellViewport();
 
