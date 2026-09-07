@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 284;
+  --bc-css: 288;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -2101,6 +2101,18 @@ button.linkish {
   margin-right: 6px;
   vertical-align: middle;
 }
+.tbp-swatch.is-mix {
+  width: 18px;
+  height: 0;
+  background: transparent;
+  border-top: 2px dashed #e8ecf2;
+}
+.tbp-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-mute);
+}
 
 .contrast-sentence {
   margin-top: 20px;
@@ -2390,6 +2402,18 @@ button.linkish {
 .about-block li {
   color: var(--text-dim);
   font-size: 14px;
+}
+.about-block p + p,
+.about-block p + ul,
+.about-block ul + p {
+  margin-top: 10px;
+}
+.about-block ul {
+  margin: 0;
+  padding-left: 1.15em;
+}
+.about-block li + li {
+  margin-top: 8px;
 }
 .glossary {
   margin: 0;

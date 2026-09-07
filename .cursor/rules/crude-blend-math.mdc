@@ -33,6 +33,9 @@ function blend(a, b, fa) {
 ```
 
 TBP curves blend by volume at each fraction point, same as yields.
+On Compare that is a dashed mix line: at each distilled yield, volume-weight
+the parents' temperatures. Skip the line if any selected stream has no curve;
+do not invent points. 211 of 334 streams have `distillation_curve`.
 
 ## Validate, don't assert
 

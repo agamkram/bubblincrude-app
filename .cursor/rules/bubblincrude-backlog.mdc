@@ -5,7 +5,7 @@ alwaysApply: true
 
 # BubblinCrude — audited state and backlog
 
-Verified counts: **334 streams, 347 sites, 156 hubs, 773 refineries.**
+Verified counts: **334 streams, 347 sites, 156 hubs, 700 refineries.**
 Streams are clean — zero broken `related_ids`/`site_ids`/`hub_ids`, no duplicate
 ids, yields sum to 100±10, TBP curves monotonic. Coverage: 100% api/sulfur/yields/
 notes, 88% TAN, 63% distillation+resid, 61% metals, 5% SARA. `cuts` and `products`
@@ -15,21 +15,28 @@ Never hand-edit the version; use `scripts/bump-version.py` and `--check`.
 
 ## 1. Refinery layer — capacity filled from Climate TRACE; keep matching conservative
 
-574 of 773 have `capacity_kbd` (US from EIA-820, others from Climate TRACE v7
+601 of 700 have `capacity_kbd` (US from EIA-820, others from Climate TRACE v7
 `oil-and-gas-refining`, CC BY 4.0). Rebuild via `scripts/build-refineries.py`.
 Attaching a real capacity to the wrong plant is worse than leaving it null.
+OSM junk (gas plants, sugar, chem, mining, South Pars, one-word company pins)
+dropped; duplicate yards collapsed onto the pin that already had kb/d. EIA
+company copied onto US `operator` (all **117** matched US plants — the 14 OSM
+misses are now curated pins with published yards). 7 EIA rows stay skipped
+(not crude CDUs / same yard). Named TRACE kb/d attached only when one pin and
+one TRACE row agree (Jamnagar, Visakh, Thai Oil, Antwerp Total/Esso, Cubatão,
+Paraguaná, Mina Al-Ahmadi, Kirishi, Basrah, SATORP Jubail). Operator filled
+from a known company in the plant name when the name is more than that
+company word.
 
-Still open: 199 plants with no kb/d, many without `operator`, and **none** have
-`related_ids`, so refineries still do not link to streams. OSM junk roads/rails/
-power pins and the five country errors (Panipat, Xinjiang, Isaac Sabbá, Soraz,
-CNPC Niger) were fixed in the TRACE rebuild.
+Still open: ~99 plants with no kb/d, ~336 without `operator`, and **none** have
+`related_ids`, so refineries still do not link to streams.
 
 ## 2. Blend calculator — on Compare (v281)
 
 Volume blend of ≥2 streams on the Compare board: SG-weighted gravity, mass-weighted
-sulfur, volume-weighted yields. Honest limits in the card copy. Arab Light +
-Basrah Light at half-and-half is the teaching check against Dubai. TBP blending
-is not built. See `crude-blend-math`.
+sulfur, volume-weighted yields and TBP (dashed mix line when every selected
+stream has a curve). Honest limits in the card copy. Arab Light + Basrah Light
+at half-and-half is the teaching check against Dubai. See `crude-blend-math`.
 
 ## 3. Phone filters — sheet on Compare-adjacent slider strip (v282)
 
@@ -62,4 +69,5 @@ of what was under the finger — do not move markers.
 
 ## Still open
 
-Refineries: ~199 without kb/d, thin operators, zero `related_ids`.
+Refineries: ~99 without kb/d, ~336 without operator, zero `related_ids`.
+US EIA holes closed (v287): 14 curated yards; 7 non-CDU/same-yard rows still skipped.

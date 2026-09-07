@@ -52,7 +52,28 @@ SKIP_NAME = re.compile(
     # Roads, rails, power, sports clubs, filling stations tagged industrial=refinery.
     r"\bdrive\b|\brow\b|carretera|\bramal\b|110.?k\s?v|subestaci|"
     r"club deportivo|gas station|\bjetty\b|\bbranch\b|"
-    r"irr dora|entrada 110|multiboya",
+    r"irr dora|entrada 110|multiboya|"
+    # Not crude CDUs: gas plants, GTL, sugar/veg oil, chem, mining, harbours.
+    r"gas plant|nam-locatie|sour water|amine regeneration|"
+    r"cooling tower|wastewater plant|perth mint|"
+    r"edible oil|destilaria|usina de a[cç]|fabrica de zah|"
+    r"raffinerie de sucre|\bzah[aă]r\b|"
+    r"bio-raffineria|ldpe plant|plateforme chimique|"
+    r"ineos nitriles|evonik degussa|eni versalis|"
+    r"plastic and tools|carmen concentrator|chancadora|miner[ae] |"
+    r"cajamarquilla|raffineriehafen|parque de abastecimento|"
+    r"puerto de refiner|lote 2e1|"
+    r"پارس جنوبی|parsian gas|south pars|تصفی[هة] خانه|"
+    r"\byanpet\b|\byansab\b|ibn zahr|\btasnee\b|"
+    r"arab potash|refiner[íi]a de aceite|"
+    r"mellita gas|pks ptpn|kaybob|minerva gas|"
+    r"sandakan edible|paran[aá] xisto|pampa b[ií]o|"
+    r"alcana|cofco international|purum s\.r\.o|dow portugal|"
+    r"horizon oil sands|mossel bay gtl|mossgas|"
+    r"harwich refinery|petroplus coryton|d[eé]p[oô]t rouen|"
+    r"p[oô]le industriel du malambas|"
+    r"оргсинтез|оргхим|\bппсн\b|\bуппн\b|\bцпс\b|"
+    r"рафинерија гаса|محطة عزل غاز",
     re.I,
 )
 # OSM still has a pin. These are not operable crude CDUs.
@@ -146,6 +167,20 @@ COUNTRIES = [
     ("Denmark", "Europe", 56.3, 9.5),
     ("Lithuania", "Europe", 55.2, 23.9),
     ("Turkey", "Europe", 39.0, 35.2),
+    ("Turkey", "Europe", 40.77, 29.92),  # İzmit / Marmara
+    ("France", "Europe", 48.86, 2.35),  # Paris / Grandpuits
+    ("France", "Europe", 51.03, 2.37),  # Dunkirk / Flandres
+    ("France", "Europe", 43.30, 5.37),  # Marseille / Berre
+    ("Iran", "Middle East", 27.50, 52.60),  # South Pars / Asaluyeh
+    ("Saudi Arabia", "Middle East", 21.50, 39.20),  # Jeddah
+    ("Saudi Arabia", "Middle East", 24.08, 38.05),  # Yanbu
+    ("Sweden", "Europe", 57.70, 11.97),  # Gothenburg
+    ("Germany", "Europe", 51.50, 7.10),  # Ruhr / Gelsenkirchen
+    ("United Kingdom", "Europe", 51.50, 0.50),  # Thames estuary
+    ("Italy", "Europe", 44.40, 8.93),  # Genoa
+    ("Hungary", "Europe", 47.10, 17.90),  # west Hungary
+    ("South Korea", "Asia Pacific", 35.50, 129.40),  # Ulsan / Onsan
+    ("Eritrea", "Africa", 13.01, 42.74),  # Assab
     ("Russia", "Russia & CIS", 61.5, 105.3),
     ("Russia", "Russia & CIS", 55.8, 37.6),
     ("Russia", "Russia & CIS", 56.8, 60.6),
@@ -179,6 +214,8 @@ COUNTRIES = [
     ("Saudi Arabia", "Middle East", 23.9, 45.1),
     ("United Arab Emirates", "Middle East", 23.4, 53.8),
     ("Iraq", "Middle East", 33.2, 43.7),
+    ("Iraq", "Middle East", 30.50, 47.80),  # Basra
+    ("Iraq", "Middle East", 31.84, 47.14),  # Maysan
     ("Iran", "Middle East", 32.4, 53.7),
     ("Kuwait", "Middle East", 29.3, 47.5),
     ("Qatar", "Middle East", 25.3, 51.2),
@@ -313,9 +350,24 @@ CURATED = [
     ("laurel-refinery", "Laurel Refinery", "United States", "North America", 45.65807, -108.76909, "CHS", "CHS Laurel."),
     ("tulsa-east-refinery", "Tulsa East Refinery", "United States", "North America", 36.11892, -95.99931, "HF Sinclair", "HF Sinclair Tulsa East."),
     ("salt-lake-city-refinery", "Salt Lake City Refinery", "United States", "North America", 40.804, -111.914, "", "Tesoro / Marathon Salt Lake City."),
-    ("countrymark-refinery-2", "CountryMark Refinery", "United States", "North America", 37.94303, -87.90883, "CountryMark", "CountryMark Mount Vernon."),
+    ("countrymark-mount-vernon-refinery", "CountryMark Mount Vernon Refinery", "United States", "North America", 37.94303, -87.90883, "CountryMark", "CountryMark Mount Vernon."),
     ("axeon-specialty-products-refinery", "Axeon Specialty Products Refinery", "United States", "North America", 39.84654, -75.22802, "", "Paulsboro specialty products."),
     ("nixon-refinery", "Nixon Refinery", "United States", "North America", 29.26038, -97.78829, "Lazarus Energy", "Lazarus Energy Nixon."),
+    # EIA operable plants OSM never kept as a named US yard. Coords from the OSM
+    # polygon, an EPA/ADEC/NDEP published point, or (Goodway) the TRACE centroid.
+    ("petro-star-valdez-refinery", "Petro Star Valdez Refinery", "United States", "North America", 61.08459, -146.25187, "Petro Star", "Petro Star Valdez."),
+    ("chevron-salt-lake-refinery", "Chevron Salt Lake Refinery", "United States", "North America", 40.82474, -111.92394, "Chevron", "Chevron Salt Lake City."),
+    ("hartree-channelview-refinery", "Hartree Channelview Refinery", "United States", "North America", 29.76757, -95.10517, "Hartree", "Hartree Channelview."),
+    ("kern-oil-bakersfield-refinery", "Kern Oil Bakersfield Refinery", "United States", "North America", 35.29617, -118.91855, "Kern Oil", "Kern Energy (Kern Oil) Bakersfield."),
+    ("petro-star-north-pole-refinery", "Petro Star North Pole Refinery", "United States", "North America", 64.73178, -147.34977, "Petro Star", "Petro Star North Pole."),
+    ("petromax-houston-refinery", "Petromax Houston Refinery", "United States", "North America", 29.75377, -95.12322, "Petromax", "Petromax Houston."),
+    ("conocophillips-kuparuk-topping-plant", "ConocoPhillips Kuparuk Topping Plant", "United States", "North America", 70.32333, -149.60833, "ConocoPhillips", "ConocoPhillips Kuparuk Unit topping plant."),
+    ("san-joaquin-bakersfield-refinery", "San Joaquin Bakersfield Refinery", "United States", "North America", 35.38733, -119.04792, "San Joaquin Refining", "San Joaquin Refining Bakersfield."),
+    ("silver-eagle-woods-cross-refinery", "Silver Eagle Woods Cross Refinery", "United States", "North America", 40.86639, -111.91139, "Silver Eagle", "Silver Eagle Woods Cross."),
+    ("lunday-thagard-south-gate-refinery", "Lunday Thagard South Gate Refinery", "United States", "North America", 33.9463, -118.16573, "Lunday Thagard", "World Oil / Lunday-Thagard South Gate."),
+    ("hilcorp-prudhoe-bay-topping-plant", "Hilcorp Prudhoe Bay Topping Plant", "United States", "North America", 70.25499, -148.34718, "Hilcorp", "Hilcorp North Slope crude oil topping unit."),
+    ("goodway-atmore-refinery", "Goodway Atmore Refinery", "United States", "North America", 31.072, -87.363, "Goodway", "Goodway Refining Atmore."),
+    ("foreland-eagle-springs-refinery", "Foreland Eagle Springs Refinery", "United States", "North America", 38.62257, -115.61816, "Foreland", "Foreland Eagle Springs (EIA site Ely)."),
 ]
 
 
@@ -453,6 +505,23 @@ def keep(tags, name):
     if SKIP_NAME.search(blob):
         return False
     if NOT_CRUDE.search(name):
+        return False
+    if name.strip().lower() in {
+        "shell",
+        "agip",
+        "tamoil",
+        "citgo",
+        "sasol",
+        "oil company",
+        "raffinerie",
+        "refinería",
+        "refineria",
+        "refinery",
+        "sharq",
+        "versalis",
+        "refinaria grande",
+        "jeongju refinery",
+    }:
         return False
     if tags.get("man_made") == "pipeline":
         return False
@@ -643,6 +712,9 @@ def build(payloads):
     out = prune_us_without_eia(out)
     attach_trace(out)
     out = add_trace_missing(out)
+    out = collapse_duplicates(out)
+    attach_trace_named(out)
+    fill_operators(out)
     return out
 
 
@@ -750,6 +822,17 @@ EIA_PIN = {
     ("SALT LAKE CITY", "CHEVRON"): "chevron-salt-lake-refinery",
     ("WOODS CROSS", "SILVER"): "silver-eagle-woods-cross-refinery",
     ("WOODS CROSS", "HF SINCLAIR"): "woods-cross-refinery",
+    ("VALDEZ", "PETRO STAR"): "petro-star-valdez-refinery",
+    ("NORTH POLE", "PETRO STAR"): "petro-star-north-pole-refinery",
+    ("CHANNELVIEW", "HARTREE"): "hartree-channelview-refinery",
+    ("BAKERSFIELD", "KERN"): "kern-oil-bakersfield-refinery",
+    ("BAKERSFIELD", "SAN JOAQUIN"): "san-joaquin-bakersfield-refinery",
+    ("HOUSTON", "PETROMAX"): "petromax-houston-refinery",
+    ("PRUDHOE BAY", "CONOCOPHILLIPS"): "conocophillips-kuparuk-topping-plant",
+    ("PRUDHOE BAY", "HILCORP"): "hilcorp-prudhoe-bay-topping-plant",
+    ("SOUTH GATE", "LUNDAY"): "lunday-thagard-south-gate-refinery",
+    ("ATMORE", "GOODWAY"): "goodway-atmore-refinery",
+    ("ELY", "FORELAND"): "foreland-eagle-springs-refinery",
     ("PAULSBORO", "PAULSBORO"): "paulsboro-refinery",
     ("BILLINGS", "PAR"): "exxonmobile-billings-refinery",
     ("BILLINGS", "PHILLIPS"): "phillips-66-refinery",
@@ -763,7 +846,7 @@ EIA_PIN = {
     ("THREE RIVERS", "DIAMOND"): "three-rivers-refinery-oil-recieving",
     ("BIG SPRING", "ALON"): "alon-big-spring-refinery",
     ("KROTZ SPRINGS", "ALON"): "alon-refining",
-    ("MOUNT VERNON", "COUNTRYMARK"): "countrymark-refinery-2",
+    ("MOUNT VERNON", "COUNTRYMARK"): "countrymark-mount-vernon-refinery",
     ("DEER PARK", "DEER"): "pemex-deer-park-refinery",
     ("EL SEGUNDO", "CHEVRON"): "chevron-el-segundo-refinery",
     ("BAYTOWN", "EXXON"): "baytown-refinery",
@@ -965,6 +1048,8 @@ def attach_eia(rows):
         hit["capacity_kbd"] = kbd
         hit["country"] = "United States"
         hit["region"] = "North America"
+        if e.get("company"):
+            hit["operator"] = str(e["company"]).strip()
         extra = "EIA operable atmospheric crude %s kb/d (Jan 1, 2026, barrels per calendar day)." % (
             str(int(kbd)) if kbd == int(kbd) else kbd
         )
@@ -1076,6 +1161,7 @@ ISO3_TO_COUNTRY = {
     "TKM": ("Turkmenistan", "Russia & CIS"),
     "AGO": ("Angola", "Africa"),
     "YEM": ("Yemen", "Middle East"),
+    "ERI": ("Eritrea", "Africa"),
     "BOL": ("Bolivia", "Latin America"),
     "MAR": ("Morocco", "Africa"),
     "SDN": ("Sudan", "Africa"),
@@ -1317,6 +1403,237 @@ def add_trace_missing(rows):
     return rows
 
 
+def _complex_key(name):
+    """Distinctive same-plant token. Used to drop a duplicate pin, not to merge neighbors."""
+    n = _name_key(name)
+    if "strathcona" in n:
+        return "strathcona"
+    if "ras tanura" in n:
+        return "ras tanura"
+    if "kirishi" in n:
+        return "kirishi"
+    if n == "warri" or n.startswith("warri "):
+        return "warri"
+    if n == "omsk" or n.startswith("omsk "):
+        return "omsk"
+    if "jamnagar" in n or n == "reliance refinery":
+        return "jamnagar"
+    if "cubat" in n or "bernardes" in n:
+        return "cubatao"
+    if "mina al ahmadi" in n:
+        return "mina ahmadi"
+    if "paraguan" in n or "amuay" in n:
+        return "paraguana"
+    if "sitra" in n or n == "bahrain oil refinery":
+        return "sitra"
+    if n in ("s oil",) or "onsan" in n:
+        return "onsan"
+    if "basrah" in n or n == "basra refinery" or n.startswith("basra "):
+        return "basrah"
+    if "maysan" in n:
+        return "maysan"
+    return None
+
+
+def _collapse_km(key):
+    if key == "strathcona":
+        return 30.0
+    return 12.0
+
+
+def collapse_duplicates(rows):
+    """Drop a no-kb/d pin that is the same plant as a nearby pin.
+
+    Keep the pin that already has kb/d. Wrong merge of neighboring Gulf plants
+    is avoided by requiring a distinctive shared name.
+    """
+    ranked = sorted(
+        rows,
+        key=lambda r: (
+            0 if r.get("capacity_kbd") is not None else 1,
+            0 if (r.get("operator") or "").strip() else 1,
+            -len(r.get("name") or ""),
+        ),
+    )
+    kept = []
+    dropped = 0
+    for r in ranked:
+        key = _complex_key(r.get("name") or "")
+        dup = False
+        for k in kept:
+            d = haversine(r["lat"], r["lon"], k["lat"], k["lon"])
+            other = _complex_key(k.get("name") or "")
+            if key and key == other and d < _collapse_km(key):
+                if not (k.get("operator") or "").strip() and (r.get("operator") or "").strip():
+                    k["operator"] = r["operator"]
+                dup = True
+                break
+        if dup:
+            dropped += 1
+            continue
+        kept.append(r)
+    kept.sort(key=lambda r: (r["region"], r["country"], r["name"].lower()))
+    print("collapsed duplicate pins", dropped)
+    return kept
+
+
+# Pin name pattern, TRACE name pattern, max km. Only when both sides are unique.
+TRACE_NAMED = [
+    (re.compile(r"jamnagar", re.I), re.compile(r"jamnagar", re.I), 15.0),
+    (re.compile(r"visakh", re.I), re.compile(r"visakh", re.I), 15.0),
+    (re.compile(r"thai oil", re.I), re.compile(r"thai oil", re.I), 15.0),
+    (re.compile(r"raffinaderij antwerpen", re.I), re.compile(r"total antwerp", re.I), 15.0),
+    (re.compile(r"^esso belgium$", re.I), re.compile(r"exxonmobil antwerp", re.I), 15.0),
+    (re.compile(r"cubat|bernardes", re.I), re.compile(r"cubatao", re.I), 15.0),
+    (re.compile(r"paraguan", re.I), re.compile(r"paraguana", re.I), 15.0),
+    (re.compile(r"mina al-?ahmadi", re.I), re.compile(r"mina al-ahmadi", re.I), 15.0),
+    (re.compile(r"kirishi", re.I), re.compile(r"kirishi", re.I), 15.0),
+    (re.compile(r"basrah refinery", re.I), re.compile(r"inoc basrah", re.I), 15.0),
+    (re.compile(r"^jubail refinery$", re.I), re.compile(r"satorp", re.I), 20.0),
+]
+
+
+def attach_trace_named(rows):
+    """Hand-named TRACE attachments after duplicates are collapsed.
+
+    Geographic unique-match already ran. These are plants where two OSM pins
+    used to compete, or the name is distinctive and the TRACE centroid is on
+    the yard. Still skip when two pins or two TRACE rows fit the pattern.
+    """
+    plants = fetch_trace()
+    matched = 0
+    skipped = 0
+    for pin_rx, trace_rx, max_km in TRACE_NAMED:
+        t_hits = [t for t in plants if trace_rx.search(t.get("name") or "") and _trace_kbd(t)]
+        p_hits = [p for p in rows if pin_rx.search(p.get("name") or "")]
+        if len(t_hits) != 1 or len(p_hits) != 1:
+            skipped += 1
+            continue
+        t = t_hits[0]
+        p = p_hits[0]
+        if p.get("capacity_kbd") is not None:
+            continue
+        c = t.get("centroid") or {}
+        if c.get("latitude") is None:
+            skipped += 1
+            continue
+        d = haversine(p["lat"], p["lon"], float(c["latitude"]), float(c["longitude"]))
+        if d > max_km:
+            skipped += 1
+            continue
+        kbd = _trace_kbd(t)
+        p["capacity_kbd"] = kbd
+        country, region = _trace_place(t)
+        if country:
+            p["country"] = country
+            p["region"] = region
+        extra = (
+            "Climate TRACE atmospheric crude %s kb/d (CC BY 4.0)."
+            % (str(int(kbd)) if kbd == int(kbd) else kbd)
+        )
+        notes = (p.get("notes") or "").strip()
+        if "Climate TRACE" not in notes:
+            p["notes"] = (notes + " " + extra).strip() if notes else extra
+        matched += 1
+    print("TRACE named-match kb/d", matched, "skipped", skipped)
+
+
+KNOWN_OPERATORS = [
+    "Reliance Industries",
+    "TotalEnergies",
+    "Marathon Petroleum",
+    "Flint Hills Resources",
+    "Saudi Aramco",
+    "ExxonMobil",
+    "Phillips 66",
+    "HF Sinclair",
+    "Gazprom Neft",
+    "Surgutneftegas",
+    "Hindustan Petroleum",
+    "Indian Oil",
+    "GS Caltex",
+    "SK Energy",
+    "LyondellBasell",
+    "Petrobras",
+    "PetroChina",
+    "Sonatrach",
+    "Sonangol",
+    "Petronas",
+    "PetroSA",
+    "Sinopec",
+    "Imperial",
+    "Chevron",
+    "Valero",
+    "Motiva",
+    "Suncor",
+    "Tesoro",
+    "Pemex",
+    "PDVSA",
+    "ADNOC",
+    "SATORP",
+    "Hengli",
+    "Nynas",
+    "Preem",
+    "Orlen",
+    "Neste",
+    "Sasol",
+    "Indeni",
+    "Bapco",
+    "SAMIR",
+    "CNPC",
+    "NNPC",
+    "KNPC",
+    "Citgo",
+    "Delek",
+    "Eni",
+    "OMV",
+    "MOL",
+    "CHS",
+    "KPC",
+    "EGPC",
+    "S-Oil",
+    "BP",
+]
+
+
+def fill_operators(rows):
+    """Fill blank operator only when a known company is in the plant name
+    and the name is more than just that company word."""
+    ops = sorted(KNOWN_OPERATORS, key=len, reverse=True)
+    filled = 0
+    for r in rows:
+        if (r.get("operator") or "").strip():
+            continue
+        name = r.get("name") or ""
+        low = name.lower()
+        hit = None
+        if re.search(r"\besso\b", low) and re.search(r"belgium|antwerp|refin", low):
+            r["operator"] = "ExxonMobil"
+            filled += 1
+            continue
+        for op in ops:
+            if op.lower() not in low:
+                continue
+            leftover = re.sub(re.escape(op), "", name, flags=re.I)
+            leftover = re.sub(
+                r"refiner\w*|raffiner\w*|oil|company|limited|ltd|inc|corp|the|co\b",
+                "",
+                leftover,
+                flags=re.I,
+            )
+            leftover = re.sub(r"[^a-z0-9]+", "", leftover, flags=re.I)
+            if len(op) <= 3 and len(leftover) < 4:
+                continue
+            if not leftover and len(op.split()) < 2:
+                continue
+            hit = op
+            break
+        if hit:
+            r["operator"] = hit
+            filled += 1
+    print("filled operator from name", filled)
+
+
 def emit(rows):
     lines = [
         "/* BubblinCrude — crude oil refineries.",
@@ -1385,7 +1702,9 @@ def main():
         if r.get("capacity_kbd") is not None:
             cap += 1
     print("by region", by)
-    print("with kb/d", cap)
+    print("with kb/d", cap, "of", len(rows))
+    op = sum(1 for r in rows if (r.get("operator") or "").strip())
+    print("with operator", op, "of", len(rows))
 
 
 if __name__ == "__main__":
