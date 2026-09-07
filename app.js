@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v293";
+  const APP_VERSION = "v296";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -228,7 +228,6 @@
     el.btnOpenFilters = $("btn-open-filters");
     el.filtersCount = $("filters-count");
     el.topbarTools = document.querySelector(".topbar-tools");
-    el.barrelTools = document.querySelector(".barrel-tools");
     el.barrelNav = document.querySelector("[data-nav='barrel']");
   }
 
@@ -4050,9 +4049,7 @@
 
   function renderCuts() {
     let html =
-      '<div class="page-head"><h2 class="page-title">Cuts</h2>' +
-      unitsBtnHtml() +
-      "</div>" +
+      '<h2 class="sr-only">Cuts</h2>' +
       '<p class="page-lead">A <strong>cut</strong> is a slice of crude oil by boiling range — light stuff comes off first, heavy stuff last. Think of a barrel poured into a tall still: gases and gasoline-range liquids leave early; jet and diesel in the middle; thick residue at the bottom. Refineries do this in two steps: first at normal pressure (the <strong>crude distillation unit</strong>, or CDU), then the leftover heavy bottoms are distilled again under vacuum (the <strong>vacuum distillation unit</strong>, or VDU) so they can be split without burning. <strong>Residue</strong> (often shortened to resid) just means that leftover bottoms — atmospheric residue after the first tower, vacuum residue after the second. <strong>World</strong> is <em>where the oil is</em>. <strong>Barrel</strong> is this story: Cuts teach <em>how the still slices a barrel</em>; <a href="/products">Products</a> teach <em>what commerce takes from those slices</em>. Each card is one slice: temperature, carbon size, and which crudes tend to be rich or poor in it. Rich/poor notes are typical patterns, not measured yields for every stream.</p>';
     html += '<div class="cut-grid">';
     for (const c of DATA.cuts) {
@@ -4116,7 +4113,7 @@
     );
 
     let html =
-      '<h2 class="page-title">Products</h2><p class="page-lead">The hydrocarbon barrel is not taken to the dump — it is sold, burned for plant heat, or upgraded. <strong>Cuts</strong> are how the still slices the oil; <strong>Products</strong> are what commerce takes away — the two steps of Barrel. The <strong>All</strong> list reads light → heavy like the tower (fuel gas and treating recoveries at the top; asphalt and coke at the bottom). Filters regroup by market. Each card names a market, what you already know it as, which cuts feed it, and one signature molecule for teaching.</p>';
+      '<h2 class="sr-only">Products</h2><p class="page-lead">The hydrocarbon barrel is not taken to the dump — it is sold, burned for plant heat, or upgraded. <strong>Cuts</strong> are how the still slices the oil; <strong>Products</strong> are what commerce takes away — the two steps of Barrel. The <strong>All</strong> list reads light → heavy like the tower (fuel gas and treating recoveries at the top; asphalt and coke at the bottom). Filters regroup by market. Each card names a market, what you already know it as, which cuts feed it, and one signature molecule for teaching.</p>';
     html += '<div class="prod-filters" role="toolbar" aria-label="Product groups">';
     for (const g of groups) {
       html +=
@@ -4560,7 +4557,6 @@
     document.documentElement.classList.toggle("app-barrel", onBarrel);
     document.documentElement.classList.toggle("app-about", onAbout);
     if (el.topbarTools) el.topbarTools.hidden = !onHome;
-    if (el.barrelTools) el.barrelTools.hidden = !onBarrel;
     const tray = $("compare-tray");
     if (tray) tray.hidden = !onHome;
     if (!onHome) {
@@ -4568,6 +4564,12 @@
       if (state._searchFocused) {
         state._searchFocused = false;
         syncSearchOpen();
+      }
+    }
+    if (!onBarrel) {
+      const barrelUnits = document.querySelector(".barrel-units");
+      if (barrelUnits && barrelUnits.getAttribute("aria-expanded") === "true") {
+        setUnitsPopoverOpen(false);
       }
     }
 

@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 293;
+  --bc-css: 296;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -186,8 +186,9 @@ html.pwa-standalone .app {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  align-self: center;
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -255,8 +256,11 @@ html.pwa-standalone .app {
 html:not(.app-home) #btn-search,
 html:not(.app-home) .topbar-tools,
 .topbar-tools[hidden],
-html:not(.app-barrel) .barrel-tools,
-.barrel-tools[hidden] {
+html.app-barrel .mode-toggle,
+html.app-barrel .nav-oil,
+html:not(.app-barrel) .barrel-exit,
+html:not(.app-barrel) .barrel-toggle,
+html:not(.app-barrel) .barrel-units {
   display: none !important;
 }
 
@@ -956,8 +960,7 @@ input[type="range"] {
   line-height: 32px !important;
 }
 
-.topbar-tools,
-.barrel-tools {
+.topbar-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1720,25 +1723,26 @@ button.pill {
 .related-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 .related-chip {
-  min-height: 34px;
-  padding: 6px 12px;
+  min-height: 24px;
+  padding: 2px 8px;
   border: 1px solid rgba(232, 168, 56, 0.5);
   border-radius: 999px;
   background: var(--accent-dim);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
+  line-height: 1.2;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
 .related-chip::after {
   content: " →";
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 @media (hover: hover) {
   .related-chip:hover {

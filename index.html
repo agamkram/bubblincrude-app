@@ -49,6 +49,10 @@
           r.style.height = total + "px";
           r.style.minHeight = total + "px";
         }
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        if (path === "/cuts" || path === "/products") r.classList.add("app-barrel");
+        else if (path === "/about") r.classList.add("app-about");
+        else if (path !== "/compare" && path.indexOf("/stream/") !== 0) r.classList.add("app-home");
       } catch (e) {}
     })();
   </script>
@@ -102,7 +106,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="styles.css?v=293" />
+  <link rel="stylesheet" href="styles.css?v=296" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -112,13 +116,6 @@
       <div class="topbar-title">
         <div class="brand-line">
           <h1 class="brand-title">BubblinCrude</h1>
-          <a
-            href="/about"
-            class="brand-info"
-            data-nav="about"
-            title="About"
-            aria-label="About"
-          >i</a>
         </div>
         <p class="brand-sub brand-sub-text">World map of crude — what’s in a barrel</p>
       </div>
@@ -129,15 +126,33 @@
             <a href="/" data-nav="home" class="nav-link is-active">World</a>
             <a href="/cuts" data-nav="barrel" class="nav-link">Barrel</a>
           </div>
+          <a href="/" data-nav="home" class="nav-link barrel-exit">World</a>
+          <div class="barrel-toggle" role="group" aria-label="Cuts or products">
+            <a href="/cuts" data-nav="cuts" class="color-btn">Cuts</a>
+            <a href="/products" data-nav="products" class="color-btn">Products</a>
+          </div>
+          <button
+            type="button"
+            class="nav-link js-units-btn barrel-units"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >Units</button>
           <a
             href="https://oilprice.com/oil-price-charts/#prices"
-            class="nav-link nav-link-icon"
+            class="nav-link nav-link-icon nav-oil"
             target="_blank"
             rel="noopener noreferrer"
             title="Oil price charts (oilprice.com)"
             aria-label="Oil price charts on oilprice.com"
           ><img src="oilprice-32.png" width="16" height="16" alt="" /></a>
           <button type="button" class="nav-link" id="btn-search" title="Search" aria-pressed="false" aria-controls="search-input">Search</button>
+          <a
+            href="/about"
+            class="brand-info"
+            data-nav="about"
+            title="About"
+            aria-label="About"
+          >i</a>
         </nav>
 
         <div class="topbar-tools" role="toolbar" aria-label="Map tools">
@@ -178,13 +193,6 @@
           </div>
           <div class="legend-scale" id="legend-scale" role="status"></div>
           <div class="legend-help hidden" id="legend-help" role="note"></div>
-        </div>
-
-        <div class="barrel-tools" hidden role="toolbar" aria-label="Barrel">
-          <div class="barrel-toggle" role="group" aria-label="Cuts or products">
-            <a href="/cuts" data-nav="cuts" class="color-btn">Cuts</a>
-            <a href="/products" data-nav="products" class="color-btn">Products</a>
-          </div>
         </div>
       </div>
     </header>
@@ -371,11 +379,11 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="data.js?v=293"></script>
-  <script src="sites.js?v=293"></script>
-  <script src="hubs.js?v=293"></script>
-  <script src="refineries.js?v=293"></script>
-  <script src="app.js?v=293"></script>
+  <script src="data.js?v=296"></script>
+  <script src="sites.js?v=296"></script>
+  <script src="hubs.js?v=296"></script>
+  <script src="refineries.js?v=296"></script>
+  <script src="app.js?v=296"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -386,7 +394,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v293";
+    var EXPECTED = "v296";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)
