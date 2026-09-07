@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v289";
+  const APP_VERSION = "v290";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -4252,7 +4252,7 @@
       '<p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter, built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>. After the first visit the app shell and data cache for offline use; map tiles still need a network.</p></div>',
       '<div class="about-block"><h3>Glossary</h3><dl class="glossary">',
       '<dt id="g-api">API gravity</dt><dd>Industry density scale for crude (°API). Higher is lighter. Card labels use the usual bands: light ≥31°, medium 22–31°, heavy 10–22°, extra-heavy &lt;10°. Map pins use a continuous color ramp, not those four buckets. Condensate is a product type, not an API class here.</dd>',
-      "<dt>Condensate</dt><dd>Ultra-light liquid hydrocarbons, typically field or plant pentanes-plus from gas streams. Trades as a naphtha-rich feedstock and is a common diluent for bitumen (see Dilbit). Distinct from light sweet crude.</dd>",
+      "<dt>Condensate</dt><dd>Pentanes-plus liquids recovered from a gas stream — at a field separator (lease condensate) or at a gas plant (plant condensate / natural gasoline). This catalog uses one kind for both; EIA counts lease condensate with crude oil and plant condensate with NGLs. Kind is curated from that production route, not from API gravity: published cutoffs run from 40 to 60 °API, so any threshold would encode one house rule. Distinct from light sweet crude. A common diluent for bitumen (see Dilbit).</dd>",
       '<dt id="g-sulfur">Sulfur (wt% S)</dt><dd>Mass percent sulfur in the crude. Lower sulfur is cheaper to treat. This app’s sweet cutoff is ≤0.5 wt% S.</dd>',
       "<dt>Sweet / sour</dt><dd>Sweet means low sulfur (≤0.5 wt% S here). Sour means higher. Independent of light/heavy (API).</dd>",
       '<dt id="g-lights">Lights</dt><dd>Naphtha plus middle distillate from the assay yield slate (vol%). The gasoline- and diesel-range share of the barrel — what you get out, not just how light the whole crude is (API).</dd>',

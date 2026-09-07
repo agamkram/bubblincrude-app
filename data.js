@@ -43,7 +43,10 @@
   }
 
   /** Compact stream factory — defaults unknowns; API/S assumed typical unless overridden.
-      A number on the record is never flagged unknown: missing flag → typical. */
+      A number on the record is never flagged unknown: missing flag → typical.
+      `kind` is curated per record from how the stream is produced and sold. It is
+      never derived from the name or from API gravity: published condensate cutoffs
+      run from 40 to 60 °API, so any threshold would encode one house rule. */
   function S(o) {
     const rec = {
       aliases: [],
@@ -66,9 +69,6 @@
       retrieved: null,
       ...o,
     };
-    if (!o.kind && /condensate|diluent/i.test(String(o.name || ""))) {
-      rec.kind = "Condensate";
-    }
     rec.flags = flags({ api: T, sulfur_wt: T, ...(o.flags || {}) }, rec);
     return rec;
   }
@@ -2141,6 +2141,7 @@
       country: "United Kingdom",
       basin: "North Sea",
       region: "Europe",
+      kind: "Condensate",
       lat: 56.7,
       lon: 2.3,
       api: 49.2,
@@ -3244,6 +3245,7 @@
       country: "Algeria",
       basin: "Bejaia export",
       region: "Africa",
+      kind: "Condensate",
       lat: 36.75,
       lon: 5.08,
       api: 68.6,
@@ -3541,6 +3543,7 @@
       country: "Australia",
       basin: "Bass Strait / Gippsland",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: -38.3,
       lon: 148.0,
       api: 68.4,
@@ -3736,6 +3739,7 @@
       country: "Australia",
       basin: "North West Shelf",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: -19.6,
       lon: 116.2,
       api: 63.0,
@@ -3770,6 +3774,7 @@
       country: "Australia",
       basin: "Browse Basin",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: -13.9,
       lon: 123.3,
       api: 48.4,
@@ -3844,6 +3849,7 @@
       country: "United Arab Emirates",
       basin: "Abu Dhabi",
       region: "Middle East",
+      kind: "Condensate",
       lat: 24.2,
       lon: 54.0,
       api: 55.0,
@@ -5744,6 +5750,7 @@
       country: "Norway",
       basin: "Barents Sea",
       region: "Europe",
+      kind: "Condensate",
       lat: 71.5,
       lon: 21.0,
       api: 63.7,
@@ -6160,6 +6167,7 @@
       country: "Norway",
       basin: "Norwegian Sea",
       region: "Europe",
+      kind: "Condensate",
       lat: 63.5,
       lon: 5.3,
       api: 62.5,
@@ -6496,6 +6504,7 @@
       country: "Indonesia",
       basin: "Kutei / East Kalimantan",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: 0.13,
       lon: 117.48,
       api: 72.8,
@@ -6598,6 +6607,7 @@
       country: "Indonesia",
       basin: "North Sumatra",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: 5.0,
       lon: 97.3,
       api: 55.0,
@@ -7228,6 +7238,7 @@
       country: "Qatar",
       basin: "North Field",
       region: "Middle East",
+      kind: "Condensate",
       lat: 26.6,
       lon: 51.9,
       api: 57.0,
@@ -7248,6 +7259,7 @@
       country: "Iran",
       basin: "South Pars / North Field",
       region: "Middle East",
+      kind: "Condensate",
       lat: 26.7,
       lon: 52.1,
       api: 55.0,
@@ -7268,6 +7280,7 @@
       country: "Indonesia",
       basin: "East Kalimantan",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: -1.0,
       lon: 117.5,
       api: 50.0,
@@ -7301,6 +7314,7 @@
       country: "Indonesia",
       basin: "Natuna Sea",
       region: "Asia Pacific",
+      kind: "Condensate",
       lat: 4.2,
       lon: 106.5,
       api: 48.0,
@@ -9801,7 +9815,7 @@
       country: "Malaysia",
       basin: "",
       region: "Asia Pacific",
-      kind: "Conventional",
+      kind: "Condensate",
       lat: 4.8,
       lon: 103.4,
       api: 77.5,

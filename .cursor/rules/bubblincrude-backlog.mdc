@@ -34,8 +34,13 @@ Still open: 96 plants with no kb/d, 334 without `operator`, and **none** have
 Honesty pass (v289): yield bins and TBP labeled vol% to match volume blend;
 `S()` no longer flags a present value as unknown; four non-CDU pins dropped
 (Nafoora field, Tazhong gathering station, Senegal/Mauritania “Old Refinery”,
-inland SAMIR). Named condensates are `kind: "Condensate"`. Saved views renamed
-to the filter they actually apply.
+inland SAMIR). Saved views renamed to the filter they actually apply.
+
+Condensate kind (v290): **24** streams, all with an explicit `kind`. `S()` does
+not infer it from the name or from API. Culzean, Belanak, and Terengganu added
+because the records already called them condensate. One kind covers lease
+condensate and plant pentanes-plus — EIA splits those; the glossary says so.
+Kind is curated from production route. Check with `scripts/check-data.py`.
 
 ## 2. Blend calculator — on Compare (v281)
 
@@ -77,3 +82,4 @@ of what was under the finger — do not move markers.
 
 Refineries: 96 without kb/d, 334 without operator, zero `related_ids`.
 US EIA holes closed (v287): 14 curated yards; 7 non-CDU/same-yard rows still skipped.
+Aasta Hansteen stays Conventional (record calls it crude); do not auto-tag from API.
