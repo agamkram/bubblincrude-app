@@ -1,16 +1,16 @@
 /* BubblinCrude service worker — cache app shell + embedded JSON */
 /* Bump CACHE together with APP_VERSION in app.js and the ?v= query strings
    in index.html. Renaming the cache is what evicts the previous build. */
-const CACHE = "bubblincrude-v308";
+const CACHE = "bubblincrude-v309";
 const PRECACHE = [
   "./",
   "./index.html",
-  "./styles.css?v=308",
-  "./app.js?v=308",
-  "./data.js?v=308",
-  "./sites.js?v=308",
-  "./hubs.js?v=308",
-  "./refineries.js?v=308",
+  "./styles.css?v=309",
+  "./app.js?v=309",
+  "./data.js?v=309",
+  "./sites.js?v=309",
+  "./hubs.js?v=309",
+  "./refineries.js?v=309",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",

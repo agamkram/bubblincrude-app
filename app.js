@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v308";
+  const APP_VERSION = "v309";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -2114,13 +2114,9 @@
   }
 
   function cutTempSpan(c) {
-    const loC = c.boil_c[0];
-    const hiC = c.boil_c[1];
-    const lo = tempLabel(loC);
-    const open = hiC >= 1000;
-    const hi = open ? "+" : tempLabel(hiC);
-    const joiner = loC < 0 || (!open && hiC < 0) ? " to " : "–";
-    return lo + joiner + hi + " " + tempUnit();
+    const lo = tempLabel(c.boil_c[0]);
+    const hi = c.boil_c[1] >= 1000 ? "+" : tempLabel(c.boil_c[1]);
+    return lo + " to " + hi + " " + tempUnit();
   }
 
   function streamNameList(ids) {
