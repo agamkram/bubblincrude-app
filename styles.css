@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 307;
+  --bc-css: 308;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -995,6 +995,12 @@ input[type="range"] {
 .color-help {
   border-left: 1px solid var(--border);
 }
+.color-toggle.is-assay-off [data-color] {
+  display: none;
+}
+.color-toggle.is-assay-off .color-help {
+  border-left: 0;
+}
 .layer-toggle .color-btn {
   padding: 0 6px;
 }
@@ -1419,6 +1425,34 @@ input[type="range"] {
   margin: 1px 0 0;
   font-size: 11px;
   color: var(--text-dim);
+}
+.pin-stack-open {
+  display: inline-flex;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pin-stack-open:hover,
+.pin-stack-open:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+.pin-stack-list {
+  margin-top: 4px;
+  max-height: min(60vh, 420px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.pin-stack-list .search-hit:last-child {
+  border-bottom: 0;
 }
 .bc-maps-btn,
 .bc-tool-btn {

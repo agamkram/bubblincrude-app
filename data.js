@@ -34,7 +34,7 @@
     };
     const out = {};
     for (const k of keys) {
-      const asked = partial[k] || (k === "resid_vol" ? partial.resid_wt : null);
+      const asked = partial[k];
       const has = val[k] != null && val[k] !== "";
       if (has) out[k] = asked && asked !== U ? asked : T;
       else out[k] = asked || U;

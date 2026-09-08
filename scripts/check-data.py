@@ -122,8 +122,14 @@ def flag_problems(label, rec, fields):
     out = []
     flags = rec.get("flags") or {}
     for k in fields:
-        if present(rec.get(k)) and flags.get(k) == "unknown":
+        has = present(rec.get(k))
+        flag = flags.get(k)
+        if has and flag == "unknown":
             out.append("%s %s: %s is present but flagged unknown" % (label, rec["id"], k))
+        elif not has and flag and flag != "unknown":
+            out.append(
+                "%s %s: %s is missing but flagged %s" % (label, rec["id"], k, flag)
+            )
     return out
 
 

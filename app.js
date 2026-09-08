@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v307";
+  const APP_VERSION = "v308";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -102,6 +102,8 @@
     lastBarrelRoute: "cuts",
     /* Pin hops from inspector chips. Last entry is the named ← back. */
     pinTrail: [],
+    /* Map-tap chooser when several pins share a pixel. Ids, not moved markers. */
+    pinStackIds: null,
     /* Volume fractions keyed by pin key (stream:id). Renormalized to 1. */
     blendShare: {},
   };
@@ -1256,7 +1258,38 @@
     if (nextId) paint(nextId, true);
   }
 
+  /* Same teaching coordinate — Edmonton condensates, Guyana grades, etc.
+     Markers stay on true lat/lon. Pixel-radius “near misses” at world zoom
+     would scoop a whole basin; exact match is the stacked-pin case. */
+  function pinsUnderLatLng(lat, lon) {
+    if (lat == null || lon == null) return [];
+    const hits = [];
+    for (const s of activePins()) {
+      if (s.lat == null || s.lon == null) continue;
+      if (Math.abs(s.lat - lat) < 1e-4 && Math.abs(s.lon - lon) < 1e-4) hits.push(s);
+    }
+    hits.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    return hits;
+  }
+
+  function openPinStack(list) {
+    state.pinStackIds = list.map((s) => s.id);
+    renderInspector();
+    const w = window.innerWidth;
+    if (w > 699 && w <= 1099) openInspectorDrawer();
+  }
+
   function pickPin(s, fly) {
+    const stack = pinsUnderLatLng(s.lat, s.lon);
+    if (stack.length > 1) {
+      openPinStack(stack);
+      return;
+    }
+    state.pinStackIds = null;
+    commitPickPin(s, fly);
+  }
+
+  function commitPickPin(s, fly) {
     const kind = pinKindFromLayer(state.layer);
     if (!samePin(currentPin(), { kind: kind, id: s.id })) clearPinTrail();
     if (state.layer === "sites") selectSite(s.id, fly);
@@ -1467,6 +1500,7 @@
       return;
     if (state.layer === layer) return;
     state.layer = layer;
+    state.pinStackIds = null;
     if (!opts.keepSearch) {
       state.query = "";
       if (el.search) el.search.value = "";
@@ -1493,6 +1527,7 @@
       }
     }
     syncLayerSeg();
+    syncColorSeg();
     syncMapSliders();
     syncFilterLayerUi();
     syncLayerAria();
@@ -1884,6 +1919,7 @@
       " / " +
       escapeHtml(s.basin) +
       "</p>";
+    html += stackHereBtnHtml(s);
     html += "</div>";
     html += inspTitleButtonsHtml();
     html += "</div>";
@@ -2078,9 +2114,13 @@
   }
 
   function cutTempSpan(c) {
-    const lo = tempLabel(c.boil_c[0]);
-    const hi = c.boil_c[1] >= 1000 ? "+" : tempLabel(c.boil_c[1]);
-    return lo + "–" + hi + " " + tempUnit();
+    const loC = c.boil_c[0];
+    const hiC = c.boil_c[1];
+    const lo = tempLabel(loC);
+    const open = hiC >= 1000;
+    const hi = open ? "+" : tempLabel(hiC);
+    const joiner = loC < 0 || (!open && hiC < 0) ? " to " : "–";
+    return lo + joiner + hi + " " + tempUnit();
   }
 
   function streamNameList(ids) {
@@ -2259,6 +2299,23 @@
   }
 
   function renderInspector() {
+    if (state.pinStackIds && state.pinStackIds.length > 1) {
+      const kind = pinKindFromLayer(state.layer);
+      const list = [];
+      for (let i = 0; i < state.pinStackIds.length; i++) {
+        const rec = pinRecord(kind, state.pinStackIds[i]);
+        if (rec) list.push(rec);
+      }
+      if (list.length > 1) {
+        el.inspectorEmpty.classList.add("hidden");
+        el.inspectorBody.classList.remove("hidden");
+        el.inspectorBody.innerHTML = pinStackHtml(list);
+        bindClearSelection(el.inspectorBody);
+        resetInspectorScroll();
+        return;
+      }
+      state.pinStackIds = null;
+    }
     if (state.layer === "sites") {
       const site = getSite(state.siteId);
       if (!site) {
@@ -2322,6 +2379,46 @@
     resetInspectorScroll();
   }
 
+  function pinStackHtml(list) {
+    const n = list.length;
+    const kind = pinKindFromLayer(state.layer);
+    let html = '<div class="insp-header">';
+    html += '<div class="insp-title-row">';
+    html += '<div class="insp-title-main">';
+    html += '<h2 class="insp-name">' + n + " " + layerNoun(n) + " here</h2>";
+    html +=
+      '<p class="insp-loc">Same map spot — pick one. Pins stay on their coordinates.</p>';
+    html += "</div>";
+    html += inspTitleButtonsHtml();
+    html += "</div></div>";
+    html += '<div class="pin-stack-list">';
+    for (const s of list) {
+      html +=
+        '<button type="button" class="search-hit" data-stack-pick="' +
+        escapeHtml(s.id) +
+        '"><span class="search-hit-name">' +
+        escapeHtml(s.name) +
+        '</span><span class="search-hit-meta">' +
+        escapeHtml(searchHitMeta({ s: s, kind: kind })) +
+        "</span></button>";
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function stackHereBtnHtml(s) {
+    if (!s || s.lat == null || s.lon == null) return "";
+    const n = pinsUnderLatLng(s.lat, s.lon).length;
+    if (n < 2) return "";
+    return (
+      '<button type="button" class="pin-stack-open" data-open-stack>' +
+      n +
+      " " +
+      layerNoun(n) +
+      " here</button>"
+    );
+  }
+
   function siteInspectorHtml(s) {
     const pills = [];
     pills.push('<span class="pill pill-kind">' + escapeHtml(s.kind) + "</span>");
@@ -2347,6 +2444,7 @@
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.basin, s.region].filter(Boolean).join(" · ")) +
       "</p>";
+    html += stackHereBtnHtml(s);
     html += "</div>";
     html += inspTitleButtonsHtml();
     html += "</div>";
@@ -2424,6 +2522,7 @@
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.region].filter(Boolean).join(" · ")) +
       "</p>";
+    html += stackHereBtnHtml(s);
     html += "</div>";
     html += inspTitleButtonsHtml();
     html += "</div>";
@@ -2473,6 +2572,7 @@
       '<p class="insp-loc">' +
       escapeHtml([s.country, s.region].filter(Boolean).join(" · ")) +
       "</p>";
+    html += stackHereBtnHtml(s);
     html += "</div>";
     html += inspTitleButtonsHtml(s);
     html += "</div>";
@@ -2523,8 +2623,34 @@
     root.querySelectorAll("[data-clear-selection]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (state.pinStackIds) {
+          state.pinStackIds = null;
+          renderInspector();
+          return;
+        }
         if (state.route === "stream") navigate("home");
         else clearSelection();
+      });
+    });
+    root.querySelectorAll("[data-open-stack]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const cur = currentPin();
+        const rec = cur && pinRecord(cur.kind, cur.id);
+        if (!rec) return;
+        const stack = pinsUnderLatLng(rec.lat, rec.lon);
+        if (stack.length > 1) openPinStack(stack);
+      });
+    });
+    root.querySelectorAll("[data-stack-pick]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute("data-stack-pick");
+        const kind = pinKindFromLayer(state.layer);
+        const rec = pinRecord(kind, id);
+        state.pinStackIds = null;
+        if (rec) commitPickPin(rec, false);
+        else renderInspector();
       });
     });
     root.querySelectorAll("[data-insp-expand]").forEach((btn) => {
@@ -2552,6 +2678,7 @@
 
   function clearSelection() {
     clearPinTrail();
+    state.pinStackIds = null;
     state.streamId = null;
     state.siteId = null;
     state.hubId = null;
@@ -2825,10 +2952,17 @@
   }
 
   function syncColorSeg() {
+    const assay = state.layer === "streams" || state.layer === "sites";
+    const toggle = document.querySelector(".color-toggle");
+    if (toggle) {
+      toggle.classList.toggle("is-assay-off", !assay);
+      toggle.setAttribute("aria-label", assay ? "Map color mode" : "Map color notes");
+    }
     document.querySelectorAll("[data-color]").forEach((btn) => {
+      btn.hidden = !assay;
       btn.setAttribute(
         "aria-pressed",
-        btn.getAttribute("data-color") === state.colorMode ? "true" : "false"
+        assay && btn.getAttribute("data-color") === state.colorMode ? "true" : "false"
       );
     });
   }
@@ -4303,10 +4437,10 @@
       '<div class="about-block"><h3>Four layers</h3>',
       "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay.</p>",
       "<p>World opens on <strong>WTI</strong> so the inspector is a real card — Drake Well, Cushing, and Motiva Port Arthur on the other layers. Tap a pin, or <strong>Search</strong> any name — streams, sites, hubs, and plants in one list. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search pick, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
-      "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
+      "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Some grades share a hub or loading coordinate; pins stay stacked on that point, and a tap opens a list instead of grabbing whichever marker is on top. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
       "<p>Each stream card cites a source. <strong>Sample year</strong> is the assay date when we know it. <strong>Retrieved</strong> is when the record was pulled — not when the oil was sampled.</p>",
-      "<p>Small labels on metrics are quality flags. <strong>measured</strong> comes from a cited lab report for that stream. <strong>typical</strong> is a widely published representative value for the grade. <strong>estimated</strong> is inferred from related assays — treat it as approximate. <strong>unknown</strong> means the field is not on the record. The card shows “—” and Compare skips it. A shown number is never flagged unknown. Trust the dash: Resid (vol) can still read “—” when Resid (wt) is typical.</p>",
+      "<p>Small labels on metrics are quality flags. <strong>measured</strong> comes from a cited lab report for that stream. <strong>typical</strong> is a widely published representative value for the grade. <strong>estimated</strong> is inferred from related assays — treat it as approximate. <strong>unknown</strong> means the field is not on the record. The card shows “—” and Compare skips it. A shown number is never flagged unknown. Resid (wt) and Resid (vol) are separate — a number on one does not invent the other.</p>",
       "<p>Every stream has API, sulfur, and yields. Distillation, metals, TAN, and SARA appear only when a published value exists. 211 streams have a true boiling-point curve. The rest do not get a fake one. Eagle Ford’s published cut table does not split VGO from resid, so that VGO cell is “—” and the 370°C+ sits in resid.</p></div>",
       '<div class="about-block"><h3>Mixing crudes</h3>',
       "<p>On Compare, add two or more streams and drag the volume cuts. The board computes a <strong>volume blend</strong> of those assays — a teaching calculator, not a pipeline nomination.</p>",
@@ -4987,6 +5121,7 @@
 
     document.querySelectorAll("[data-color]").forEach((btn) => {
       btn.addEventListener("click", () => {
+        if (state.layer === "hubs" || state.layer === "refineries") return;
         state.colorMode = btn.getAttribute("data-color");
         saveStorage();
         history.replaceState(null, "", buildUrl());
