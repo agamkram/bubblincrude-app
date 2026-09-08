@@ -5450,6 +5450,7 @@
       ni_ppm: 4,
       v_ppm: 6,
       resid_wt: 12,
+      resid_vol: 7.8,
       yields: { naphtha: 26, middle: 34, vgo: 24, resid: 16 },
       distillation_curve: [
         { t_c: 65, yield_wt: 7 },
@@ -5461,13 +5462,14 @@
         { t_c: 650, yield_wt: 97 },
       ],
 
-      notes: "Caspian light sweet delivered Ceyhan via BTC; Azeri family.",
+      notes:
+        "Caspian light sweet delivered Ceyhan via BTC; Azeri family. Resid (vol) is vacuum 550 °C+ from ExxonMobil Azeri BTC AZRBT24Y (19 Jul 2024). Resid (wt) and the yield slate stay typical published ranges, not that cargo.",
       related_ids: ["azeri-light", "cpc", "tengiz", "brent"],
       hub_ids: ["ceyhan"],
       site_ids: ["azerbaijani"],
       source: "ExxonMobil crude oil assay library (published table)",
       retrieved: 2026,
-      flags: { yields: T }
+      flags: { yields: T, resid_vol: M },
     }),
     S({
       id: "tengiz",
