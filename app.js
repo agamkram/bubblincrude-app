@@ -44,7 +44,7 @@
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). */
-  const APP_VERSION = "v322";
+  const APP_VERSION = "v323";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -4875,7 +4875,7 @@
       " plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p>",
       "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products. This page is the circled <strong>i</strong>.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
-      "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay. <strong>Pipelines</strong> are the trunk lines between them; color is status and thickness is published capacity.</p>",
+      "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay. <strong>Pipelines</strong> are the trunk lines between them; color is status, and stroke width follows zoom only.</p>",
       "<p>World opens on <strong>WTI</strong> so the inspector is a real card — Drake Well, Cushing, and Motiva Port Arthur on the other layers. Tap a pin, or <strong>Search</strong> any name — streams, sites, hubs, plants, and pipelines in one list. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search pick, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> sits next to Search and opens the same controls as the left rail; gravity and sulfur sliders hide on hubs, refineries, and pipelines so the map can use that strip.</p>",
       "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Some grades share a hub or loading coordinate; pins stay stacked on that point, and a tap opens a list instead of grabbing whichever marker is on top. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
