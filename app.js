@@ -44,7 +44,7 @@
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). */
-  const APP_VERSION = "v326";
+  const APP_VERSION = "v327";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -882,6 +882,11 @@
      mb/d design capacity is the check that the capacity join is sane. */
   const DEFAULT_PIPELINE_ID = "P0135";
 
+  const PIPELINE_SIBLING_COUNT = Object.create(null);
+  for (const row of PIPELINES.pipelines) {
+    PIPELINE_SIBLING_COUNT[row.name] = (PIPELINE_SIBLING_COUNT[row.name] || 0) + 1;
+  }
+
   /* Falls back to the first record so a catalog edit cannot leave home blank. */
   function pickDefaultId(kind) {
     const wanted = {
@@ -1328,6 +1333,12 @@
   function tipHtmlPipeline(s) {
     const action = compareActionHtml(pinKey("pipeline", s.id));
     const meta = [pipelineRouteBit(s), pipelineCapBit(s)].filter(Boolean).join(" · ");
+    const blurb = pipelineNote(s);
+    const tipBlurb = blurb
+      ? '<div class="tip-blurb">' +
+        escapeHtml(blurb.length > 140 ? blurb.slice(0, 137).trim() + "…" : blurb) +
+        "</div>"
+      : "";
     return (
       '<div class="tip-name">' +
       escapeHtml(pipelineTitle(s)) +
@@ -1335,6 +1346,7 @@
       '<div class="tip-meta">' +
       escapeHtml(meta || "Pipeline") +
       "</div>" +
+      tipBlurb +
       '<div class="tip-pills">' +
       '<span class="pill pill-kind">' +
       escapeHtml(s.status) +
@@ -1351,6 +1363,476 @@
     return s.segment && s.segment !== s.name
       ? s.name + " · " + s.segment
       : s.name;
+  }
+
+  /* Place glosses add the job the name does not: Hardisty is a heavy-oil
+     hub, Kharg is an export island. Only well-known places — a wrong gloss
+     is worse than a thinner sentence. */
+  const PIPELINE_PLACE_GLOSS = [
+    [/prudhoe/i, "Prudhoe Bay on the North Slope"],
+    [/valdez/i, "the Valdez tanker terminal"],
+    [/hardisty/i, "Alberta's Hardisty heavy-oil hub"],
+    [/cushing/i, "Cushing, Oklahoma"],
+    [/edmoton|edmonton/i, "Edmonton"],
+    [/fort mcmurray/i, "Fort McMurray"],
+    [/patoka/i, "Patoka, Illinois"],
+    [/nederland/i, "Nederland on the Texas Gulf"],
+    [/port arthur/i, "Port Arthur"],
+    [/beaumont/i, "Beaumont / Port Arthur"],
+    [/corpus christi/i, "Corpus Christi"],
+    [/houston/i, "Houston"],
+    [/midland/i, "Midland in the Permian"],
+    [/wink\b/i, "Wink in the Permian"],
+    [/pecos/i, "Pecos in the Permian"],
+    [/orla\b/i, "Orla in the Delaware Basin"],
+    [/sweeny/i, "Sweeny, Texas"],
+    [/houma/i, "Houma, Louisiana"],
+    [/st(\.|e)? james/i, "St. James, Louisiana"],
+    [/clovelly|loop\b/i, "LOOP, the Louisiana deepwater port"],
+    [/abqaiq/i, "Abqaiq, Aramco's main processing complex"],
+    [/ras tanura/i, "Ras Tanura"],
+    [/yanbu/i, "Yanbu on the Red Sea"],
+    [/juaymah/i, "Juaymah"],
+    [/qatif/i, "the Qatif junction"],
+    [/kharg/i, "Kharg Island, Iran's main crude export port"],
+    [/genaveh/i, "Genaveh"],
+    [/ahwaz|ahvaz/i, "Ahwaz"],
+    [/abadan/i, "Abadan"],
+    [/ceyhan/i, "Ceyhan on the Turkish Mediterranean"],
+    [/kirkuk/i, "Kirkuk"],
+    [/novorossiysk/i, "Novorossiysk"],
+    [/primorsk/i, "Primorsk"],
+    [/ust-luga|ust luga/i, "Ust-Luga"],
+    [/kozmino/i, "Kozmino on the Pacific"],
+    [/skovorodino/i, "Skovorodino"],
+    [/tayshet/i, "Tayshet"],
+    [/tengiz/i, "the Tengiz field"],
+    [/sangachal/i, "Sangachal"],
+    [/sidi kerir/i, "Sidi Kerir on the Mediterranean"],
+    [/ain sukhna|ain sokhna/i, "Ain Sokhna on the Gulf of Suez"],
+    [/fujairah/i, "Fujairah, outside the Strait of Hormuz"],
+    [/ashkelon/i, "Ashkelon"],
+    [/eilat|eliat/i, "Eilat"],
+    [/trieste/i, "Trieste"],
+    [/omi[sš]alj/i, "Omišalj on Krk"],
+    [/schwechat/i, "the Schwechat refinery near Vienna"],
+    [/teesside/i, "Teesside"],
+    [/mongstad/i, "Mongstad"],
+    [/ekofisk/i, "Ekofisk"],
+    [/johan sverdrup|johan svedrup/i, "Johan Sverdrup"],
+    [/cove[nñ]as/i, "Coveñas"],
+    [/cusiana/i, "Cusiana"],
+    [/almetyevsk/i, "Almetyevsk"],
+    [/samara|kuibyshev/i, "Samara"],
+    [/tikhoretsk/i, "Tikhoretsk"],
+    [/mozyr|mazyr/i, "Mozyr"],
+    [/uzhgorod|uzhhorod/i, "Uzhhorod"],
+    [/schwedt/i, "Schwedt"],
+    [/haoudh el hamra|haoud el hamra/i, "Haoud El Hamra"],
+    [/nuevo teapa/i, "Nuevo Teapa"],
+    [/barrancabermeja/i, "Barrancabermeja"],
+    [/ras lanuf|ra'?s lanuf/i, "Ras Lanuf"],
+    [/zueitina/i, "the Zueitina terminal"],
+    [/baiji/i, "the Baiji refinery in northern Iraq"],
+    [/basra|basrah|al basra/i, "Basra"],
+    [/al-?fao|al faw|fao\b/i, "Fao"],
+    [/halul/i, "Halul Island"],
+    [/lavan/i, "Lavan Island"],
+    [/shaybah/i, "Shaybah"],
+    [/ghawar/i, "Ghawar"],
+    [/steele city/i, "Steele City, Nebraska"],
+    [/stanley/i, "the Bakken around Stanley, North Dakota"],
+    [/fish khabur/i, "Fish Khabur on the Turkey-Iraq border"],
+    [/taq taq/i, "the Taq Taq field"],
+    [/tanga\b/i, "Tanga on the Tanzanian coast"],
+    [/panipat/i, "the Panipat refinery"],
+    [/paradip/i, "Paradip"],
+    [/numaligarh/i, "the Numaligarh refinery"],
+    [/yizheng/i, "Yizheng"],
+    [/atyrau/i, "Atyrau"],
+    [/aktau/i, "Aktau"],
+    [/kumkol/i, "Kumkol"],
+  ];
+
+  /* Famous corridors get a fact the tiles do not already show. Keys are
+     GEM PipelineName strings, exact. */
+  const PIPELINE_SYSTEM_NOTES = {
+    "Trans-Alaska Oil Pipeline System":
+      "Moves North Slope crude from Prudhoe Bay to Valdez for tanker export — Alaska's only crude line to tidewater.",
+    "East-West Crude Oil Pipeline":
+      "Saudi Petroline: the East-West line that lets Arabian crude load at Yanbu on the Red Sea instead of transiting Hormuz.",
+    "Druzhba Oil Pipeline":
+      "The Soviet Friendship system that still feeds Central European refineries with Russian crude via Belarus.",
+    "Eastern Siberia–Pacific Ocean Oil Pipeline":
+      "ESPO: Transneft's Pacific export system from Siberia to Kozmino, with a spur into northeast China.",
+    "Caspian Pipeline":
+      "CPC: the main export line for Tengiz and Kashagan crude, loading at Novorossiysk on the Black Sea.",
+    "Baku-Tbilisi-Ceyhan Pipeline":
+      "BTC: Azeri crude from Sangachal across Georgia to Ceyhan, bypassing both Russia and the Turkish Straits.",
+    "Sumed Oil Pipeline":
+      "SUMED: the Suez bypass that moves Persian Gulf crude from Ain Sokhna to Sidi Kerir, so VLCCs need not transit the canal.",
+    "Kirkuk-Ceyhan Oil Pipeline":
+      "Iraq's northern export line from Kirkuk to Ceyhan — the country's other seaboard besides the Gulf.",
+    "Keystone Oil Pipeline":
+      "TC Energy's Keystone: Canadian heavy from Hardisty into the US Midwest and on to the Gulf Coast. Not the cancelled Keystone XL.",
+    "Dakota Access Oil Pipeline (DAPL)":
+      "Bakken crude south to Illinois — the 2016–17 Standing Rock fight made this the most-watched US crude line in a generation.",
+    "Trans Mountain Oil Pipeline":
+      "Alberta crude to Burnaby for Pacific loading. The TMX expansion is the extra capacity on this corridor.",
+    "Louisiana Offshore Oil Port (LOOP) Pipeline":
+      "Shore line for LOOP, the US deepwater port that can berth VLCCs in the Gulf of Mexico.",
+    "LOCAP Pipeline":
+      "Onshore takeaway from LOOP into the Louisiana crude network.",
+    "Bab-Habshan–Fujairah Oil Pipeline":
+      "UAE Hormuz bypass: Abu Dhabi crude to Fujairah on the Gulf of Oman, so exports need not enter the Strait.",
+    "Trans-Israel Oil Pipeline":
+      "Eilat–Ashkelon (Tipline): Red Sea to Mediterranean. Built to move Iranian crude to Europe; now a north–south link for the Levant.",
+    "Trans-Panama Pipeline":
+      "Pacific–Atlantic shortcut across Panama, so crude need not wait on the Canal.",
+    "East African Crude Oil Pipeline (EACOP)":
+      "Uganda's Lake Albert crude to Tanga on the Tanzanian coast — East Africa's first long export line, still being built.",
+    "Basra–Aqaba Oil Pipeline":
+      "Planned Iraq-to-Jordan export line that would give Basra crude a Red Sea outlet at Aqaba.",
+    "Wink to Webster Pipeline":
+      "Permian takeaway from Wink to the Houston Ship Channel / Beaumont refining complex.",
+    "Gray Oak Oil Pipeline":
+      "Permian crude from the Delaware Basin to Sweeny and the Corpus Christi export dock.",
+    "Seaway Oil Pipeline System":
+      "Cushing to the Texas Gulf. Reversed in 2012 so Midwest crude could reach USGC export docks instead of sitting in Oklahoma.",
+    "Cactus II Oil Pipeline":
+      "Permian takeaway toward Corpus Christi export.",
+    "Cactus Oil Pipeline":
+      "Permian crude toward the Texas Gulf Coast.",
+    "Grand Rapids Oil Pipeline":
+      "Oil-sands dilbit from the Athabasca region into the Edmonton / Hardisty system.",
+    "Cold Lake Pipeline System":
+      "Moves Cold Lake thermal dilbit into the Edmonton-area network.",
+    "Athabasca Oil Pipeline":
+      "Oil-sands line from the Athabasca region into Edmonton-area tankage.",
+    "Athabasca Oil Pipeline Twin":
+      "Twin loop that added capacity on the Athabasca oil-sands corridor into Edmonton.",
+    "Enbridge Line 3 Oil Pipeline":
+      "Enbridge's Canadian Mainline replacement: Edmonton-area crude into the US Midwest.",
+    "Norpipe Oil Pipeline":
+      "North Sea line from Ekofisk to Teesside — Norway's original crude export pipe to Britain.",
+    "Oseberg Transport System":
+      "Pipes Oseberg-area North Sea crude to the Sture terminal in Norway.",
+    "Johan Svedrup Oil Pipeline":
+      "Takes Johan Sverdrup crude to Mongstad, Norway's main west-coast refining and export hub.",
+    "Ninian Crude Oil Pipeline":
+      "Northern North Sea crude to Sullom Voe in Shetland.",
+    "Ocensa Oil Pipeline":
+      "Colombia's main export line from the Cusiana / Cupiagua fields to Coveñas on the Caribbean.",
+    "Transalpine Oil Pipeline":
+      "TAL: Mediterranean crude landed at Trieste, then pumped north to Bavarian and Austrian refineries.",
+    "Adria Oil Pipeline":
+      "JANAF: Adriatic crude landed at Omišalj, then inland to refineries in the former Yugoslavia and Hungary.",
+    "Adria-Wien Oil Pipeline":
+      "Takes Adria-system crude from the Alps into the Schwechat refinery that supplies Vienna.",
+    "Hoover Offshore Oil Pipeline System (HOOPS)":
+      "Gulf of Mexico deepwater gathering into the Texas City / Texas Gulf Coast system.",
+    "Kirkuk Baiji Baghdad Oil Pipeline":
+      "Domestic Iraqi trunk from Kirkuk production toward Baiji and Baghdad.",
+    "Iraq Strategic Pipeline":
+      "North–south spine inside Iraq that can move southern crude toward the Mediterranean export system, or the other way.",
+    "Iraq Crude Oil Export Expansion Project (ICOEEP)":
+      "New southern Iraq sealines and onshore feeders that raised Basra's offshore loading capacity.",
+    "Basra Sealines Oil Pipelines":
+      "Subsea lines from Fao out to Basra's offshore loading terminals in the Gulf.",
+    "Kurdistan Oil Pipeline":
+      "KRG export line from Taq Taq and nearby fields to Fish Khabur, where it can join the Iraq–Turkey system.",
+    "Ahwaz PS-Genaveh PS Oil Pipeline":
+      "Iran's big Ahwaz-to-Genaveh trunk toward Kharg — one of the largest-capacity crude lines in the dataset.",
+    "Shaybah-Abqaiq Oil Pipeline":
+      "Takes Shaybah crude, from the Empty Quarter, north to Abqaiq for processing.",
+    "Ku-Maloob-Zaap Oil Pipeline Network":
+      "Gathers Mexico's KMZ offshore heavy crude into the onshore Campeche / Dos Bocas system.",
+    "Baltic Pipeline System 1":
+      "BPS-1: Transneft's Baltic export system that loads Russian crude at Primorsk, bypassing the Baltic states.",
+    "Baltic Pipeline System 2":
+      "BPS-2: a second Baltic export route, feeding Ust-Luga.",
+    "Vostok Oil Pipeline":
+      "Rosneft's Vostok project line from the Vankor cluster to a new Arctic loading port at Sever Bay.",
+    "Paradip Numaligarh Crude Pipeline (PNCPL)":
+      "Import crude from Paradip on the Bay of Bengal up to Numaligarh in Assam — still being built.",
+    "New Mundra–Panipat Oil Pipeline":
+      "Import crude from Mundra on the Arabian Sea to IOCL's Panipat refinery.",
+    "Ningbo-Shanghai-Nanjing Oil Pipeline":
+      "East China import trunk that moves seaborne crude from Ningbo toward the Shanghai–Nanjing refining belt.",
+    "Willow Sales Oil Pipeline":
+      "North Slope sales line that would tie ConocoPhillips' Willow development into the Alpine / TAPS system.",
+    "Pikka Sales Oil Pipeline":
+      "North Slope sales line from the Nanushuk / Pikka development into the TAPS system.",
+    "Access Pipeline System":
+      "Christina Lake dilbit and diluent lines into Edmonton.",
+    "Alberta Clipper Oil Pipeline":
+      "Enbridge Line 67: Canadian heavy from Hardisty into the US Midwest — the 2010 Mainline expansion.",
+    "Amberjack Oil Pipeline":
+      "Gulf of Mexico crude line — Shell's Amberjack corridor into Louisiana.",
+    "Auger Oil Pipeline":
+      "Gulf of Mexico line from Shell's Auger spar into the Louisiana network.",
+    "Big Foot Oil Pipeline":
+      "Gulf of Mexico export line from Chevron's Big Foot field.",
+    "Eugene Island Oil Pipeline":
+      "Gulf of Mexico trunk on the Eugene Island corridor into Louisiana.",
+    "Heidelberg Oil Pipeline":
+      "Gulf of Mexico line from the Heidelberg field.",
+    "Odyssey Oil Pipeline":
+      "Gulf of Mexico crude line into the Louisiana system.",
+    "Ship Shoal Oil Pipeline":
+      "Gulf of Mexico trunk on the Ship Shoal corridor.",
+    "Stampede Oil Pipeline":
+      "Gulf of Mexico line from the Stampede field.",
+    "SEKCO Oil Pipeline":
+      "Gulf of Mexico crude line from the Keathley Canyon area (SEKCO).",
+    "Pony Express Oil Pipeline":
+      "Rockies and Bakken crude toward Cushing.",
+    "Saddlehorn Oil Pipeline":
+      "DJ Basin / Rockies crude toward Cushing.",
+    "Sacagawea Oil Pipeline":
+      "Bakken gathering into North Dakota takeaway.",
+    "Powder River Basin Pipeline":
+      "Powder River Basin crude takeaway in Wyoming.",
+    "STACK Oil Pipeline":
+      "Oklahoma STACK-play crude takeaway.",
+    "Centurion Oil Pipeline":
+      "Permian and Midcontinent crude toward Cushing.",
+    "Ozark Crude Oil Pipeline":
+      "Midcontinent crude toward Cushing.",
+    "Cushing Connect Oil Pipeline":
+      "Last-mile crude line into Cushing tankage.",
+    "Keystone HoustonLink Oil Pipeline":
+      "Last-mile Keystone link into the Houston refining complex.",
+    "Enbridge Line 61 Oil Pipeline":
+      "Enbridge Mainline from Superior to Flanagan — a main Canadian-crude path into Illinois.",
+    "Enbridge Line 14/64 Oil Pipeline":
+      "Enbridge Mainline capacity across Wisconsin into the Chicago-area system.",
+    "North Dakota Pipeline System":
+      "Bakken gathering and takeaway in North Dakota.",
+    "South Texas Crude Oil Pipeline System (Enterprise)":
+      "Enterprise's South Texas crude system toward Gulf Coast docks and plants.",
+    "South Texas Crude Oil Pipeline System (NuStar Energy)":
+      "NuStar's South Texas crude system.",
+    "South Texas Crude Oil Pipeline (Koch)":
+      "Koch's South Texas crude gathering.",
+    "Trans Niger Pipeline":
+      "Nigeria's Trans-Niger line — the onshore spine that feeds Bonny and the eastern export system.",
+    "Peace Pipeline":
+      "Canadian Peace River-region crude into the Alberta network.",
+    "Wolfcamp Connector System":
+      "Permian Wolfcamp crude connector.",
+    "Delaware Crossing Pipeline":
+      "Delaware Basin takeaway in the Permian.",
+    "Avalon Oil Pipeline":
+      "Delaware Basin Avalon-play crude takeaway.",
+    "Glass Mountain Oil Pipeline":
+      "Oklahoma / Midcontinent crude gathering.",
+    "Joliet Crude Oil Pipeline":
+      "Chicago-area crude line into the Joliet refining hub.",
+    "Augustus Oil Pipeline":
+      "Short-haul US crude line in the Midcontinent / Permian system.",
+    "Beta Crude Connector":
+      "Short-haul US crude connector.",
+    "Big Spring Gateway Oil Pipeline System":
+      "Permian crude toward Big Spring, Texas.",
+    "Esfandiar Oil Pipeline":
+      "Iranian offshore line from the Esfandiar field, toward Kharg.",
+    "Granite Wash Pipeline":
+      "Granite Wash play crude in the Texas–Oklahoma panhandle.",
+    "Marjan Oil Pipeline":
+      "Saudi Marjan offshore crude line, still being built.",
+    "Northern Geisum \"GNN-11\" Oil Pipeline":
+      "Gulf of Suez line from the Geisum field.",
+    "Red River Oil Pipeline":
+      "Midcontinent crude along the Texas–Oklahoma Red River corridor.",
+    "Redbud Pipeline System":
+      "Oklahoma crude gathering.",
+    "Silvertip Crude Oil Pipeline":
+      "Rockies crude line in Wyoming / Montana.",
+    "Western Corridor Oil Pipeline System":
+      "Canadian western-corridor crude system.",
+    "Caesar Oil Pipeline":
+      "Gulf of Mexico line serving the Caesar / Tonga area into the Louisiana system.",
+    "Endymion Oil Pipeline":
+      "Gulf of Mexico crude line into Louisiana, paired with the Proteus system.",
+    "Galveston Block A244 Offshore Oil Pipelines":
+      "Gulf of Mexico gathering off Galveston Block A244.",
+    "Heavy Louisiana Sweet Crude Oil Pipeline System":
+      "Gulf of Mexico gathering for Heavy Louisiana Sweet into the Louisiana network.",
+    "Mars Crude Oil Pipeline":
+      "Gulf of Mexico line from the Mars field — a deepwater marker grade — into Louisiana.",
+    "Poseidon Oil Pipeline":
+      "Gulf of Mexico gathering system into the Louisiana crude network.",
+    "Proteus Oil Pipeline":
+      "Gulf of Mexico line into Louisiana, feeding the same corridor as Endymion.",
+  };
+
+  function pipelinePlaceKind(place) {
+    const t = String(place || "").toLowerCase();
+    if (!t) return "";
+    if (/power\s*plant/.test(t)) return "power";
+    if (/refiner/.test(t)) return "refinery";
+    if (/terminal|harbour|harbor|jetty|\bspm\b/.test(t)) return "terminal";
+    if (/\bport\b/.test(t)) return "terminal";
+    if (/oil\s*fields?|oilfield|reservoir/.test(t) || /\bfields?\b/.test(t))
+      return "field";
+    if (/\bbasin\b/.test(t)) return "basin";
+    if (/storage|depot|tank/.test(t)) return "storage";
+    if (/pump|junction|\bps\b|pumping/.test(t)) return "station";
+    if (/plant|complex/.test(t)) return "plant";
+    return "";
+  }
+
+  function pipelinePlaceGloss(place, country) {
+    const raw = String(place || "").replace(/\s+/g, " ").replace(/^[^\w(]+/, "").trim();
+    if (!raw) return country || "";
+    for (let i = 0; i < PIPELINE_PLACE_GLOSS.length; i++) {
+      if (PIPELINE_PLACE_GLOSS[i][0].test(raw)) return PIPELINE_PLACE_GLOSS[i][1];
+    }
+    const kind = pipelinePlaceKind(raw);
+    if (kind === "refinery") return /refiner/i.test(raw) ? raw : raw + " refinery";
+    if (kind === "terminal") return raw;
+    if (kind === "field" || kind === "basin") return "the " + raw;
+    if (kind === "power") return raw;
+    return raw;
+  }
+
+  function pipelineSiblings(name) {
+    return PIPELINE_SIBLING_COUNT[name] || 1;
+  }
+
+  function pipelineNameLegs(name) {
+    let t = String(name || "");
+    t = t.replace(/^\([^)]*\)\s*/, "");
+    t = t.replace(/\s*\([^)]*\)\s*$/g, "");
+    t = t.replace(/\s+(oil\s+)?pipelines?\s*$/i, "");
+    t = t.replace(/\s+pipeline\s+systems?\b.*$/i, "");
+    t = t.replace(/\s+crude\s+oil\s+pipeline.*$/i, "");
+    t = t.replace(/\s+oil\s+pipeline\s+network$/i, "");
+    t = t.replace(/\s+pipeline\s+network$/i, "");
+    const parts = t
+      .split(/\s*[–—]\s*|-(?=[A-ZÀ-ÖØ-Ý])|\s+-\s+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    if (parts.length >= 2) return [parts[0], parts.slice(1).join("–")];
+    return null;
+  }
+
+  function pipelineSegmentBit(s) {
+    const n = pipelineSiblings(s.name);
+    if (n < 2) return "";
+    const seg = String(s.segment || "")
+      .replace(/^SYSTEM\/NETWORK ROUTE$/i, "")
+      .trim();
+    if (seg && seg !== s.name && !/^pipelines?\s+\d+$/i.test(seg)) {
+      return "This stretch is " + seg.replace(/\s+oil pipeline$/i, "") + ".";
+    }
+    if (s.start_place && s.end_place) {
+      const route = pipelineRouteBit(s);
+      if (route) return "This stretch runs " + route.replace(" → ", " to ") + ".";
+    }
+    return "";
+  }
+
+  /* One or two sentences. Never the old shared disclaimer — that was the
+     same paragraph on every card. Famous names use PIPELINE_SYSTEM_NOTES;
+     everything else gets a job line from its own endpoints. */
+  function pipelineNote(s) {
+    const canned = PIPELINE_SYSTEM_NOTES[s.name];
+    if (canned) {
+      const extra = pipelineSegmentBit(s);
+      return extra ? canned + " " + extra : canned;
+    }
+    return composePipelineNote(s);
+  }
+
+  function composePipelineNote(s) {
+    const a = pipelinePlaceGloss(s.start_place, s.start_country);
+    const b = pipelinePlaceGloss(s.end_place, s.end_country);
+    const ak = pipelinePlaceKind(s.start_place);
+    const bk = pipelinePlaceKind(s.end_place);
+    const blob = [s.name, s.segment, s.start_place, s.end_place].join(" ");
+    const n = pipelineSiblings(s.name);
+    const xborder =
+      s.start_country && s.end_country && s.start_country !== s.end_country;
+    const thinA = !s.start_place || a === s.start_country;
+    const thinB = !s.end_place || b === s.end_country;
+    const aNice = a && !thinA;
+    const bNice = b && !thinB;
+
+    let job = "";
+    if (bk === "power") {
+      job = aNice
+        ? "Feeds " + b + " from " + a + "."
+        : "Feeds " + (b || "a power plant") + " with crude.";
+    } else if (bk === "refinery") {
+      job = aNice ? "Feeds " + b + " from " + a + "." : "Feeds " + b + ".";
+    } else if (bk === "terminal") {
+      job = aNice
+        ? "Takes crude from " + a + " to " + b + " for tanker loading."
+        : "Export line into " + b + ".";
+    } else if (ak === "field" || ak === "basin") {
+      job = b
+        ? "Gathers " + a + " crude toward " + b + "."
+        : "Gathers " + a + " crude.";
+    } else if (bk === "storage" || ak === "storage") {
+      job =
+        aNice || bNice
+          ? "Moves crude between " + a + " and " + b + "."
+          : "Storage and tank-farm crude line.";
+    } else if (/offshore|sealine|subsea|sealines/i.test(blob)) {
+      job =
+        aNice && bNice
+          ? "Offshore crude line from " + a + " to " + b + "."
+          : "Offshore crude line" + (s.start_country ? " in " + s.start_country : "") + ".";
+    } else if (/\b(twin|loop)\b/i.test(blob) && !/loop\b.*port/i.test(blob)) {
+      job =
+        "Capacity loop on this corridor" +
+        (aNice && bNice ? ", " + a + " to " + b : "") +
+        ".";
+    } else if (/\bgathering\b/i.test(blob)) {
+      job = "Field gathering line" + (bNice ? " into " + b : "") + ".";
+    } else if (/refiner/i.test(blob) && (bNice || b)) {
+      job = aNice ? "Feeds " + b + " from " + a + "." : "Feeds " + b + ".";
+    } else if (aNice && bNice && a !== b) {
+      job = "Moves crude from " + a + " to " + b + ".";
+    } else if (aNice) {
+      job = "Crude line out of " + a + ".";
+    } else if (bNice) {
+      job = "Crude line into " + b + ".";
+    } else {
+      const legs = pipelineNameLegs(s.name);
+      if (legs) {
+        const ga = pipelinePlaceGloss(legs[0], "");
+        const gb = pipelinePlaceGloss(legs[1], "");
+        const gk = pipelinePlaceKind(legs[1]);
+        if (gk === "refinery" || /refiner/i.test(legs[1])) {
+          job = "Feeds " + gb + (ga ? " from " + ga : "") + ".";
+        } else if (gk === "terminal") {
+          job =
+            "Takes crude from " + ga + " to " + gb + " for tanker loading.";
+        } else {
+          job = "Moves crude from " + ga + " to " + gb + ".";
+        }
+      } else if (xborder) {
+        job =
+          "Cross-border crude line from " +
+          s.start_country +
+          " into " +
+          s.end_country +
+          ".";
+      } else {
+        job =
+          "Crude trunk in " +
+          (s.region || s.start_country || "this corridor") +
+          ".";
+      }
+    }
+
+    const extra = [];
+    if (s.status === "construction") extra.push("Still under construction.");
+    if (n > 1) extra.push("One of " + n + " segments in this system.");
+    return [job].concat(extra).slice(0, 2).join(" ");
   }
 
   function ensurePinTooltip(marker, s) {
@@ -2923,9 +3405,15 @@
       html += '<div class="quality-strip">' + tiles.join("") + "</div>";
     }
 
+    const note = pipelineNote(s);
+    if (note) {
+      html +=
+        '<p class="insp-blurb" style="margin-top:8px">' + escapeHtml(note) + "</p>";
+    }
+
     if (s.countries && s.countries !== s.start_country) {
       html +=
-        '<p class="insp-blurb" style="margin-top:8px">Crosses ' +
+        '<p class="insp-blurb" style="color:var(--text-mute)">Crosses ' +
         escapeHtml(s.countries) +
         ".</p>";
     }
