@@ -45,7 +45,7 @@
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). Visible product version is
      DISPLAY_VERSION next to the title — start at 1, bump when Mark says so. */
-  const APP_VERSION = "v319";
+  const APP_VERSION = "v320";
   const DISPLAY_VERSION = "1";
   window.__APP_VERSION = APP_VERSION;
   window.__DISPLAY_VERSION = DISPLAY_VERSION;
@@ -3374,7 +3374,10 @@
       toggle.setAttribute("aria-label", assay ? "Map color mode" : "Map color notes");
     }
     document.querySelectorAll("[data-color]").forEach((btn) => {
-      btn.hidden = !assay;
+      /* Do not set hidden — that drops the buttons from layout and shortens
+         the phone topbar by a wrap row (tray/inspector jump). */
+      btn.disabled = !assay;
+      btn.setAttribute("aria-disabled", assay ? "false" : "true");
       btn.setAttribute(
         "aria-pressed",
         assay && btn.getAttribute("data-color") === state.colorMode ? "true" : "false"
