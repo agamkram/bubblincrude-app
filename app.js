@@ -43,7 +43,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v316";
+  const APP_VERSION = "v317";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -990,11 +990,14 @@
     }
     const w = stage.clientWidth || pane.clientWidth || window.innerWidth;
     let h = Math.round(w / beltAspect());
-    /* Phone map row is content-sized (`auto`). Collapsing the assay strip
-       would otherwise hand those pixels to the inspector. Add them to the
-       map instead so Pipelines/Hubs/Refineries grow into the freed strip. */
+    /* Phone map row is content-sized. When the assay strip is gone, keep the
+       pane's total height stable by giving those pixels to the map — otherwise
+       they fall through to the inspector. `_collapsedMapH` is a one-shot from
+       the toggle (pane-before − tray) so we cannot come up short by the
+       compare row; afterward belt + cached strip handles rotate/resize. */
     if (el.mapSliders && el.mapSliders.classList.contains("is-collapsed")) {
-      h += state._assayStripH || 72;
+      if (state._collapsedMapH) h = state._collapsedMapH;
+      else h += state._assayStripH || 72;
     }
     pane.classList.add("is-belt-cut");
     mapEl.style.height = h + "px";
@@ -1781,7 +1784,7 @@
     if (!opts.keepIds) clearOtherSelections(pinKindFromLayer(layer));
     syncLayerSeg();
     syncColorSeg();
-    syncMapSliders();
+    const assayToggled = syncMapSliders();
     syncFilterLayerUi();
     syncLayerAria();
     renderLegend();
@@ -1792,7 +1795,11 @@
     updateMarkers();
     renderInspector();
     renderTray();
-    if (!opts.skipFit) fitMapFull(true);
+    if (opts.skipFit) return;
+    /* Assay show/hide needs one quiet refit after layout. An animated fit
+       here plus a second snap was the bounce of about a compare-row. */
+    if (assayToggled) refitAfterAssayToggle();
+    else fitMapFull(true);
   }
 
   function syncLayerSeg() {
@@ -3245,38 +3252,78 @@
     });
   }
 
+  /* Returns true when the assay strip was shown or hidden, so the caller can
+     do one quiet refit after layout — a second animated fit was the bounce. */
   function syncMapSliders() {
     const collapse = !layerHasAssay();
+    let toggled = false;
     if (el.mapSliders) {
       const wasCollapsed = el.mapSliders.classList.contains("is-collapsed");
-      /* Measure before hide — once collapsed, offsetHeight is 0. */
-      if (collapse && !wasCollapsed && el.mapSliders.offsetHeight > 0) {
-        state._assayStripH = el.mapSliders.offsetHeight;
-      }
-      el.mapSliders.classList.toggle("is-collapsed", collapse);
-      el.mapSliders.classList.remove("is-inert");
+      toggled = wasCollapsed !== collapse;
       const pane = document.getElementById("map-pane");
-      if (pane) pane.classList.toggle("is-assay-collapsed", collapse);
-      if (!collapse) {
+      const tray = document.getElementById("compare-tray");
+      const phone = window.innerWidth <= 699;
+
+      if (toggled && collapse && phone && pane) {
+        /* Pane height before hide = map + strip + tray. After hide we want the
+           same pane height, so map must become (before − tray). Using the strip
+           alone came up short by about the compare row and left a gap. */
+        const before = pane.offsetHeight;
+        const trayH = tray && !tray.hidden ? tray.offsetHeight : 0;
+        if (el.mapSliders.offsetHeight > 0) {
+          state._assayStripH = el.mapSliders.offsetHeight;
+        }
+        el.mapSliders.classList.add("is-collapsed");
+        state._collapsedMapH = Math.max(
+          Math.round((pane.clientWidth || window.innerWidth) / beltAspect()),
+          before - trayH
+        );
+        /* Apply height this frame — waiting for rAF left one paint of a short
+           map and a jumped inspector (the bounce). */
+        sizeMapToBelt();
+      } else if (toggled && !collapse) {
+        el.mapSliders.classList.remove("is-collapsed");
+        state._collapsedMapH = 0;
+        sizeMapToBelt();
         const h = el.mapSliders.offsetHeight;
         if (h > 0) state._assayStripH = h;
+      } else {
+        el.mapSliders.classList.toggle("is-collapsed", collapse);
       }
-      /* Desktop/tablet: map-stage is flex:1 and grows on its own. Phone:
-         sizeMapToBelt() adds the cached strip height. Either way Leaflet
-         only notices after invalidateSize. */
-      if (wasCollapsed !== collapse && state.map && state.route === "home") {
-        requestAnimationFrame(() => {
-          if (!state.map) return;
-          sizeMapToBelt();
-          state.map.invalidateSize({ pan: false });
-          fitMapFull(false);
-        });
-      }
+
+      el.mapSliders.classList.remove("is-inert");
+      if (pane) pane.classList.toggle("is-assay-collapsed", collapse);
     }
     const stack = el.mapSliders && el.mapSliders.querySelector(".map-slider-stack");
     if (stack) stack.setAttribute("aria-disabled", collapse ? "true" : "false");
     [el.apiMin, el.apiMax, el.sulfurMax].forEach((inp) => {
       if (inp) inp.disabled = collapse;
+    });
+    return toggled;
+  }
+
+  /* One refit after the strip toggles — never animate. The old path ran
+     fitMapFull(true) from setLayer and again from rAF, which bounced the
+     map by about a chrome-row of pixels. */
+  function refitAfterAssayToggle() {
+    if (!state.map || state.route !== "home") return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!state.map || state.route !== "home") return;
+        sizeMapToBelt();
+        state.map.invalidateSize({ pan: false });
+        fitMapFull(false);
+        /* Consume the one-shot pane budget; keep strip delta for rotate. */
+        if (state._collapsedMapH) {
+          const mapEl = document.getElementById("map");
+          const w = mapEl?.clientWidth || window.innerWidth;
+          state._assayStripH = Math.max(
+            0,
+            state._collapsedMapH - Math.round(w / beltAspect())
+          );
+          state._collapsedMapH = 0;
+        }
+      });
     });
   }
 
