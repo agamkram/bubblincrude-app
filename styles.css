@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 314;
+  --bc-css: 315;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -254,6 +254,7 @@ html.pwa-standalone .app {
   display: block;
 }
 html:not(.app-home) #btn-search,
+html:not(.app-home) #btn-open-filters,
 html:not(.app-home) .topbar-tools,
 .topbar-tools[hidden],
 html.app-barrel .mode-toggle,
@@ -562,6 +563,11 @@ html:not(.app-barrel) .barrel-units {
   background: var(--bg-panel);
   z-index: 4;
 }
+/* Hubs / refineries / pipelines have no gravity or sulfur — collapse the
+   strip so the map takes the row back rather than showing dead thumbs. */
+.map-sliders.is-collapsed {
+  display: none;
+}
 .map-slider-stack {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -569,31 +575,16 @@ html:not(.app-barrel) .barrel-units {
   align-items: center;
   min-width: 0;
 }
+/* Filter lives next to Search in the topbar. Desktop keeps the left rail, so
+   the opener is sheet-mode only (≤1099px). */
 .btn-open-filters {
   display: none;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1px;
-  width: 52px;
-  margin: 0;
-  padding: 0 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-elev);
-  color: var(--text-dim);
-  font: inherit;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1.15;
-  cursor: pointer;
-  align-self: stretch;
+  gap: 4px;
 }
 .btn-open-filters-label,
 .btn-open-filters-count {
-  display: block;
+  display: inline;
 }
 .btn-open-filters-count {
   font-family: var(--mono);
@@ -601,10 +592,10 @@ html:not(.app-barrel) .barrel-units {
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+  color: var(--accent);
 }
 .btn-open-filters.is-on,
 .btn-open-filters[aria-expanded="true"] {
-  border-color: var(--accent);
   color: var(--accent);
   background: var(--accent-dim);
 }
@@ -710,27 +701,6 @@ html:not(.app-barrel) .barrel-units {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
   cursor: grab;
-}
-/* Hubs and refineries have no gravity/sulfur — keep the row, gray it out.
-   The Filter end-cap stays live so region filters still open. */
-.map-sliders.is-inert .map-slider-stack {
-  pointer-events: none;
-}
-.map-sliders.is-inert .filter-label,
-.map-sliders.is-inert .range-readout {
-  color: var(--text-mute);
-}
-.map-sliders.is-inert .dual-range-fill,
-.map-sliders.is-inert .solo-range-fill {
-  background: #6b7280;
-}
-.map-sliders.is-inert .dual-range input[type="range"]::-webkit-slider-thumb,
-.map-sliders.is-inert .solo-range input[type="range"]::-webkit-slider-thumb,
-.map-sliders.is-inert .dual-range input[type="range"]::-moz-range-thumb,
-.map-sliders.is-inert .solo-range input[type="range"]::-moz-range-thumb {
-  background: #8b929c;
-  cursor: default;
-  pointer-events: none;
 }
 .rail-inspector {
   grid-area: inspector;
@@ -2889,11 +2859,8 @@ html.pwa-standalone:not(.app-home) .view-page {
   .btn-filters-done {
     display: inline-flex;
   }
-  .map-sliders {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
   .btn-open-filters {
-    display: flex;
+    display: inline-flex;
   }
   .rail-inspector {
     display: none;
@@ -2974,7 +2941,6 @@ html.pwa-standalone:not(.app-home) .view-page {
     flex: 0 0 auto;
   }
   .map-sliders {
-    grid-template-columns: minmax(0, 1fr) auto;
     gap: 2px 8px;
     padding: 4px 14px 5px;
   }
@@ -3031,10 +2997,6 @@ html.pwa-standalone:not(.app-home) .view-page {
 @media (min-width: 700px) and (max-width: 1099px) {
   .map-pane {
     padding-bottom: max(17px, env(safe-area-inset-bottom, 0px));
-  }
-  /* One-line slider row — a count under Filter would grow the strip. */
-  .btn-open-filters-count {
-    display: none !important;
   }
 }
 

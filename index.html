@@ -106,7 +106,7 @@
     crossorigin=""
   />
   <!-- ?v= must be bumped with APP_VERSION in app.js and CACHE in sw.js. -->
-  <link rel="stylesheet" href="/styles.css?v=314" />
+  <link rel="stylesheet" href="/styles.css?v=315" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -146,6 +146,17 @@
             aria-label="Oil price charts on oilprice.com"
           ><img src="/oilprice-32.png" width="16" height="16" alt="" /></a>
           <button type="button" class="nav-link" id="btn-search" title="Search" aria-pressed="false" aria-controls="search-input">Search</button>
+          <button
+            type="button"
+            class="nav-link btn-open-filters"
+            id="btn-open-filters"
+            aria-expanded="false"
+            aria-controls="filters-rail"
+            title="Filters"
+          >
+            <span class="btn-open-filters-label">Filter</span>
+            <span class="btn-open-filters-count" id="filters-count" hidden></span>
+          </button>
           <a
             href="/about"
             class="brand-info"
@@ -313,16 +324,6 @@
               <div class="range-readout" id="sulfur-readout">≤ 5.2 wt%</div>
             </div>
             </div>
-            <button
-              type="button"
-              class="btn-open-filters"
-              id="btn-open-filters"
-              aria-expanded="false"
-              aria-controls="filters-rail"
-            >
-              <span class="btn-open-filters-label">Filter</span>
-              <span class="btn-open-filters-count" id="filters-count" hidden></span>
-            </button>
           </div>
           <div class="compare-tray" id="compare-tray" aria-label="Compare tray">
             <div class="tray-chips" id="tray-chips"></div>
@@ -389,12 +390,12 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="/data.js?v=314"></script>
-  <script src="/sites.js?v=314"></script>
-  <script src="/hubs.js?v=314"></script>
-  <script src="/refineries.js?v=314"></script>
-  <script src="/pipelines.js?v=314"></script>
-  <script src="/app.js?v=314"></script>
+  <script src="/data.js?v=315"></script>
+  <script src="/sites.js?v=315"></script>
+  <script src="/hubs.js?v=315"></script>
+  <script src="/refineries.js?v=315"></script>
+  <script src="/pipelines.js?v=315"></script>
+  <script src="/app.js?v=315"></script>
   <script>
     // Local previews must never be cached. Offline support is a production
     // feature; on a dev box it only serves you files you already changed.
@@ -405,7 +406,7 @@
     // This file is served no-store, so EXPECTED is always current. If the
     // JS or CSS the browser actually loaded is older, a stale service worker
     // is in the way: purge it and reload once (guarded so it cannot loop).
-    var EXPECTED = "v314";
+    var EXPECTED = "v315";
 
     function loadedVersions() {
       var css = getComputedStyle(document.documentElement)

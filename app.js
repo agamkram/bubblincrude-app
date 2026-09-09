@@ -43,7 +43,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v314";
+  const APP_VERSION = "v315";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -3066,8 +3066,8 @@
   function renderActiveChips() {
     const chips = [];
     const f = state.filters;
-    /* Same test syncMapSliders() uses to disable the sliders: a layer with no
-       gravity or sulfur must not show a chip claiming to filter on it. */
+    /* Same test syncMapSliders() uses: a layer with no gravity or sulfur must
+       not show a chip claiming to filter on it. */
     const assayInert = !layerHasAssay();
     if (!assayInert) {
       if (f.apiMin !== API_FLOOR || f.apiMax !== API_CEIL) {
@@ -3240,14 +3240,26 @@
   }
 
   function syncMapSliders() {
-    const inert = !layerHasAssay();
+    const collapse = !layerHasAssay();
     if (el.mapSliders) {
-      el.mapSliders.classList.toggle("is-inert", inert);
+      const wasCollapsed = el.mapSliders.classList.contains("is-collapsed");
+      el.mapSliders.classList.toggle("is-collapsed", collapse);
+      el.mapSliders.classList.remove("is-inert");
+      /* Map stage flexes into the freed strip on desktop/tablet; Leaflet only
+         notices after invalidateSize. Refit when the strip appears or goes. */
+      if (wasCollapsed !== collapse && state.map && state.route === "home") {
+        requestAnimationFrame(() => {
+          if (!state.map) return;
+          sizeMapToBelt();
+          state.map.invalidateSize({ pan: false });
+          fitMapFull(false);
+        });
+      }
     }
     const stack = el.mapSliders && el.mapSliders.querySelector(".map-slider-stack");
-    if (stack) stack.setAttribute("aria-disabled", inert ? "true" : "false");
+    if (stack) stack.setAttribute("aria-disabled", collapse ? "true" : "false");
     [el.apiMin, el.apiMax, el.sulfurMax].forEach((inp) => {
-      if (inp) inp.disabled = inert;
+      if (inp) inp.disabled = collapse;
     });
   }
 
@@ -4833,7 +4845,7 @@
       "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products. This page is the circled <strong>i</strong>.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
       "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay. <strong>Pipelines</strong> are the trunk lines between them; color is status and thickness is published capacity.</p>",
-      "<p>World opens on <strong>WTI</strong> so the inspector is a real card — Drake Well, Cushing, and Motiva Port Arthur on the other layers. Tap a pin, or <strong>Search</strong> any name — streams, sites, hubs, and plants in one list. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search pick, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
+      "<p>World opens on <strong>WTI</strong> so the inspector is a real card — Drake Well, Cushing, and Motiva Port Arthur on the other layers. Tap a pin, or <strong>Search</strong> any name — streams, sites, hubs, plants, and pipelines in one list. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search pick, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> sits next to Search and opens the same controls as the left rail; gravity and sulfur sliders hide on hubs, refineries, and pipelines so the map can use that strip.</p>",
       "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Some grades share a hub or loading coordinate; pins stay stacked on that point, and a tap opens a list instead of grabbing whichever marker is on top. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
       "<p>Each stream card cites a source. <strong>Sample year</strong> is the assay date when we know it. <strong>Retrieved</strong> is when the record was pulled — not when the oil was sampled.</p>",
