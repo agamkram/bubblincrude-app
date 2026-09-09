@@ -43,7 +43,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v313";
+  const APP_VERSION = "v314";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -1150,6 +1150,7 @@
       if (!state.map || state._fittingFull) return;
       stayInBelt();
       applyDragLock();
+      syncPipelineWeights();
       const floor = state._fullZoom;
       if (floor == null) return;
       if (state.map.getZoom() <= floor + 0.01) fitMapFull(true);
@@ -1459,13 +1460,34 @@
     return bounds && bounds.isValid() ? bounds : null;
   }
 
-  /* Thicker for a bigger line, but only across a narrow range: scaling stroke
-     with capacity would make a 5 mb/d trunk a slab and hide everything under
-     it. Lines with no published capacity draw thin rather than vanishing. */
+  /* Stroke width is mostly about zoom: at world view every line must stay a
+     hairline or a dense corridor turns into a slab. Capacity is only a small
+     bump on top, never the main driver — a 5 mb/d trunk at zoom 2 still has
+     to share the map with a hundred neighbours. */
   function pipelineWeight(s, selected) {
+    const z = state.map ? state.map.getZoom() : 2;
+    const base = z < 3 ? 0.6 : z < 4.5 ? 0.9 : z < 6.5 ? 1.2 : z < 8 ? 1.6 : 2;
     const kbd = Number(s.capacity_kbd) || 0;
-    let w = kbd >= 1000 ? 3 : kbd >= 300 ? 2.4 : kbd > 0 ? 1.8 : 1.4;
-    return selected ? w + 2 : w;
+    const bump = kbd >= 1000 ? 0.5 : kbd >= 300 ? 0.25 : 0;
+    const w = base + bump;
+    return selected ? Math.max(w + 1.2, 2) : w;
+  }
+
+  /* Restyle visible strokes on zoom without rebuilding 1,093 polylines. */
+  function syncPipelineWeights() {
+    if (state.layer !== "pipelines" || !state.markers) return;
+    const selId = selectedPinId();
+    state.markers.forEach((line, id) => {
+      if (!line || !line.setStyle) return;
+      const s = getPipeline(id);
+      if (!s) return;
+      const on = id === selId;
+      line.setStyle({
+        weight: pipelineWeight(s, on),
+        color: pipelineColor(s, on),
+        opacity: on ? 1 : s.status === "construction" ? 0.75 : 0.85,
+      });
+    });
   }
 
   function pipelineColor(s, selected) {
@@ -3369,7 +3391,7 @@
       return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, sand loading, teal blend.";
     }
     if (state.layer === "pipelines") {
-      return "Crude oil trunk lines that are operating (gold) or being built (dashed blue). Thicker means bigger published capacity. Routes are simplified for a world map. GEM Global Oil Infrastructure Tracker (CC BY 4.0).";
+      return "Crude oil trunk lines that are operating (gold) or being built (dashed blue). Hairlines at world zoom; they fatten as you zoom in, with a small extra bump for bigger published capacity. Routes are simplified for a world map. GEM Global Oil Infrastructure Tracker (CC BY 4.0).";
     }
     if (state.layer === "refineries") {
       return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026. Other kb/d is Climate TRACE (CC BY 4.0), attached only when the plant is a unique match — not invented.";
@@ -4856,7 +4878,7 @@
       '<dt id="g-production">Output (kb/d)</dt><dd>A field\'s crude production in thousand barrels per day, from Global Energy Monitor\'s extraction tracker (CC BY 4.0). Same unit as refinery capacity, so a field and a plant can be read against each other. Condensate is listed separately, never folded in. Flagged an estimate when the tracker\'s unit boundary does not match the field on the card.</dd>',
       '<dt id="g-reserves">Reserves (million bbl)</dt><dd>Remaining recoverable oil on the record, in million barrels, from the same tracker. Reserves are reported under competing classifications, so the largest figure on the record is shown rather than adding incompatible definitions together. A blank means no published figure we trust.</dd>',
       '<dt id="g-throughput">Pipeline capacity (kb/d)</dt><dd>Design throughput of a crude trunk line, thousand barrels per day, from GEM\'s Global Oil Infrastructure Tracker (CC BY 4.0). Not measured flow: lines run below capacity, and many are bidirectional. Same unit as refinery capacity so the two compare directly.</dd>',
-      "<dt>Pipeline</dt><dd>A trunk line that moves crude between fields, terminals, and refineries. On the map it is a route, not a dot — gold operating, dashed blue under construction, thicker for bigger published capacity. Gathering lines and product lines are not included.</dd>",
+      "<dt>Pipeline</dt><dd>A trunk line that moves crude between fields, terminals, and refineries. On the map it is a route, not a dot — gold operating, dashed blue under construction. Stroke width follows zoom first (hairlines at world view), with a small bump for bigger published capacity. Gathering lines and product lines are not included.</dd>",
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — Ghawar, Prudhoe Bay, East Texas.</dd>",
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>",
       "<dt>Play</dt><dd>A repeatable exploration or development concept within a basin (Eagle Ford, Bakken, Vaca Muerta).</dd>",
