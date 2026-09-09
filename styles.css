@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 320;
+  --bc-css: 321;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -174,14 +174,6 @@ html.pwa-standalone .app {
   min-width: 0;
 }
 
-.brand-line {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-width: 0;
-}
-
 .brand-info {
   display: inline-flex;
   align-items: center;
@@ -212,6 +204,7 @@ html.pwa-standalone .app {
 .brand-line {
   display: flex;
   align-items: baseline;
+  justify-content: center;
   gap: 8px;
   min-width: 0;
 }

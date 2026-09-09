@@ -45,7 +45,7 @@
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). Visible product version is
      DISPLAY_VERSION next to the title — start at 1, bump when Mark says so. */
-  const APP_VERSION = "v320";
+  const APP_VERSION = "v321";
   const DISPLAY_VERSION = "1";
   window.__APP_VERSION = APP_VERSION;
   window.__DISPLAY_VERSION = DISPLAY_VERSION;
@@ -3269,20 +3269,11 @@
     if (el.mapSliders) {
       const wasCollapsed = el.mapSliders.classList.contains("is-collapsed");
       toggled = wasCollapsed !== collapse;
-      if (toggled && collapse) {
-        rememberAssayStripHeight();
-        el.mapSliders.classList.add("is-collapsed");
-        sizeMapToBelt();
-      } else if (toggled && !collapse) {
-        el.mapSliders.classList.remove("is-collapsed");
-        rememberAssayStripHeight();
-        sizeMapToBelt();
-      } else {
-        if (!collapse) rememberAssayStripHeight();
-        el.mapSliders.classList.toggle("is-collapsed", collapse);
-        if (collapse) sizeMapToBelt();
-      }
-      el.mapSliders.classList.remove("is-inert");
+      /* Measure only while the strip is on screen. */
+      if (!wasCollapsed) rememberAssayStripHeight();
+      el.mapSliders.classList.toggle("is-collapsed", collapse);
+      if (!collapse) rememberAssayStripHeight();
+      if (toggled || collapse) sizeMapToBelt();
     }
     const stack = el.mapSliders && el.mapSliders.querySelector(".map-slider-stack");
     if (stack) stack.setAttribute("aria-disabled", collapse ? "true" : "false");
