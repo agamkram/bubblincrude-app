@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 321;
+  --bc-css: 322;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -201,13 +201,6 @@ html.pwa-standalone .app {
 
 /* Integer font metrics: fractional title height made the topbar 111.727px tall,
    which put the map — and every marker — on a subpixel row. */
-.brand-line {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
-  min-width: 0;
-}
 .brand-title {
   margin: 0;
   font-family: Michroma, "IBM Plex Sans", system-ui, sans-serif;
@@ -217,17 +210,6 @@ html.pwa-standalone .app {
   line-height: 28px;
   white-space: nowrap;
   text-transform: none;
-}
-.brand-version {
-  flex: 0 0 auto;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 28px;
-  letter-spacing: 0.02em;
-  color: var(--text-mute);
-  font-variant-numeric: tabular-nums;
-  user-select: none;
 }
 
 .brand-sub {
@@ -2894,10 +2876,6 @@ html.pwa-standalone:not(.app-home) .view-page {
   }
   .brand-title {
     font-size: 22px;
-    line-height: 24px;
-  }
-  .brand-version {
-    font-size: 11px;
     line-height: 24px;
   }
   .topbar-nav {

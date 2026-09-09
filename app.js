@@ -43,12 +43,9 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  /* Cache-busting build id (bump-version.py). Visible product version is
-     DISPLAY_VERSION next to the title — start at 1, bump when Mark says so. */
-  const APP_VERSION = "v321";
-  const DISPLAY_VERSION = "1";
+  /* Cache-busting build id (bump-version.py). */
+  const APP_VERSION = "v322";
   window.__APP_VERSION = APP_VERSION;
-  window.__DISPLAY_VERSION = DISPLAY_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
   const COMPARE_MAX = 5;
@@ -1479,16 +1476,11 @@
     return bounds && bounds.isValid() ? bounds : null;
   }
 
-  /* Stroke width is mostly about zoom: at world view every line must stay a
-     hairline or a dense corridor turns into a slab. Capacity is only a small
-     bump on top, never the main driver — a 5 mb/d trunk at zoom 2 still has
-     to share the map with a hundred neighbours. */
+  /* Stroke width follows zoom only: at world view every line stays a hairline
+     or a dense corridor turns into a slab. Capacity is not drawn as thickness. */
   function pipelineWeight(s, selected) {
     const z = state.map ? state.map.getZoom() : 2;
-    const base = z < 3 ? 0.6 : z < 4.5 ? 0.9 : z < 6.5 ? 1.2 : z < 8 ? 1.6 : 2;
-    const kbd = Number(s.capacity_kbd) || 0;
-    const bump = kbd >= 1000 ? 0.5 : kbd >= 300 ? 0.25 : 0;
-    const w = base + bump;
+    const w = z < 3 ? 0.6 : z < 4.5 ? 0.9 : z < 6.5 ? 1.2 : z < 8 ? 1.6 : 2;
     return selected ? Math.max(w + 1.2, 2) : w;
   }
 
@@ -3442,7 +3434,7 @@
       return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, sand loading, teal blend.";
     }
     if (state.layer === "pipelines") {
-      return "Crude oil trunk lines that are operating (gold) or being built (dashed blue). Hairlines at world zoom; they fatten as you zoom in, with a small extra bump for bigger published capacity. Routes are simplified for a world map. GEM Global Oil Infrastructure Tracker (CC BY 4.0).";
+      return "Crude oil trunk lines that are operating (gold) or being built (dashed blue). Hairlines at world zoom; they fatten as you zoom in. Capacity is not drawn as thickness. Routes are simplified for a world map. GEM Global Oil Infrastructure Tracker (CC BY 4.0).";
     }
     if (state.layer === "refineries") {
       return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026. Other kb/d is Climate TRACE (CC BY 4.0), attached only when the plant is a unique match — not invented.";
@@ -4929,7 +4921,7 @@
       '<dt id="g-production">Output (kb/d)</dt><dd>A field\'s crude production in thousand barrels per day, from Global Energy Monitor\'s extraction tracker (CC BY 4.0). Same unit as refinery capacity, so a field and a plant can be read against each other. Condensate is listed separately, never folded in. Flagged an estimate when the tracker\'s unit boundary does not match the field on the card.</dd>',
       '<dt id="g-reserves">Reserves (million bbl)</dt><dd>Remaining recoverable oil on the record, in million barrels, from the same tracker. Reserves are reported under competing classifications, so the largest figure on the record is shown rather than adding incompatible definitions together. A blank means no published figure we trust.</dd>',
       '<dt id="g-throughput">Pipeline capacity (kb/d)</dt><dd>Design throughput of a crude trunk line, thousand barrels per day, from GEM\'s Global Oil Infrastructure Tracker (CC BY 4.0). Not measured flow: lines run below capacity, and many are bidirectional. Same unit as refinery capacity so the two compare directly.</dd>',
-      "<dt>Pipeline</dt><dd>A trunk line that moves crude between fields, terminals, and refineries. On the map it is a route, not a dot — gold operating, dashed blue under construction. Stroke width follows zoom first (hairlines at world view), with a small bump for bigger published capacity. Gathering lines and product lines are not included.</dd>",
+      "<dt>Pipeline</dt><dd>A trunk line that moves crude between fields, terminals, and refineries. On the map it is a route, not a dot — gold operating, dashed blue under construction. Stroke width follows zoom only (hairlines at world view). Gathering lines and product lines are not included.</dd>",
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — Ghawar, Prudhoe Bay, East Texas.</dd>",
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>",
       "<dt>Play</dt><dd>A repeatable exploration or development concept within a basin (Eagle Ford, Bakken, Vaca Muerta).</dd>",
@@ -4961,9 +4953,7 @@
          a mismatch is legible here instead of needing the console. JS and CSS
          are shown apart because they go stale independently. */
       '<div class="about-block"><h3>Build</h3><p class="about-build">' +
-        "version " +
-        escapeHtml(DISPLAY_VERSION) +
-        " · app " +
+        "app " +
         escapeHtml(APP_VERSION) +
         " · styles " +
         escapeHtml(loadedCssVersion()) +
@@ -5796,8 +5786,6 @@
 
   function init() {
     cacheEls();
-    const brandVer = $("brand-version");
-    if (brandVer) brandVer.textContent = DISPLAY_VERSION;
     blockPageZoomGestures();
     pinShellViewport();
     forgetStorage();
