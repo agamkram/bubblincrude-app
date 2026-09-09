@@ -43,7 +43,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v315";
+  const APP_VERSION = "v316";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -989,7 +989,13 @@
       return false;
     }
     const w = stage.clientWidth || pane.clientWidth || window.innerWidth;
-    const h = Math.round(w / beltAspect());
+    let h = Math.round(w / beltAspect());
+    /* Phone map row is content-sized (`auto`). Collapsing the assay strip
+       would otherwise hand those pixels to the inspector. Add them to the
+       map instead so Pipelines/Hubs/Refineries grow into the freed strip. */
+    if (el.mapSliders && el.mapSliders.classList.contains("is-collapsed")) {
+      h += state._assayStripH || 72;
+    }
     pane.classList.add("is-belt-cut");
     mapEl.style.height = h + "px";
     return true;
@@ -3243,10 +3249,21 @@
     const collapse = !layerHasAssay();
     if (el.mapSliders) {
       const wasCollapsed = el.mapSliders.classList.contains("is-collapsed");
+      /* Measure before hide — once collapsed, offsetHeight is 0. */
+      if (collapse && !wasCollapsed && el.mapSliders.offsetHeight > 0) {
+        state._assayStripH = el.mapSliders.offsetHeight;
+      }
       el.mapSliders.classList.toggle("is-collapsed", collapse);
       el.mapSliders.classList.remove("is-inert");
-      /* Map stage flexes into the freed strip on desktop/tablet; Leaflet only
-         notices after invalidateSize. Refit when the strip appears or goes. */
+      const pane = document.getElementById("map-pane");
+      if (pane) pane.classList.toggle("is-assay-collapsed", collapse);
+      if (!collapse) {
+        const h = el.mapSliders.offsetHeight;
+        if (h > 0) state._assayStripH = h;
+      }
+      /* Desktop/tablet: map-stage is flex:1 and grows on its own. Phone:
+         sizeMapToBelt() adds the cached strip height. Either way Leaflet
+         only notices after invalidateSize. */
       if (wasCollapsed !== collapse && state.map && state.route === "home") {
         requestAnimationFrame(() => {
           if (!state.map) return;
