@@ -44,7 +44,7 @@
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). */
-  const APP_VERSION = "v325";
+  const APP_VERSION = "v326";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -5617,10 +5617,6 @@
         return;
       }
       openSearch();
-    });
-
-    $("btn-reset-view")?.addEventListener("click", () => {
-      fitMapFull(true);
     });
 
     document.addEventListener("click", (e) => {

@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 325;
+  --bc-css: 326;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -980,8 +980,7 @@ input[type="range"] {
   color: var(--teal);
 }
 .color-btn,
-.color-help,
-.map-reset {
+.color-help {
   min-height: 24px;
   min-width: 24px;
   padding: 0 8px;
@@ -1009,25 +1008,8 @@ input[type="range"] {
 .color-help[aria-expanded="true"]:focus {
   color: var(--teal);
 }
-.map-reset {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: rgba(14, 17, 22, 0.92);
-  backdrop-filter: blur(8px);
-  font-weight: 500;
-  font-size: 10px;
-  padding: 0 8px;
-}
-.map-reset[aria-pressed="true"] {
-  background: var(--teal-dim);
-  color: var(--teal);
-  border-color: var(--teal);
-}
 /* Real pointer only — touch leaves :hover stuck and washed pressed/expanded gold. */
 @media (hover: hover) {
-  .map-reset:hover:not([aria-pressed="true"]) {
-    color: var(--text);
-  }
   .color-btn:hover:not([aria-pressed="true"]) {
     color: var(--text);
   }
