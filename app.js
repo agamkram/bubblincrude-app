@@ -45,7 +45,7 @@
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). Visible product version is
      DISPLAY_VERSION next to the title — start at 1, bump when Mark says so. */
-  const APP_VERSION = "v318";
+  const APP_VERSION = "v319";
   const DISPLAY_VERSION = "1";
   window.__APP_VERSION = APP_VERSION;
   window.__DISPLAY_VERSION = DISPLAY_VERSION;
@@ -980,6 +980,16 @@
     return h > 0 ? w / h : 2;
   }
 
+  /* Cache the assay strip height while it is visible. When the strip collapses
+     on hubs/refineries/pipelines, sizeMapToBelt adds this to the belt height
+     so the map grows into the gap and the inspector/tray stay put. Opening
+     size is still exactly the Mercator belt — do not change that formula. */
+  function rememberAssayStripHeight() {
+    if (!el.mapSliders || el.mapSliders.classList.contains("is-collapsed")) return;
+    const h = el.mapSliders.offsetHeight;
+    if (h > 0) state._assayStripH = h;
+  }
+
   function sizeMapToBelt() {
     if (state.inspExpanded) return false;
     const mapEl = document.getElementById("map");
@@ -992,16 +1002,11 @@
       pane.classList.remove("is-belt-cut");
       return false;
     }
-    /* Collapsed assay: CSS locks the pane height and the map fills the stage
-       above the compare tray. Do not set an inline pixel height — that fought
-       the lock and left a tray-sized gap. */
-    if (el.viewHome && el.viewHome.classList.contains("is-assay-collapsed")) {
-      mapEl.style.height = "";
-      pane.classList.add("is-belt-cut");
-      return true;
-    }
     const w = stage.clientWidth || pane.clientWidth || window.innerWidth;
-    const h = Math.round(w / beltAspect());
+    let h = Math.round(w / beltAspect());
+    if (el.mapSliders && el.mapSliders.classList.contains("is-collapsed")) {
+      h += state._assayStripH || 0;
+    }
     pane.classList.add("is-belt-cut");
     mapEl.style.height = h + "px";
     return true;
@@ -1110,7 +1115,6 @@
     if (state._mapSizeWatch || typeof ResizeObserver === "undefined") return;
     const stage = document.querySelector(".map-stage");
     if (!stage) return;
-    let lastKey = "";
     let timer = null;
     state._mapSizeWatch = new ResizeObserver(() => {
       if (!state.map || state.route !== "home" || state._fittingFull || state.inspExpanded) return;
@@ -1122,8 +1126,11 @@
         const sz = state.map.getSize();
         if (!sz || sz.x < 2 || sz.y < 2) return;
         const key = sz.x + "x" + sz.y;
-        if (key === lastKey) return;
-        lastKey = key;
+        if (key === state._mapSizeKey) return;
+        state._mapSizeKey = key;
+        /* Assay show/hide already sized the map; a full belt fit here is the
+           bounce (zoom jumps into the taller pane, then settles). */
+        if (state._skipMapResizeFit) return;
         fitMapFull(false);
       }, 40);
     });
@@ -3255,41 +3262,26 @@
     });
   }
 
-  /* Returns true when the assay strip was shown or hidden, so the caller can
-     do one quiet refit after layout — a second animated fit was the bounce. */
+  /* Returns true when the assay strip was shown or hidden. */
   function syncMapSliders() {
     const collapse = !layerHasAssay();
     let toggled = false;
     if (el.mapSliders) {
       const wasCollapsed = el.mapSliders.classList.contains("is-collapsed");
       toggled = wasCollapsed !== collapse;
-      const pane = document.getElementById("map-pane");
-      const home = el.viewHome || document.getElementById("view-home");
-      const phone = window.innerWidth <= 699;
-
       if (toggled && collapse) {
-        /* Freeze the pane at its current height, then hide the strip. The map
-           stage fills what the strip leaves behind (CSS). Inspector does not
-           move. */
-        if (phone && pane && home) {
-          home.style.setProperty("--map-pane-h", pane.offsetHeight + "px");
-          home.classList.add("is-assay-collapsed");
-        }
+        rememberAssayStripHeight();
         el.mapSliders.classList.add("is-collapsed");
-        if (pane) pane.classList.add("is-assay-collapsed");
         sizeMapToBelt();
       } else if (toggled && !collapse) {
         el.mapSliders.classList.remove("is-collapsed");
-        if (home) {
-          home.classList.remove("is-assay-collapsed");
-          home.style.removeProperty("--map-pane-h");
-        }
-        if (pane) pane.classList.remove("is-assay-collapsed");
+        rememberAssayStripHeight();
         sizeMapToBelt();
       } else {
+        if (!collapse) rememberAssayStripHeight();
         el.mapSliders.classList.toggle("is-collapsed", collapse);
+        if (collapse) sizeMapToBelt();
       }
-
       el.mapSliders.classList.remove("is-inert");
     }
     const stack = el.mapSliders && el.mapSliders.querySelector(".map-slider-stack");
@@ -3300,17 +3292,20 @@
     return toggled;
   }
 
-  /* One refit after the strip toggles — never animate. */
+  /* After the strip toggles: grow/shrink the map by the strip height, tell
+     Leaflet the new size, do not re-fit the world (that was the bounce). */
   function refitAfterAssayToggle() {
     if (!state.map || state.route !== "home") return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (!state.map || state.route !== "home") return;
-        sizeMapToBelt();
-        state.map.invalidateSize({ pan: false });
-        fitMapFull(false);
-      });
-    });
+    state._skipMapResizeFit = true;
+    sizeMapToBelt();
+    state.map.invalidateSize({ pan: false });
+    const sz = state.map.getSize();
+    if (sz && sz.x >= 2 && sz.y >= 2) state._mapSizeKey = sz.x + "x" + sz.y;
+    /* ResizeObserver debounces ~40ms — keep the skip up past that. */
+    clearTimeout(state._skipMapResizeFitTimer);
+    state._skipMapResizeFitTimer = setTimeout(() => {
+      state._skipMapResizeFit = false;
+    }, 120);
   }
 
   function filtersUseSheet() {

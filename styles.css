@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 318;
+  --bc-css: 319;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -2935,31 +2935,6 @@ html.pwa-standalone:not(.app-home) .view-page {
     grid-template-areas:
       "map"
       "inspector";
-  }
-  /* Lock the map pane to its pre-collapse height and let the map stage fill
-     everything above the compare tray. That is the only reliable way to give
-     the strip's pixels to the map on a content-sized (`auto`) grid row —
-     measuring strip height alone kept coming up short by the tray. */
-  .view-home.is-assay-collapsed {
-    grid-template-rows: var(--map-pane-h, auto) minmax(0, 1fr);
-  }
-  .view-home.is-assay-collapsed .map-pane {
-    height: var(--map-pane-h);
-    max-height: var(--map-pane-h);
-    min-height: 0;
-  }
-  .view-home.is-assay-collapsed .map-stage {
-    flex: 1 1 auto;
-    min-height: 0;
-    aspect-ratio: auto;
-    position: relative;
-  }
-  .view-home.is-assay-collapsed .map {
-    position: absolute !important;
-    inset: 0;
-    width: 100% !important;
-    height: 100% !important;
-    flex: none !important;
   }
   .map-pane {
     display: flex;
