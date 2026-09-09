@@ -38,7 +38,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v310";
+  const APP_VERSION = "v311";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -179,6 +179,7 @@
       sulfurMax: S_CEIL,
       regions: [],
       kinds: [],
+      outputMin: 0,
       hasDistill: false,
       hasSara: false,
       hasMetals: false,
@@ -281,6 +282,26 @@
   }
   function refineryCapBit(s) {
     return s && s.capacity_kbd != null ? capacityLabel(s.capacity_kbd) + " kb/d" : "";
+  }
+  /* Rates stay in kb/d across every layer so a field, a hub and a refinery
+     can be read against each other without converting in your head. */
+  function rateLabel(kbd) {
+    if (kbd == null || kbd === "") return "—";
+    const n = Number(kbd);
+    if (!isFinite(n)) return "—";
+    return Math.round(n).toLocaleString("en-US");
+  }
+  /* A field's output only counts once: GEM records some units inside a larger
+     one, and adding a parent to its own member would invent barrels. */
+  function siteRate(site) {
+    return site && site.nested_in == null && site.production_kbd != null
+      ? Number(site.production_kbd)
+      : 0;
+  }
+  function sitesRateTotal(sites) {
+    let total = 0;
+    for (const s of sites || []) total += siteRate(s);
+    return total;
   }
   function tempLabel(c) {
     if (c == null) return "—";
@@ -555,6 +576,9 @@
       if (s.sulfur_wt == null || s.sulfur_wt <= DATA.SWEET_S_MAX) return false;
     }
     if (s.sulfur_wt != null && s.sulfur_wt > f.sulfurMax) return false;
+    /* Asking for big fields hides the ones with no figure on record rather
+       than assuming a missing number means a small field. */
+    if (f.outputMin > 0 && !(siteRate(s) >= f.outputMin)) return false;
     return true;
   }
 
@@ -642,11 +666,21 @@
   }
   function placeChipRow(title, items, attr) {
     if (!items.length) return "";
-    let html =
-      '<div class="block"><div class="block-title">' +
-      title +
-      '</div><div class="related-list">';
+    /* Output belongs to the field that produces it, not to the grade, so the
+       rate rides the chip rather than becoming a headline for the stream. A
+       field can feed several grades and its own domestic refining, so this
+       subtotal is upstream context, not the stream's export rate. */
+    const total = sitesRateTotal(items);
+    let html = '<div class="block"><div class="block-title">' + title;
+    if (total > 0) {
+      html +=
+        ' <span class="block-note">fields on record total ' +
+        rateLabel(total) +
+        " kb/d</span>";
+    }
+    html += '</div><div class="related-list">';
     for (const r of items) {
+      const rate = siteRate(r);
       html +=
         '<button type="button" class="related-chip" ' +
         attr +
@@ -654,6 +688,9 @@
         escapeHtml(r.id) +
         '">' +
         escapeHtml(r.name) +
+        (rate > 0
+          ? ' <span class="chip-rate">' + rateLabel(rate) + " kb/d</span>"
+          : "") +
         "</button>";
     }
     html += "</div></div>";
@@ -2473,6 +2510,51 @@
       null
     );
     html += "</div>";
+    if (s.production_kbd != null || s.reserves_mmbbl != null) {
+      html += '<div class="quality-strip">';
+      if (s.production_kbd != null) {
+        html += metricTile(
+          "Output",
+          rateLabel(s.production_kbd),
+          "kb/d",
+          "mute",
+          "production"
+        );
+      }
+      if (s.condensate_kbd != null) {
+        html += metricTile(
+          "Condensate",
+          rateLabel(s.condensate_kbd),
+          "kb/d",
+          "mute",
+          "production"
+        );
+      }
+      if (s.reserves_mmbbl != null) {
+        html += metricTile(
+          "Reserves",
+          rateLabel(s.reserves_mmbbl),
+          "million bbl",
+          "mute",
+          "reserves"
+        );
+      }
+      html += "</div>";
+      html += '<p class="insp-blurb" style="margin-top:8px">';
+      html +=
+        s.production_year != null
+          ? "Reported output for " + escapeHtml(String(s.production_year)) + ". "
+          : "Latest reported output. ";
+      html += flagBtn((s.flags || {}).production_kbd, "Output");
+      if (s.nested_in) {
+        const parent = getSite(s.nested_in);
+        html +=
+          " This field's barrels are already counted inside " +
+          escapeHtml(parent ? parent.name : s.nested_in) +
+          ", so the two do not add up.";
+      }
+      html += "</p>";
+    }
     if (s.api != null || s.sulfur_wt != null) {
       html +=
         '<p class="insp-blurb" style="margin-top:8px">Typical field values for map color and filters — not a commercial assay. ' +
@@ -2748,6 +2830,10 @@
       }
     }
     for (const r of f.regions) chips.push(chipDismiss(r, "region:" + r));
+    /* Only siteMatches tests output, so the chip belongs to that layer alone. */
+    if (state.layer === "sites" && f.outputMin > 0) {
+      chips.push(chipDismiss("Output ≥ " + f.outputMin + " kb/d", "output"));
+    }
     /* Kind and assay-completeness only narrow streams; siteMatches/hubMatches
        ignore them. Showing the chip on another layer claimed a filter was
        active while every pin stayed on the map. */
@@ -2802,6 +2888,9 @@
       const k = key.slice(5);
       f.kinds = f.kinds.filter((x) => x !== k);
       syncCheckboxes();
+    } else if (key === "output") {
+      f.outputMin = 0;
+      syncOutputSeg();
     } else if (key === "dist") f.hasDistill = false;
     else if (key === "sara") f.hasSara = false;
     else if (key === "metals") f.hasMetals = false;
@@ -2879,6 +2968,17 @@
     });
   }
 
+  function syncOutputSeg() {
+    document.querySelectorAll("[data-output]").forEach((btn) => {
+      btn.setAttribute(
+        "aria-pressed",
+        Number(btn.getAttribute("data-output")) === state.filters.outputMin
+          ? "true"
+          : "false"
+      );
+    });
+  }
+
   function syncCheckboxes() {
     el.regionFilters.querySelectorAll("input").forEach((inp) => {
       inp.checked = state.filters.regions.includes(inp.value);
@@ -2912,6 +3012,9 @@
       const g = block.getAttribute("data-filter-group");
       let show = true;
       if (g === "sulfur-class") show = assay;
+      /* Only sites carry a production rate, so the output filter would be a
+         dead control on every other layer. */
+      else if (g === "output") show = layer === "sites";
       else if (g === "kind" || g === "completeness" || g === "saved") show = streams;
       block.classList.toggle("is-layer-hidden", !show);
     });
@@ -3023,10 +3126,20 @@
     if (state.layer === "refineries") {
       return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026. Other kb/d is Climate TRACE (CC BY 4.0), attached only when the plant is a unique match — not invented.";
     }
+    const output =
+      state.layer === "sites"
+        ? " Pin size is not output — use the Field output filter to keep only the big ones."
+        : "";
     if (state.colorMode === "sulfur") {
-      return "Sweet is ≤ 0.5 wt% S. The ramp runs 0% to 3%+. Grey means no sulfur in the record.";
+      return (
+        "Sweet is ≤ 0.5 wt% S. The ramp runs 0% to 3%+. Grey means no sulfur in the record." +
+        output
+      );
     }
-    return "The ramp runs 15° API (heavy) to 45°+ (light). Grey means no gravity in the record.";
+    return (
+      "The ramp runs 15° API (heavy) to 45°+ (light). Grey means no gravity in the record." +
+      output
+    );
   }
 
   /* Every layer is a different pile of dots and the filters hide them
@@ -3855,6 +3968,24 @@
         "kb/d"
       );
     }
+    /* Field output shares the kb/d scale with refinery capacity, so a field
+       and the plant that could run it read against each other directly. */
+    metricsHtml += metricBarsBlock(
+      streams,
+      "output",
+      "Field output",
+      (s, i) => (pins[i].kind === "site" ? siteRate(s) || null : null),
+      (v) => rateLabel(v),
+      "kb/d"
+    );
+    metricsHtml += metricBarsBlock(
+      streams,
+      "reserves",
+      "Reserves",
+      (s, i) => (pins[i].kind === "site" ? s.reserves_mmbbl : null),
+      (v) => rateLabel(v),
+      "million bbl"
+    );
     if (metricsHtml) {
       html +=
         '<div class="compare-card"><h3>Shared metrics</h3><div class="metric-bars">' +
@@ -4452,6 +4583,10 @@
       "<p><a href=\"/cuts\">Cuts</a> is how a still slices a barrel by boiling range — first at atmospheric pressure, then the heavy bottoms again under vacuum so they can be split without burning. <a href=\"/products\">Products</a> is what commerce takes from those slices: fuels, chemicals, asphalt, coke, wax, sulfur. Together they are <strong>Barrel</strong>. Nothing in that slate is trash. Rich/poor notes on cut cards are typical patterns, not measured yields for every stream.</p></div>",
       '<div class="about-block"><h3>Refinery capacity</h3>',
       "<p>Capacity is atmospheric crude distillation, thousand barrels per calendar day, when a published figure is on the pin. US numbers are EIA Form EIA-820, operable crude as of 1 January 2026. Other numbers are Climate TRACE (CC BY 4.0), attached only when one plant and one published row clearly agree. A missing kb/d means we do not have a number we trust on that yard. Wrong barrels on the wrong plant is worse than a blank. Plants are not yet linked to the crudes they run.</p></div>",
+      '<div class="about-block"><h3>Field output and reserves</h3>',
+      "<p>Site cards show a field's crude output in thousand barrels per day and its oil reserves in million barrels, from Global Energy Monitor's Global Oil and Gas Extraction Tracker (March 2026 release, CC BY 4.0). Crude and condensate are kept apart rather than added, because a gas field's condensate is not crude production.</p>",
+      "<p>A field is matched to that catalog only when the name and the location agree — proximity alone is not enough, since Lula sits 7 km from Lapa and they are different fields. Where the catalog's boundary does not line up with the field on the card (one phase of a multi-phase development, or two fields bundled as one unit), the number is flagged as an estimate. Where a field's barrels are already counted inside a larger unit on another card, the card says so, so the two are never added together. Roughly two-thirds of active fields carry a figure; a blank means we do not have one we trust.</p>",
+      "<p>A stream card totals the fields on its record, which is upstream context rather than that grade's export rate — a field can feed several grades and its own domestic refining. Basins, plays, and historic sites carry no output by design.</p></div>",
       '<div class="about-block"><h3>Sources and map</h3>',
       "<p>Assays are curated from public producer and compilation notes (EIA, Pemex, PDVSA, Aramco, ADNOC, CAPP, CrudeMonitor, Platts, refining handbooks). Each stream card shows its source. Refinery locations are OpenStreetMap (ODbL) plus curated yards OSM missed, with EIA or TRACE capacity as above. Site pins are approximate.</p>",
       '<p>Basemap by <a href="https://carto.com/" rel="noopener" target="_blank">CARTO</a> Dark Matter, built on <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">OpenStreetMap</a>. Map library: <a href="https://leafletjs.com/" rel="noopener" target="_blank">Leaflet</a>. After the first visit the app shell and data cache for offline use; map tiles still need a network.</p></div>',
@@ -4466,6 +4601,8 @@
       "<dt>Hub</dt><dd>A commercial pricing, storage, loading, or blend point (Cushing, Midland, LOOP, Rotterdam). Geography and role — not an assay.</dd>",
       "<dt>Refinery</dt><dd>A plant that turns crude into products. The layer is place, operator, notes, and published capacity when we have it — not an assay.</dd>",
       '<dt id="g-capacity">Capacity (kb/d)</dt><dd>Atmospheric crude distillation, thousand barrels per calendar day. US figures are EIA Form EIA-820 as of 1 January 2026. Other figures are Climate TRACE (CC BY 4.0). Omitted when no published number is on the record.</dd>',
+      '<dt id="g-production">Output (kb/d)</dt><dd>A field\'s crude production in thousand barrels per day, from Global Energy Monitor\'s extraction tracker (CC BY 4.0). Same unit as refinery capacity, so a field and a plant can be read against each other. Condensate is listed separately, never folded in. Flagged an estimate when the tracker\'s unit boundary does not match the field on the card.</dd>',
+      '<dt id="g-reserves">Reserves (million bbl)</dt><dd>Remaining recoverable oil on the record, in million barrels, from the same tracker. Reserves are reported under competing classifications, so the largest figure on the record is shown rather than adding incompatible definitions together. A blank means no published figure we trust.</dd>',
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — Ghawar, Prudhoe Bay, East Texas.</dd>",
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>",
       "<dt>Play</dt><dd>A repeatable exploration or development concept within a basin (Eagle Ford, Bakken, Vaca Muerta).</dd>",
@@ -4712,6 +4849,7 @@
     if (el.search) el.search.value = state.query;
     syncFilterControls();
     syncSweetSeg();
+    syncOutputSeg();
     syncCheckboxes();
     $("has-distill").checked = f.hasDistill;
     $("has-sara").checked = f.hasSara;
@@ -4966,6 +5104,13 @@
         onFiltersChanged();
       });
     });
+    root.querySelectorAll("[data-output]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.filters.outputMin = Number(btn.getAttribute("data-output"));
+        syncOutputSeg();
+        onFiltersChanged();
+      });
+    });
     root.querySelector("#has-distill")?.addEventListener("change", (e) => {
       state.filters.hasDistill = e.target.checked;
       onFiltersChanged();
@@ -4985,6 +5130,7 @@
       syncSearchClear();
       syncFilterControls();
       syncSweetSeg();
+      syncOutputSeg();
       syncCheckboxes();
       $("has-distill").checked = false;
       $("has-sara").checked = false;
@@ -5208,6 +5354,7 @@
       bounceEmptyCompareToHome();
       syncFilterControls();
       syncSweetSeg();
+      syncOutputSeg();
       syncCheckboxes();
       el.search.value = state.query;
       syncSearchClear();
@@ -5312,6 +5459,7 @@
     wireGlobal();
     syncFilterControls();
     syncSweetSeg();
+    syncOutputSeg();
     syncCheckboxes();
     syncFilterLayerUi();
     el.search.value = state.query;

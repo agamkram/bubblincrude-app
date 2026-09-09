@@ -39,7 +39,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   /* Hidden sync probe — badge shows only vN; heal script reads this. */
-  --bc-css: 310;
+  --bc-css: 311;
   --pwa-fill-h: 100%;
   --pwa-extra-b: 0px;
 }
@@ -1802,6 +1802,21 @@ button.pill {
   line-height: 1.2;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+/* Rate rides inside the chip, dimmed so the field name still reads first. */
+.chip-rate {
+  margin-left: 4px;
+  color: var(--text-mute);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.block-note {
+  margin-left: 6px;
+  color: var(--text-mute);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .related-chip::after {
   content: " →";

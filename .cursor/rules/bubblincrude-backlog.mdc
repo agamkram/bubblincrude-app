@@ -42,14 +42,36 @@ because the records already called them condensate. One kind covers lease
 condensate and plant pentanes-plus — EIA splits those; the glossary says so.
 Kind is curated from production route. Check with `scripts/check-data.py`.
 
-## 2. Blend calculator — on Compare (v281)
+## 2. Field output and reserves — sites carry scale (v311)
+
+167 site records have `production_kbd` / `condensate_kbd` / `reserves_mmbbl` /
+`production_year` from GEM's Global Oil and Gas Extraction Tracker (March 2026,
+CC BY 4.0). 134 have output, 123 reserves, out of 275 active fields in scope.
+Rebuild with `scripts/build-volumes.py --goget <xlsx> --write`; the workbook is
+registration-gated so it is never fetched. Crosswalk lives in
+`scripts/site-goget-map.json`.
+
+Matching needs name **and** distance to agree — proximity alone pairs Lula with
+Lapa (7 km, different fields). `REJECT` drops three by hand (ek-banam/Balam,
+changqing/Huaqing, christina-lake-site/Narrows Lake). `PARTIAL` flags four
+boundary mismatches `estimated`. `nested_in` marks a site whose barrels sit
+inside another matched unit (Guneshli in ACG, Mostarda and Gindungo in Kaombo)
+so `siteRate()` returns 0 for it and nothing double-counts.
+
+Crude and condensate stay separate — do not sum them. Pins are **not** sized by
+output (deliberate: color already carries API/sulfur, and sizing would bury the
+small grades); the `Field output` filter is the scale affordance instead, and it
+shows on the sites layer only. A stream card totals its linked fields as
+upstream context, never as that grade's export rate.
+
+## 3. Blend calculator — on Compare (v281)
 
 Volume blend of ≥2 streams on the Compare board: SG-weighted gravity, mass-weighted
 sulfur, volume-weighted yields and TBP (dashed mix line when every selected
 stream has a curve). Honest limits in the card copy. Arab Light + Basrah Light
 at half-and-half is the teaching check against Dubai. See `crude-blend-math`.
 
-## 3. Phone filters — sheet on Compare-adjacent slider strip (v282)
+## 4. Phone filters — sheet on Compare-adjacent slider strip (v282)
 
 Below 1100px the left rail is a bottom sheet. Open from the **Filter** end-cap
 on the slider strip (same strip height; sliders lose width). Live apply, Done
@@ -57,13 +79,13 @@ closes. Kind / completeness / saved views are streams-only; sulfur class hides
 on hubs and refineries. `#has-distill` now tests `distillation_curve` (211).
 `sizeMapToBelt()` still sizes the map from width alone.
 
-## 4. Marker clustering — skipped
+## 5. Marker clustering — skipped
 
 Leave pins on true lat/lon. Clustering (and spiderfy) would hide or offset
 dots at low zoom. If Europe tap collisions stay bad, disambiguate with a list
 of what was under the finger — do not move markers.
 
-## 5. Small items
+## 6. Small items
 
 - `#has-distill` tests `distillation_curve` only (211).
 - `applySavedView()` reads `filters` from `data.js` only (v283). `coker-feeds`
@@ -79,6 +101,14 @@ of what was under the finger — do not move markers.
   no longer read as pale gold next to pricing.
 
 ## Still open
+
+Sites: 92 active fields with no GEM match, 141 with no output figure. Streams
+and hubs carry no volume at all — no grade export rate (not free at grade
+level), no hub tank capacity (Cushing shell capacity *is* free from EIA weekly).
+`ek-banam` is a misspelled id for Ek-Balam; renaming it would break `related_ids`.
+Country labels still disagree across layers (sites say "United Arab Emirates",
+streams say "UAE"; "Congo" vs "Republic of the Congo") — this silently breaks
+cross-layer joins and cost a debugging pass during the volume build.
 
 Refineries: 96 without kb/d, 334 without operator, zero `related_ids`.
 US EIA holes closed (v287): 14 curated yards; 7 non-CDU/same-yard rows still skipped.
