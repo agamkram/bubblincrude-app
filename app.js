@@ -6,6 +6,7 @@
   const SITES = window.SITES_DATA;
   const HUBS = window.HUBS_DATA;
   const REFINERIES = window.REFINERIES_DATA;
+  const PIPELINES = window.PIPELINES_DATA;
   if (!DATA) {
     console.error("CRUDE_DATA missing");
     return;
@@ -20,6 +21,10 @@
   }
   if (!REFINERIES || !Array.isArray(REFINERIES.refineries)) {
     console.error("REFINERIES_DATA missing");
+    return;
+  }
+  if (!PIPELINES || !Array.isArray(PIPELINES.pipelines)) {
+    console.error("PIPELINES_DATA missing");
     return;
   }
 
@@ -38,7 +43,7 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v311";
+  const APP_VERSION = "v313";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -77,11 +82,12 @@
 
   const state = {
     route: "home",
-    layer: "streams", // streams | sites | hubs | refineries
+    layer: "streams", // streams | sites | hubs | refineries | pipelines
     streamId: null,
     siteId: null,
     hubId: null,
     refineryId: null,
+    pipelineId: null,
     selectionCleared: false,
     inspExpanded: false,
     compareIds: [],
@@ -626,6 +632,23 @@
     return REFINERIES.refineries.find((s) => s.id === id) || null;
   }
 
+  /* A pipeline carries no assay, so only region and the capacity floor can
+     narrow it. Reusing the field-output floor would be wrong: that filter is
+     about how much a field lifts, this is how much a line can move. */
+  function pipelineMatches(s) {
+    const f = state.filters;
+    if (f.regions.length && !f.regions.includes(s.region)) return false;
+    return true;
+  }
+
+  function filteredPipelines() {
+    return PIPELINES.pipelines.filter(pipelineMatches);
+  }
+
+  function getPipeline(id) {
+    return PIPELINES.pipelines.find((s) => s.id === id) || null;
+  }
+
   function uniqueById(list) {
     const seen = new Set();
     const out = [];
@@ -700,18 +723,21 @@
     if (layer === "sites") return "site";
     if (layer === "hubs") return "hub";
     if (layer === "refineries") return "refinery";
+    if (layer === "pipelines") return "pipeline";
     return "stream";
   }
   function pinLayerFromKind(kind) {
     if (kind === "site") return "sites";
     if (kind === "hub") return "hubs";
     if (kind === "refinery") return "refineries";
+    if (kind === "pipeline") return "pipelines";
     return "streams";
   }
   function pinRecord(kind, id) {
     if (kind === "site") return getSite(id);
     if (kind === "hub") return getHub(id);
     if (kind === "refinery") return getRefinery(id);
+    if (kind === "pipeline") return getPipeline(id);
     return getStream(id);
   }
   function currentPin() {
@@ -721,6 +747,8 @@
       return { kind: "hub", id: state.hubId };
     if (state.layer === "refineries" && state.refineryId)
       return { kind: "refinery", id: state.refineryId };
+    if (state.layer === "pipelines" && state.pipelineId)
+      return { kind: "pipeline", id: state.pipelineId };
     if (state.streamId) return { kind: "stream", id: state.streamId };
     return null;
   }
@@ -760,6 +788,7 @@
     if (kind === "site") selectSite(id, true);
     else if (kind === "hub") selectHub(id, true);
     else if (kind === "refinery") selectRefinery(id, true);
+    else if (kind === "pipeline") selectPipeline(id, true);
     else selectStream(id, true);
   }
   function goPinTrailBack() {
@@ -782,7 +811,13 @@
     if (i <= 0) return { kind: "stream", id: raw };
     const kind = raw.slice(0, i);
     const id = raw.slice(i + 1);
-    if (kind !== "stream" && kind !== "site" && kind !== "hub" && kind !== "refinery") {
+    if (
+      kind !== "stream" &&
+      kind !== "site" &&
+      kind !== "hub" &&
+      kind !== "refinery" &&
+      kind !== "pipeline"
+    ) {
       return { kind: "stream", id: raw };
     }
     return { kind, id };
@@ -792,13 +827,37 @@
     if (p.kind === "site") return getSite(p.id) || null;
     if (p.kind === "hub") return getHub(p.id) || null;
     if (p.kind === "refinery") return getRefinery(p.id) || null;
+    if (p.kind === "pipeline") return getPipeline(p.id) || null;
     return getStream(p.id) || null;
+  }
+
+  /* Selection is single-layer: exactly one of the *Id fields is set. Keeping
+     the clearing in one place stops a new layer from silently leaving a stale
+     id behind, which showed the wrong card after a layer switch. */
+  const PIN_KIND_IDS = {
+    stream: "streamId",
+    site: "siteId",
+    hub: "hubId",
+    refinery: "refineryId",
+    pipeline: "pipelineId",
+  };
+  function clearOtherSelections(keepKind) {
+    for (const kind in PIN_KIND_IDS) {
+      if (kind !== keepKind) state[PIN_KIND_IDS[kind]] = null;
+    }
+  }
+  function otherSelectionsEmpty(keepKind) {
+    for (const kind in PIN_KIND_IDS) {
+      if (kind !== keepKind && state[PIN_KIND_IDS[kind]]) return false;
+    }
+    return true;
   }
 
   function activePins() {
     if (state.layer === "sites") return filteredSites();
     if (state.layer === "hubs") return filteredHubs();
     if (state.layer === "refineries") return filteredRefineries();
+    if (state.layer === "pipelines") return filteredPipelines();
     return filteredStreams();
   }
 
@@ -806,6 +865,7 @@
     if (state.layer === "sites") return state.siteId;
     if (state.layer === "hubs") return state.hubId;
     if (state.layer === "refineries") return state.refineryId;
+    if (state.layer === "pipelines") return state.pipelineId;
     return state.streamId;
   }
 
@@ -815,6 +875,30 @@
   const DEFAULT_SITE_ID = "drake-well";
   const DEFAULT_HUB_ID = "cushing";
   const DEFAULT_REFINERY_ID = "motiva-port-arthur-refinery";
+  /* Trans-Alaska: a line most people have heard of, and its published 2.14
+     mb/d design capacity is the check that the capacity join is sane. */
+  const DEFAULT_PIPELINE_ID = "P0135";
+
+  /* Falls back to the first record so a catalog edit cannot leave home blank. */
+  function pickDefaultId(kind) {
+    const wanted = {
+      stream: DEFAULT_STREAM_ID,
+      site: DEFAULT_SITE_ID,
+      hub: DEFAULT_HUB_ID,
+      refinery: DEFAULT_REFINERY_ID,
+      pipeline: DEFAULT_PIPELINE_ID,
+    }[kind];
+    if (wanted && pinRecord(kind, wanted)) return wanted;
+    const all = {
+      stream: DATA.streams,
+      site: SITES.sites,
+      hub: HUBS.hubs,
+      refinery: REFINERIES.refineries,
+      pipeline: PIPELINES.pipelines,
+    }[kind];
+    const first = (all || []).find((s) => s && s.id);
+    return first ? first.id : null;
+  }
 
   function pickDefaultStreamId() {
     if (getStream(DEFAULT_STREAM_ID)) return DEFAULT_STREAM_ID;
@@ -846,43 +930,13 @@
     if (state.route !== "home") return;
     /* × cleared the starter card — do not put WTI (etc.) back until a pin is picked. */
     if (state.selectionCleared) return;
-    if (state.layer === "sites") {
-      if (getSite(state.siteId)) return;
-      const id = pickDefaultSiteId();
-      if (!id) return;
-      state.siteId = id;
-      state.streamId = null;
-      state.hubId = null;
-      state.refineryId = null;
-      return;
-    }
-    if (state.layer === "hubs") {
-      if (getHub(state.hubId)) return;
-      const id = pickDefaultHubId();
-      if (!id) return;
-      state.hubId = id;
-      state.streamId = null;
-      state.siteId = null;
-      state.refineryId = null;
-      return;
-    }
-    if (state.layer === "refineries") {
-      if (getRefinery(state.refineryId)) return;
-      const id = pickDefaultRefineryId();
-      if (!id) return;
-      state.refineryId = id;
-      state.streamId = null;
-      state.siteId = null;
-      state.hubId = null;
-      return;
-    }
-    if (getStream(state.streamId)) return;
-    const id = pickDefaultStreamId();
+    const kind = pinKindFromLayer(state.layer);
+    const idField = PIN_KIND_IDS[kind];
+    if (pinRecord(kind, state[idField])) return;
+    const id = pickDefaultId(kind);
     if (!id) return;
-    state.streamId = id;
-    state.siteId = null;
-    state.hubId = null;
-    state.refineryId = null;
+    state[idField] = id;
+    clearOtherSelections(kind);
   }
 
   /* —— Map —— */
@@ -1143,6 +1197,7 @@
     if (state.layer === "sites") return tipHtmlSite(s);
     if (state.layer === "hubs") return tipHtmlHub(s);
     if (state.layer === "refineries") return tipHtmlRefinery(s);
+    if (state.layer === "pipelines") return tipHtmlPipeline(s);
     const pills = [];
     const ac = apiClass(s.api);
     if (ac) pills.push(apiClassLabel(ac));
@@ -1238,6 +1293,46 @@
     );
   }
 
+  /* Endpoints, not a country: a line's whole point is where it runs from and
+     to. */
+  function pipelineRouteBit(s) {
+    const a = s.start_place || s.start_country;
+    const b = s.end_place || s.end_country;
+    if (a && b) return a + " → " + b;
+    return a || b || s.countries || "";
+  }
+  function pipelineCapBit(s) {
+    return s.capacity_kbd != null ? rateLabel(s.capacity_kbd) + " kb/d" : "";
+  }
+
+  function tipHtmlPipeline(s) {
+    const action = compareActionHtml(pinKey("pipeline", s.id));
+    const meta = [pipelineRouteBit(s), pipelineCapBit(s)].filter(Boolean).join(" · ");
+    return (
+      '<div class="tip-name">' +
+      escapeHtml(pipelineTitle(s)) +
+      "</div>" +
+      '<div class="tip-meta">' +
+      escapeHtml(meta || "Pipeline") +
+      "</div>" +
+      '<div class="tip-pills">' +
+      '<span class="pill pill-kind">' +
+      escapeHtml(s.status) +
+      "</span>" +
+      action +
+      "</div>"
+    );
+  }
+
+  /* Many GEM rows share a pipeline name and differ only by segment, so the
+     segment has to be part of the title or the tray shows five identical
+     chips. */
+  function pipelineTitle(s) {
+    return s.segment && s.segment !== s.name
+      ? s.name + " · " + s.segment
+      : s.name;
+  }
+
   function ensurePinTooltip(marker, s) {
     if (!marker || marker.getTooltip()) {
       if (marker && marker.getTooltip() && !marker.isTooltipOpen()) marker.openTooltip();
@@ -1280,15 +1375,21 @@
     if (!state.markers) return;
     const list = activePins();
     const few = list.length > 0 && list.length <= 8;
+    const kind = pinKindFromLayer(state.layer);
     const paint = (id, on) => {
       if (!id) return;
       const marker = state.markers.get(id);
-      let s;
-      if (state.layer === "sites") s = getSite(id);
-      else if (state.layer === "hubs") s = getHub(id);
-      else if (state.layer === "refineries") s = getRefinery(id);
-      else s = getStream(id);
+      const s = pinRecord(kind, id);
       if (!marker || !s) return;
+      if (kind === "pipeline") {
+        marker.setStyle({
+          color: pipelineColor(s, !!on),
+          weight: pipelineWeight(s, !!on),
+          opacity: on ? 1 : s.status === "construction" ? 0.75 : 0.85,
+        });
+        if (on && marker.bringToFront) marker.bringToFront();
+        return;
+      }
       marker.setIcon(makeIcon(s, !!on, few));
     };
     if (prevId && prevId !== nextId) paint(prevId, false);
@@ -1299,6 +1400,9 @@
      Markers stay on true lat/lon. Pixel-radius “near misses” at world zoom
      would scoop a whole basin; exact match is the stacked-pin case. */
   function pinsUnderLatLng(lat, lon) {
+    /* Lines overlap along their length rather than sharing one dot, so the
+       stack picker would fire on a shared midpoint and mean nothing. */
+    if (state.layer === "pipelines") return [];
     if (lat == null || lon == null) return [];
     const hits = [];
     for (const s of activePins()) {
@@ -1332,7 +1436,86 @@
     if (state.layer === "sites") selectSite(s.id, fly);
     else if (state.layer === "hubs") selectHub(s.id, fly);
     else if (state.layer === "refineries") selectRefinery(s.id, fly);
+    else if (state.layer === "pipelines") selectPipeline(s.id, fly);
     else selectStream(s.id, fly);
+  }
+
+  /* Stored flat as lat,lon,lat,lon to keep pipelines.js small; Leaflet wants
+     pairs. */
+  function pipelineLatLngs(path) {
+    const out = [];
+    for (let i = 0; i + 1 < path.length; i += 2) out.push([path[i], path[i + 1]]);
+    return out;
+  }
+
+  function pipelineBounds(s) {
+    if (!s || !s.paths || !s.paths.length) return null;
+    let bounds = null;
+    for (const path of s.paths) {
+      for (const pt of pipelineLatLngs(path)) {
+        bounds = bounds ? bounds.extend(pt) : L.latLngBounds(pt, pt);
+      }
+    }
+    return bounds && bounds.isValid() ? bounds : null;
+  }
+
+  /* Thicker for a bigger line, but only across a narrow range: scaling stroke
+     with capacity would make a 5 mb/d trunk a slab and hide everything under
+     it. Lines with no published capacity draw thin rather than vanishing. */
+  function pipelineWeight(s, selected) {
+    const kbd = Number(s.capacity_kbd) || 0;
+    let w = kbd >= 1000 ? 3 : kbd >= 300 ? 2.4 : kbd > 0 ? 1.8 : 1.4;
+    return selected ? w + 2 : w;
+  }
+
+  function pipelineColor(s, selected) {
+    if (selected) return "#ffd27a";
+    /* Under construction reads as the future: cooler and dimmer than oil. */
+    return s.status === "construction" ? "#7aa2ff" : "#e8a838";
+  }
+
+  function drawPipelines(list, selId) {
+    const showTips = !L.Browser.touch;
+    /* Touch needs a much bigger target than a mouse, and a 1.4 px stroke is
+       unhittable either way. */
+    const grab = L.Browser.touch ? 16 : 10;
+    for (const s of list) {
+      if (!s.paths || !s.paths.length) continue;
+      const selected = s.id === selId;
+      const latlngs = s.paths.map(pipelineLatLngs);
+      const pick = () => commitPickPin(s, false);
+
+      /* An invisible fat line under the visible one carries the clicks, so the
+         stroke can stay thin enough to read a dense corridor. */
+      const halo = L.polyline(latlngs, {
+        color: "#000",
+        weight: grab,
+        opacity: 0,
+        fillOpacity: 0,
+        interactive: true,
+        bubblingMouseEvents: false,
+      });
+      halo.on("click", pick);
+      halo.addTo(state.markerLayer);
+
+      const line = L.polyline(latlngs, {
+        color: pipelineColor(s, selected),
+        weight: pipelineWeight(s, selected),
+        opacity: selected ? 1 : s.status === "construction" ? 0.75 : 0.85,
+        dashArray: s.status === "construction" ? "5,4" : null,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: true,
+        bubblingMouseEvents: false,
+      });
+      line.on("click", pick);
+      if (showTips) {
+        halo.on("mouseover", () => ensurePinTooltip(line, s));
+        line.on("mouseover", () => ensurePinTooltip(line, s));
+      }
+      line.addTo(state.markerLayer);
+      state.markers.set(s.id, line);
+    }
   }
 
   function updateMarkers() {
@@ -1342,6 +1525,10 @@
 
     const list = activePins();
     const selId = selectedPinId();
+    if (state.layer === "pipelines") {
+      drawPipelines(list, selId);
+      return;
+    }
     const few = list.length > 0 && list.length <= 8;
     /* Hover tips on Mac/desktop; on touch the inspector is the detail surface
        and tips mostly duplicated it (plus clipped on belt-edge pins). */
@@ -1429,11 +1616,9 @@
   function selectStream(id, fly) {
     state.selectionCleared = false;
     const prev = state.streamId;
-    const same = prev === id && !state.siteId && !state.hubId && !state.refineryId;
+    const same = prev === id && otherSelectionsEmpty("stream");
     state.streamId = id;
-    state.siteId = null;
-    state.hubId = null;
-    state.refineryId = null;
+    clearOtherSelections("stream");
     dismissSearchQuery();
     saveStorage();
     if (state.route === "home") {
@@ -1457,11 +1642,9 @@
   function selectSite(id, fly) {
     state.selectionCleared = false;
     const prev = state.siteId;
-    const same = prev === id && !state.streamId && !state.hubId && !state.refineryId;
+    const same = prev === id && otherSelectionsEmpty("site");
     state.siteId = id;
-    state.streamId = null;
-    state.hubId = null;
-    state.refineryId = null;
+    clearOtherSelections("site");
     dismissSearchQuery();
     if (!same) syncMarkerSelection(prev, id);
     renderInspector();
@@ -1481,11 +1664,9 @@
   function selectHub(id, fly) {
     state.selectionCleared = false;
     const prev = state.hubId;
-    const same = prev === id && !state.streamId && !state.siteId && !state.refineryId;
+    const same = prev === id && otherSelectionsEmpty("hub");
     state.hubId = id;
-    state.streamId = null;
-    state.siteId = null;
-    state.refineryId = null;
+    clearOtherSelections("hub");
     dismissSearchQuery();
     if (!same) syncMarkerSelection(prev, id);
     renderInspector();
@@ -1505,11 +1686,9 @@
   function selectRefinery(id, fly) {
     state.selectionCleared = false;
     const prev = state.refineryId;
-    const same = prev === id && !state.streamId && !state.siteId && !state.hubId;
+    const same = prev === id && otherSelectionsEmpty("refinery");
     state.refineryId = id;
-    state.streamId = null;
-    state.siteId = null;
-    state.hubId = null;
+    clearOtherSelections("refinery");
     dismissSearchQuery();
     if (!same) syncMarkerSelection(prev, id);
     renderInspector();
@@ -1526,13 +1705,40 @@
     }
   }
 
+  /* A line has no single dot, so the fly-to frames the whole route instead of
+     centring a point. */
+  function selectPipeline(id, fly) {
+    state.selectionCleared = false;
+    const prev = state.pipelineId;
+    const same = prev === id && otherSelectionsEmpty("pipeline");
+    state.pipelineId = id;
+    clearOtherSelections("pipeline");
+    dismissSearchQuery();
+    if (!same) syncMarkerSelection(prev, id);
+    renderInspector();
+    renderTray();
+    if (fly && state.map && !same) {
+      const s = getPipeline(id);
+      const bounds = pipelineBounds(s);
+      if (bounds) state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 7 });
+      else if (s && s.lat != null) flyToPin(s.lat, s.lon);
+    }
+    state._searchFocused = false;
+    renderSearchResults();
+    const w = window.innerWidth;
+    if (w > 699 && w <= 1099) {
+      openInspectorDrawer();
+    }
+  }
+
   function setLayer(layer, opts) {
     opts = opts || {};
     if (
       layer !== "streams" &&
       layer !== "sites" &&
       layer !== "hubs" &&
-      layer !== "refineries"
+      layer !== "refineries" &&
+      layer !== "pipelines"
     )
       return;
     if (state.layer === layer) return;
@@ -1544,25 +1750,7 @@
       syncSearchClear();
     }
     if (el.search) el.search.placeholder = "Search…";
-    if (!opts.keepIds) {
-      if (layer === "sites") {
-        state.streamId = null;
-        state.hubId = null;
-        state.refineryId = null;
-      } else if (layer === "hubs") {
-        state.streamId = null;
-        state.siteId = null;
-        state.refineryId = null;
-      } else if (layer === "refineries") {
-        state.streamId = null;
-        state.siteId = null;
-        state.hubId = null;
-      } else {
-        state.siteId = null;
-        state.hubId = null;
-        state.refineryId = null;
-      }
-    }
+    if (!opts.keepIds) clearOtherSelections(pinKindFromLayer(layer));
     syncLayerSeg();
     syncColorSeg();
     syncMapSliders();
@@ -1604,6 +1792,10 @@
       title.textContent = "Select a refinery";
       body.textContent =
         "Tap a plant on the map — or search Jamnagar, Port Arthur, Ras Tanura…";
+    } else if (state.layer === "pipelines") {
+      title.textContent = "Select a pipeline";
+      body.textContent =
+        "Tap a line on the map — or search Trans-Alaska, Druzhba, Keystone…";
     } else {
       title.textContent = "Select a stream";
       body.textContent = "Tap a marker on the map, or search for WTI, Merey-16, Boscan…";
@@ -1638,6 +1830,9 @@
     }
     if (kind === "site") {
       return [s.basin || s.country, s.kind].filter(Boolean).join(" · ");
+    }
+    if (kind === "pipeline") {
+      return [pipelineRouteBit(s), pipelineCapBit(s)].filter(Boolean).join(" · ");
     }
     return s.basin || s.country || "";
   }
@@ -2331,6 +2526,17 @@
     if (el.inspectorBody) el.inspectorBody.scrollTop = 0;
   }
 
+  /* One card renderer per pin kind. Declared as a table so a new layer cannot
+     half-land: a missing entry throws here instead of silently falling through
+     to the stream card, which is what four copied blocks used to allow. */
+  const INSPECTOR_BY_KIND = {
+    stream: { html: inspectorHtml, bind: bindInspectorEvents },
+    site: { html: siteInspectorHtml, bind: bindSiteInspectorEvents },
+    hub: { html: hubInspectorHtml, bind: bindHubInspectorEvents },
+    refinery: { html: refineryInspectorHtml, bind: bindRefineryInspectorEvents },
+    pipeline: { html: pipelineInspectorHtml, bind: bindPipelineInspectorEvents },
+  };
+
   function renderInspector() {
     if (state.pinStackIds && state.pinStackIds.length > 1) {
       const kind = pinKindFromLayer(state.layer);
@@ -2349,56 +2555,10 @@
       }
       state.pinStackIds = null;
     }
-    if (state.layer === "sites") {
-      const site = getSite(state.siteId);
-      if (!site) {
-        el.inspectorEmpty.classList.remove("hidden");
-        el.inspectorBody.classList.add("hidden");
-        el.inspectorBody.innerHTML = "";
-        resetInspectorScroll();
-        return;
-      }
-      el.inspectorEmpty.classList.add("hidden");
-      el.inspectorBody.classList.remove("hidden");
-      el.inspectorBody.innerHTML = siteInspectorHtml(site);
-      bindSiteInspectorEvents(el.inspectorBody);
-      resetInspectorScroll();
-      return;
-    }
-    if (state.layer === "hubs") {
-      const hub = getHub(state.hubId);
-      if (!hub) {
-        el.inspectorEmpty.classList.remove("hidden");
-        el.inspectorBody.classList.add("hidden");
-        el.inspectorBody.innerHTML = "";
-        resetInspectorScroll();
-        return;
-      }
-      el.inspectorEmpty.classList.add("hidden");
-      el.inspectorBody.classList.remove("hidden");
-      el.inspectorBody.innerHTML = hubInspectorHtml(hub);
-      bindHubInspectorEvents(el.inspectorBody);
-      resetInspectorScroll();
-      return;
-    }
-    if (state.layer === "refineries") {
-      const plant = getRefinery(state.refineryId);
-      if (!plant) {
-        el.inspectorEmpty.classList.remove("hidden");
-        el.inspectorBody.classList.add("hidden");
-        el.inspectorBody.innerHTML = "";
-        resetInspectorScroll();
-        return;
-      }
-      el.inspectorEmpty.classList.add("hidden");
-      el.inspectorBody.classList.remove("hidden");
-      el.inspectorBody.innerHTML = refineryInspectorHtml(plant);
-      bindRefineryInspectorEvents(el.inspectorBody);
-      resetInspectorScroll();
-      return;
-    }
-    const s = getStream(state.streamId);
-    if (!s) {
+    const kind = pinKindFromLayer(state.layer);
+    const render = INSPECTOR_BY_KIND[kind];
+    const rec = pinRecord(kind, state[PIN_KIND_IDS[kind]]);
+    if (!rec) {
       el.inspectorEmpty.classList.remove("hidden");
       el.inspectorBody.classList.add("hidden");
       el.inspectorBody.innerHTML = "";
@@ -2407,8 +2567,8 @@
     }
     el.inspectorEmpty.classList.add("hidden");
     el.inspectorBody.classList.remove("hidden");
-    el.inspectorBody.innerHTML = inspectorHtml(s);
-    bindInspectorEvents(el.inspectorBody);
+    el.inspectorBody.innerHTML = render.html(rec);
+    render.bind(el.inspectorBody);
     resetInspectorScroll();
   }
 
@@ -2682,6 +2842,75 @@
     return html;
   }
 
+  function pipelineInspectorHtml(s) {
+    let html = '<div class="insp-header">';
+    html += '<div class="insp-title-row">';
+    html += '<div class="insp-title-main">';
+    html += inspBackHtml();
+    html += '<h2 class="insp-name">' + escapeHtml(pipelineTitle(s)) + "</h2>";
+    html +=
+      '<p class="insp-loc">' +
+      escapeHtml([pipelineRouteBit(s), s.region].filter(Boolean).join(" · ")) +
+      "</p>";
+    html += "</div>";
+    html += inspTitleButtonsHtml();
+    html += "</div>";
+    html += '<div class="pill-row">';
+    html += '<span class="pill pill-kind">pipeline</span>';
+    html += '<span class="pill pill-kind">' + escapeHtml(s.status) + "</span>";
+    if (s.owner) {
+      html += '<span class="pill pill-kind">' + escapeHtml(s.owner) + "</span>";
+    }
+    html += compareActionHtml(pinKey("pipeline", s.id), "data-compare-add");
+    html += "</div></div>";
+
+    const tiles = [];
+    if (s.capacity_kbd != null) {
+      tiles.push(
+        metricTile("Capacity", rateLabel(s.capacity_kbd), "kb/d", "mute", "throughput")
+      );
+    }
+    if (s.length_km != null) {
+      tiles.push(metricTile("Length", rateLabel(s.length_km), "km", "mute", null));
+    }
+    if (s.diameter_in != null) {
+      tiles.push(metricTile("Diameter", String(s.diameter_in), "in", "mute", null));
+    }
+    if (s.start_year != null) {
+      tiles.push(metricTile("In service", String(s.start_year), "", "mute", null));
+    }
+    if (tiles.length) {
+      html += '<div class="quality-strip">' + tiles.join("") + "</div>";
+    }
+
+    if (s.countries && s.countries !== s.start_country) {
+      html +=
+        '<p class="insp-blurb" style="margin-top:8px">Crosses ' +
+        escapeHtml(s.countries) +
+        ".</p>";
+    }
+    html +=
+      '<p class="insp-blurb" style="margin-top:8px">' +
+      (s.capacity_kbd != null
+        ? "Design capacity, not measured throughput — a line rarely runs full, and direction can reverse. "
+        : "No published capacity on this line. ") +
+      "Route is simplified for a world map, so it is the corridor rather than a survey.</p>";
+
+    /* Endpoints are place names in GEM, not ids, so there is nothing reliable
+       to link to yet — say that instead of guessing at a field or a plant. */
+    html +=
+      '<p class="insp-blurb" style="color:var(--text-mute)">Not yet linked to the fields it drains or the plants it feeds.</p>';
+    return html;
+  }
+
+  function bindPipelineInspectorEvents(root) {
+    root.querySelectorAll("[data-compare-add]").forEach((btn) => {
+      btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
+    });
+    bindGlossaryButtons(root);
+    bindClearSelection(root);
+  }
+
   function bindRefineryInspectorEvents(root) {
     root.querySelectorAll("[data-compare-add]").forEach((btn) => {
       btn.addEventListener("click", () => addToCompare(btn.getAttribute("data-compare-add")));
@@ -2815,9 +3044,9 @@
   function renderActiveChips() {
     const chips = [];
     const f = state.filters;
-    /* Same test syncMapSliders() uses to disable the sliders: hubs and
-       refineries carry no gravity or sulfur, so those chips mean nothing. */
-    const assayInert = state.layer === "hubs" || state.layer === "refineries";
+    /* Same test syncMapSliders() uses to disable the sliders: a layer with no
+       gravity or sulfur must not show a chip claiming to filter on it. */
+    const assayInert = !layerHasAssay();
     if (!assayInert) {
       if (f.apiMin !== API_FLOOR || f.apiMax !== API_CEIL) {
         chips.push(chipDismiss("API " + f.apiMin + "–" + f.apiMax, "api"));
@@ -2989,7 +3218,7 @@
   }
 
   function syncMapSliders() {
-    const inert = state.layer === "hubs" || state.layer === "refineries";
+    const inert = !layerHasAssay();
     if (el.mapSliders) {
       el.mapSliders.classList.toggle("is-inert", inert);
     }
@@ -3004,9 +3233,17 @@
     return window.matchMedia("(max-width: 1099px)").matches;
   }
 
+  /* Only streams and sites carry gravity and sulfur. Hubs, refineries and
+     pipelines are places and conduits, so the assay controls are dead there.
+     Four call sites used to re-list the layers by hand, and every one of them
+     would have missed pipelines. */
+  function layerHasAssay() {
+    return state.layer === "streams" || state.layer === "sites";
+  }
+
   function syncFilterLayerUi() {
     const layer = state.layer;
-    const assay = layer === "streams" || layer === "sites";
+    const assay = layerHasAssay();
     const streams = layer === "streams";
     document.querySelectorAll("[data-filter-group]").forEach((block) => {
       const g = block.getAttribute("data-filter-group");
@@ -3051,7 +3288,7 @@
   }
 
   function syncColorSeg() {
-    const assay = state.layer === "streams" || state.layer === "sites";
+    const assay = layerHasAssay();
     const toggle = document.querySelector(".color-toggle");
     if (toggle) {
       toggle.classList.toggle("is-assay-off", !assay);
@@ -3113,6 +3350,14 @@
         "</div>"
       );
     }
+    if (state.layer === "pipelines") {
+      return (
+        '<div class="legend-ramp legend-ramp-roles" aria-label="Pipelines by status">' +
+        legendRoleTick("#e8a838", "operating") +
+        legendRoleTick("#7aa2ff", "building") +
+        "</div>"
+      );
+    }
     if (state.colorMode === "sulfur") {
       return legendBarHtml(SULFUR_RAMP, "0% S", "3%+ S", "Sulfur from 0% to 3%+");
     }
@@ -3122,6 +3367,9 @@
   function legendHelpText() {
     if (state.layer === "hubs") {
       return "Hubs are painted by commercial role, not API or sulfur. Gold pricing, blue storage, sand loading, teal blend.";
+    }
+    if (state.layer === "pipelines") {
+      return "Crude oil trunk lines that are operating (gold) or being built (dashed blue). Thicker means bigger published capacity. Routes are simplified for a world map. GEM Global Oil Infrastructure Tracker (CC BY 4.0).";
     }
     if (state.layer === "refineries") {
       return "Refineries are the plants that turn crude into products. Violet dots. US kb/d is EIA operable atmospheric crude as of Jan 1, 2026. Other kb/d is Climate TRACE (CC BY 4.0), attached only when the plant is a unique match — not invented.";
@@ -3149,6 +3397,7 @@
     if (state.layer === "sites") return SITES.sites.length;
     if (state.layer === "hubs") return HUBS.hubs.length;
     if (state.layer === "refineries") return REFINERIES.refineries.length;
+    if (state.layer === "pipelines") return PIPELINES.pipelines.length;
     return DATA.streams.length;
   }
 
@@ -3156,6 +3405,7 @@
     if (state.layer === "sites") return n === 1 ? "site" : "sites";
     if (state.layer === "hubs") return n === 1 ? "hub" : "hubs";
     if (state.layer === "refineries") return n === 1 ? "refinery" : "refineries";
+    if (state.layer === "pipelines") return n === 1 ? "pipeline" : "pipelines";
     return n === 1 ? "stream" : "streams";
   }
 
@@ -3163,19 +3413,17 @@
     if (el.searchResults) {
       el.searchResults.setAttribute(
         "aria-label",
-        "Matching streams, sites, hubs, and plants"
+        "Matching streams, sites, hubs, plants, and pipelines"
       );
     }
     const mapEl = document.getElementById("map");
     if (mapEl) {
-      const label =
-        state.layer === "sites"
-          ? "World map of oil sites"
-          : state.layer === "hubs"
-            ? "World map of oil hubs"
-            : state.layer === "refineries"
-              ? "World map of refineries"
-              : "World map of crude streams";
+      const label = {
+        sites: "World map of oil sites",
+        hubs: "World map of oil hubs",
+        refineries: "World map of refineries",
+        pipelines: "World map of crude oil pipelines",
+      }[state.layer] || "World map of crude streams";
       mapEl.setAttribute("aria-label", label);
     }
   }
@@ -3249,6 +3497,7 @@
       [SITES.sites, "site", "sites"],
       [HUBS.hubs, "hub", "hubs"],
       [REFINERIES.refineries, "refinery", "refineries"],
+      [PIPELINES.pipelines, "pipeline", "pipelines"],
     ];
     for (let c = 0; c < catalogs.length; c++) {
       const list = catalogs[c][0];
@@ -3266,7 +3515,7 @@
         else rest.push(item);
       }
     }
-    const kindTie = { stream: 0, site: 1, hub: 2, refinery: 3 };
+    const kindTie = { stream: 0, site: 1, hub: 2, refinery: 3, pipeline: 4 };
     function tie(a, b) {
       const aCur = a.layer === state.layer ? 0 : 1;
       const bCur = b.layer === state.layer ? 0 : 1;
@@ -3285,6 +3534,7 @@
     if (kind === "site") return "Site";
     if (kind === "hub") return "Hub";
     if (kind === "refinery") return "Refinery";
+    if (kind === "pipeline") return "Pipeline";
     return "Stream";
   }
 
@@ -3298,6 +3548,8 @@
       rest = [s.country, s.role].filter(Boolean).join(" · ");
     } else if (item.kind === "refinery") {
       rest = [s.country, s.operator, refineryCapBit(s)].filter(Boolean).join(" · ");
+    } else if (item.kind === "pipeline") {
+      rest = [pipelineRouteBit(s), pipelineCapBit(s)].filter(Boolean).join(" · ");
     } else {
       rest = [
         s.country,
@@ -3334,7 +3586,7 @@
         '<button type="button" class="search-hit" role="option" data-search-hit="' +
         escapeHtml(pinKey(item.kind, item.s.id)) +
         '"><span class="search-hit-name">' +
-        escapeHtml(item.s.name) +
+        escapeHtml(item.kind === "pipeline" ? pipelineTitle(item.s) : item.s.name) +
         '</span><span class="search-hit-meta">' +
         escapeHtml(searchHitMeta(item)) +
         "</span></button>";
@@ -3405,14 +3657,7 @@
 
   function pickSearchHit(key) {
     const p = parsePinKey(key);
-    const layer =
-      p.kind === "site"
-        ? "sites"
-        : p.kind === "hub"
-          ? "hubs"
-          : p.kind === "refinery"
-            ? "refineries"
-            : "streams";
+    const layer = pinLayerFromKind(p.kind);
     clearPinTrail();
     state._searchFocused = false;
     state.query = "";
@@ -3872,7 +4117,6 @@
 
     const hasAssayPin = pins.some((p) => p.kind === "stream" || p.kind === "site");
     const hasHubPin = pins.some((p) => p.kind === "hub");
-    const hasRefPin = pins.some((p) => p.kind === "refinery");
     let metricsHtml = "";
     if (hasAssayPin) {
       metricsHtml += metricBarsBlock(
@@ -3958,16 +4202,20 @@
         metricsHtml += "</div>";
       }
     }
-    if (hasRefPin) {
-      metricsHtml += metricBarsBlock(
-        streams,
-        "capacity",
-        "Capacity",
-        (s, i) => (pins[i].kind === "refinery" ? s.capacity_kbd : null),
-        (v) => capacityLabel(v),
-        "kb/d"
-      );
-    }
+    /* Plant throughput and line throughput are the same unit and the same
+       question — how many barrels a day can move through this thing — so they
+       share one bar instead of two that cannot be compared. */
+    metricsHtml += metricBarsBlock(
+      streams,
+      "capacity",
+      "Capacity",
+      (s, i) =>
+        pins[i].kind === "refinery" || pins[i].kind === "pipeline"
+          ? s.capacity_kbd
+          : null,
+      (v) => capacityLabel(v),
+      "kb/d"
+    );
     /* Field output shares the kb/d scale with refinery capacity, so a field
        and the plant that could run it read against each other directly. */
     metricsHtml += metricBarsBlock(
@@ -4562,7 +4810,7 @@
       " plants. Stream numbers are typical published assays, not a live well. A blank is a blank. Nothing is invented to look complete.</p>",
       "<p>Two altitudes. <strong>World</strong> is the map — streams, sites, hubs, plants. <strong>Barrel</strong> is the still, then the store: Cuts, then Products. This page is the circled <strong>i</strong>.</p></div>",
       '<div class="about-block"><h3>Four layers</h3>',
-      "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay.</p>",
+      "<p><strong>Streams</strong> are grades that trade and get assayed as a product, not a single well. <strong>Sites</strong> are fields, basins, plays, and historic finds — teaching centroids, not lease maps. <strong>Hubs</strong> are commercial points (pricing, storage, loading, blend); color is role, not quality. <strong>Refineries</strong> are plants; color is place, not assay. <strong>Pipelines</strong> are the trunk lines between them; color is status and thickness is published capacity.</p>",
       "<p>World opens on <strong>WTI</strong> so the inspector is a real card — Drake Well, Cushing, and Motiva Port Arthur on the other layers. Tap a pin, or <strong>Search</strong> any name — streams, sites, hubs, and plants in one list. Sites, hubs, and similar-grade chips on a card jump you there; a named back (<strong>← WTI</strong>) returns you along that trail. A map tap, Search pick, or layer switch starts a new trail. Saved views (light sweet exporters, Orinoco heavies, heavies API ≤ 22.3, North America light sweet) are starting filters, not a second catalog. On a phone, <strong>Filter</strong> opens the same controls as the left rail.</p>",
       "<p>Refinery pins sit on plant coordinates and are not clustered, so two nearby plants stay two plants. Stream pins are teaching locations for the grade — a basin or loading area, not a wellhead. Site pins are approximate centroids. Some grades share a hub or loading coordinate; pins stay stacked on that point, and a tap opens a list instead of grabbing whichever marker is on top. Stream and site color follows API or sulfur on a continuous ramp — the scale sits under the map buttons. Light/heavy (API) and sweet/sour (sulfur) are separate axes. Sweet here means ≤ 0.5 wt% sulfur.</p></div>",
       '<div class="about-block"><h3>How to trust a number</h3>',
@@ -4583,6 +4831,10 @@
       "<p><a href=\"/cuts\">Cuts</a> is how a still slices a barrel by boiling range — first at atmospheric pressure, then the heavy bottoms again under vacuum so they can be split without burning. <a href=\"/products\">Products</a> is what commerce takes from those slices: fuels, chemicals, asphalt, coke, wax, sulfur. Together they are <strong>Barrel</strong>. Nothing in that slate is trash. Rich/poor notes on cut cards are typical patterns, not measured yields for every stream.</p></div>",
       '<div class="about-block"><h3>Refinery capacity</h3>',
       "<p>Capacity is atmospheric crude distillation, thousand barrels per calendar day, when a published figure is on the pin. US numbers are EIA Form EIA-820, operable crude as of 1 January 2026. Other numbers are Climate TRACE (CC BY 4.0), attached only when one plant and one published row clearly agree. A missing kb/d means we do not have a number we trust on that yard. Wrong barrels on the wrong plant is worse than a blank. Plants are not yet linked to the crudes they run.</p></div>",
+      '<div class="about-block"><h3>Pipelines</h3>',
+      "<p>The Pipelines layer is crude oil trunk lines from Global Energy Monitor's Global Oil Infrastructure Tracker (June 2026 release, CC BY 4.0). Gold is operating, dashed blue is under construction. Lines that were cancelled, shelved, retired, or only proposed are left out rather than drawn as if they move oil today, and NGL lines are excluded because this is a crude map.</p>",
+      "<p>Capacity is <strong>design</strong> throughput, not measured flow. A line rarely runs full, many can reverse direction, and GEM publishes some figures in tonnes per year which it converts to barrels — so treat the number as the size of the pipe, not this month's shipments. It shares the kb/d scale with refinery capacity so a line and a plant can be read against each other. Roughly a quarter of lines have no published capacity and show none. One line (Rotterdam-Venlo) is recorded upstream at a figure that would make it the largest crude pipeline on Earth; its capacity is omitted rather than quietly adjusted.</p>",
+      "<p>Routes are simplified to about a kilometre — about 1% of the original points — because the full geometry is 2.6 million coordinates. Treat a line as the corridor it follows, not a survey. Pipelines are not yet linked to the fields they drain or the plants they feed.</p></div>",
       '<div class="about-block"><h3>Field output and reserves</h3>',
       "<p>Site cards show a field's crude output in thousand barrels per day and its oil reserves in million barrels, from Global Energy Monitor's Global Oil and Gas Extraction Tracker (March 2026 release, CC BY 4.0). Crude and condensate are kept apart rather than added, because a gas field's condensate is not crude production.</p>",
       "<p>A field is matched to that catalog only when the name and the location agree — proximity alone is not enough, since Lula sits 7 km from Lapa and they are different fields. Where the catalog's boundary does not line up with the field on the card (one phase of a multi-phase development, or two fields bundled as one unit), the number is flagged as an estimate. Where a field's barrels are already counted inside a larger unit on another card, the card says so, so the two are never added together. Roughly two-thirds of active fields carry a figure; a blank means we do not have one we trust.</p>",
@@ -4603,6 +4855,8 @@
       '<dt id="g-capacity">Capacity (kb/d)</dt><dd>Atmospheric crude distillation, thousand barrels per calendar day. US figures are EIA Form EIA-820 as of 1 January 2026. Other figures are Climate TRACE (CC BY 4.0). Omitted when no published number is on the record.</dd>',
       '<dt id="g-production">Output (kb/d)</dt><dd>A field\'s crude production in thousand barrels per day, from Global Energy Monitor\'s extraction tracker (CC BY 4.0). Same unit as refinery capacity, so a field and a plant can be read against each other. Condensate is listed separately, never folded in. Flagged an estimate when the tracker\'s unit boundary does not match the field on the card.</dd>',
       '<dt id="g-reserves">Reserves (million bbl)</dt><dd>Remaining recoverable oil on the record, in million barrels, from the same tracker. Reserves are reported under competing classifications, so the largest figure on the record is shown rather than adding incompatible definitions together. A blank means no published figure we trust.</dd>',
+      '<dt id="g-throughput">Pipeline capacity (kb/d)</dt><dd>Design throughput of a crude trunk line, thousand barrels per day, from GEM\'s Global Oil Infrastructure Tracker (CC BY 4.0). Not measured flow: lines run below capacity, and many are bidirectional. Same unit as refinery capacity so the two compare directly.</dd>',
+      "<dt>Pipeline</dt><dd>A trunk line that moves crude between fields, terminals, and refineries. On the map it is a route, not a dot — gold operating, dashed blue under construction, thicker for bigger published capacity. Gathering lines and product lines are not included.</dd>",
       "<dt>Field</dt><dd>A producing accumulation of oil (and often gas) developed as a unit — Ghawar, Prudhoe Bay, East Texas.</dd>",
       "<dt>Basin</dt><dd>A large geologic province that hosts many fields (Permian, Williston, Santos). Pins are approximate centroids.</dd>",
       "<dt>Play</dt><dd>A repeatable exploration or development concept within a basin (Eagle Ford, Bakken, Vaca Muerta).</dd>",
@@ -4630,7 +4884,25 @@
       "<li><strong>estimated</strong> — inferred from related assays or blends; treat as approximate.</li>",
       "<li><strong>unknown</strong> — not on the record. Renders as “—” and is omitted from compare charts. A shown number is measured, typical, or estimated. A dash is still a blank if a sibling field is typical.</li>",
       "</ul></div>",
+      /* Read off the assets the browser actually loaded, not off a constant, so
+         a mismatch is legible here instead of needing the console. JS and CSS
+         are shown apart because they go stale independently. */
+      '<div class="about-block"><h3>Build</h3><p class="about-build">' +
+        "app " +
+        escapeHtml(APP_VERSION) +
+        " · styles " +
+        escapeHtml(loadedCssVersion()) +
+        "</p></div>",
     ].join("");
+  }
+
+  /* Mirrors the stale-asset check in index.html; "—" means the stylesheet did
+     not load rather than that it is old. */
+  function loadedCssVersion() {
+    const v = getComputedStyle(document.documentElement)
+      .getPropertyValue("--bc-css")
+      .trim();
+    return v ? "v" + v : "—";
   }
 
   function renderStreamPage() {
@@ -4649,10 +4921,11 @@
   }
 
   function pickerSearchHint() {
-    if (state.route === "compare") return "Search streams, sites, hubs, plants…";
+    if (state.route === "compare") return "Search streams, sites, hubs, plants, lines…";
     if (state.layer === "sites") return "Search sites…";
     if (state.layer === "hubs") return "Search hubs…";
     if (state.layer === "refineries") return "Search plants…";
+    if (state.layer === "pipelines") return "Search pipelines…";
     return "Search streams…";
   }
 
@@ -4754,20 +5027,19 @@
         );
       }).map((s) => ({ s, kind, key: pinKey(kind, s.id) }));
     }
+    const byLayer = {
+      streams: () => hits("stream", filteredStreams()),
+      sites: () => hits("site", filteredSites()),
+      hubs: () => hits("hub", filteredHubs()),
+      refineries: () => hits("refinery", filteredRefineries()),
+      pipelines: () => hits("pipeline", filteredPipelines()),
+    };
     let items;
     if (state.route === "compare") {
-      items = hits("stream", filteredStreams())
-        .concat(hits("site", filteredSites()))
-        .concat(hits("hub", filteredHubs()))
-        .concat(hits("refinery", filteredRefineries()));
-    } else if (state.layer === "sites") {
-      items = hits("site", filteredSites());
-    } else if (state.layer === "hubs") {
-      items = hits("hub", filteredHubs());
-    } else if (state.layer === "refineries") {
-      items = hits("refinery", filteredRefineries());
+      items = [];
+      for (const layer in byLayer) items = items.concat(byLayer[layer]());
     } else {
-      items = hits("stream", filteredStreams());
+      items = (byLayer[state.layer] || byLayer.streams)();
     }
     let html = "";
     if (full) {
@@ -5263,7 +5535,7 @@
 
     document.querySelectorAll("[data-color]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        if (state.layer === "hubs" || state.layer === "refineries") return;
+        if (!layerHasAssay()) return;
         state.colorMode = btn.getAttribute("data-color");
         saveStorage();
         history.replaceState(null, "", buildUrl());

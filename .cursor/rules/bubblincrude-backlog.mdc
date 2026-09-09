@@ -64,14 +64,45 @@ small grades); the `Field output` filter is the scale affordance instead, and it
 shows on the sites layer only. A stream card totals its linked fields as
 upstream context, never as that grade's export rate.
 
-## 3. Blend calculator — on Compare (v281)
+## 3. Pipelines — fifth layer, polylines not pins (v313)
+
+`pipelines.js` (547 KB, ~125 KB gzipped, eagerly loaded and precached) holds
+**1,093** crude trunk lines from GEM's Global Oil Infrastructure Tracker (June
+2026, CC BY 4.0): oil only, operating or construction. 846 have design
+capacity. Rebuild with `scripts/build-pipelines.py --xlsx … --geojson …`; both
+downloads are registration-gated so nothing is fetched.
+
+Routes are simplified to ~1 km, **1% of 2.6M source points**, stored as flat
+`[lat,lon,lat,lon]` runs. Each record also carries a midpoint `lat`/`lon` so
+search, fly-to, tooltips and compare reuse the pin code paths untouched — only
+rendering is special. An invisible fat polyline under each line carries the
+clicks (16 px touch, 10 px mouse); without it a 1.4 px stroke is untappable.
+
+Capacity comes from GEM's `CapacityBOEd`, not `Capacity` — the latter is a
+comma-formatted string and half the rows are mtpa. It is **design** throughput,
+not flow, and shares one Compare bar with refinery capacity. `CAPACITY_SUSPECT`
+drops P0809 Rotterdam-Venlo (recorded at 250 mtpa ≈ 5 mb/d, ~7× reality).
+Regions are borrowed from the country assignments already in sites/hubs/
+refineries, so pipelines speak the app's seven regions, not UN M49.
+
+Checks that must keep holding: Trans-Alaska 2,136 kb/d / 1,288 km / 48 in /
+1977, Petroline 5,000 kb/d.
+
+Refactors this landed, do not re-fork them: `clearOtherSelections()` /
+`otherSelectionsEmpty()` / `PIN_KIND_IDS` replace six copies of id-clearing;
+`INSPECTOR_BY_KIND` replaces four copied dispatch blocks (a missing entry now
+throws instead of falling through to the stream card); `layerHasAssay()`
+replaces four hand-listed layer sets; `pickDefaultId(kind)` replaces four
+pickDefault* functions.
+
+## 4. Blend calculator — on Compare (v281)
 
 Volume blend of ≥2 streams on the Compare board: SG-weighted gravity, mass-weighted
 sulfur, volume-weighted yields and TBP (dashed mix line when every selected
 stream has a curve). Honest limits in the card copy. Arab Light + Basrah Light
 at half-and-half is the teaching check against Dubai. See `crude-blend-math`.
 
-## 4. Phone filters — sheet on Compare-adjacent slider strip (v282)
+## 5. Phone filters — sheet on Compare-adjacent slider strip (v282)
 
 Below 1100px the left rail is a bottom sheet. Open from the **Filter** end-cap
 on the slider strip (same strip height; sliders lose width). Live apply, Done
@@ -79,13 +110,13 @@ closes. Kind / completeness / saved views are streams-only; sulfur class hides
 on hubs and refineries. `#has-distill` now tests `distillation_curve` (211).
 `sizeMapToBelt()` still sizes the map from width alone.
 
-## 5. Marker clustering — skipped
+## 6. Marker clustering — skipped
 
 Leave pins on true lat/lon. Clustering (and spiderfy) would hide or offset
 dots at low zoom. If Europe tap collisions stay bad, disambiguate with a list
 of what was under the finger — do not move markers.
 
-## 6. Small items
+## 7. Small items
 
 - `#has-distill` tests `distillation_curve` only (211).
 - `applySavedView()` reads `filters` from `data.js` only (v283). `coker-feeds`
@@ -101,6 +132,12 @@ of what was under the finger — do not move markers.
   no longer read as pale gold next to pricing.
 
 ## Still open
+
+Pipelines: 257 crude lines GEM tracks have no mapped route and are omitted
+entirely; no `related_ids`, so a line does not link to the fields it drains or
+the plants it feeds (its endpoints are place-name strings, not ids). NGL lines
+(244 operating) and the GOIT product-pipeline set are unused. The tracker's
+`Owner`/`Parent` chain is reduced to one owner name.
 
 Sites: 92 active fields with no GEM match, 141 with no output figure. Streams
 and hubs carry no volume at all — no grade export rate (not free at grade
