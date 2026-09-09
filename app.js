@@ -44,7 +44,7 @@
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). */
-  const APP_VERSION = "v324";
+  const APP_VERSION = "v325";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -2929,17 +2929,6 @@
         escapeHtml(s.countries) +
         ".</p>";
     }
-    html +=
-      '<p class="insp-blurb" style="margin-top:8px">' +
-      (s.capacity_kbd != null
-        ? "Design capacity, not measured throughput — a line rarely runs full, and direction can reverse. "
-        : "No published capacity on this line. ") +
-      "Route is simplified for a world map, so it is the corridor rather than a survey.</p>";
-
-    /* Endpoints are place names in GEM, not ids, so there is nothing reliable
-       to link to yet — say that instead of guessing at a field or a plant. */
-    html +=
-      '<p class="insp-blurb" style="color:var(--text-mute)">Not yet linked to the fields it drains or the plants it feeds.</p>';
     return html;
   }
 
