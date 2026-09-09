@@ -43,8 +43,12 @@
     '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>';
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
-  const APP_VERSION = "v317";
+  /* Cache-busting build id (bump-version.py). Visible product version is
+     DISPLAY_VERSION next to the title — start at 1, bump when Mark says so. */
+  const APP_VERSION = "v318";
+  const DISPLAY_VERSION = "1";
   window.__APP_VERSION = APP_VERSION;
+  window.__DISPLAY_VERSION = DISPLAY_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
   const COMPARE_MAX = 5;
@@ -988,17 +992,16 @@
       pane.classList.remove("is-belt-cut");
       return false;
     }
-    const w = stage.clientWidth || pane.clientWidth || window.innerWidth;
-    let h = Math.round(w / beltAspect());
-    /* Phone map row is content-sized. When the assay strip is gone, keep the
-       pane's total height stable by giving those pixels to the map — otherwise
-       they fall through to the inspector. `_collapsedMapH` is a one-shot from
-       the toggle (pane-before − tray) so we cannot come up short by the
-       compare row; afterward belt + cached strip handles rotate/resize. */
-    if (el.mapSliders && el.mapSliders.classList.contains("is-collapsed")) {
-      if (state._collapsedMapH) h = state._collapsedMapH;
-      else h += state._assayStripH || 72;
+    /* Collapsed assay: CSS locks the pane height and the map fills the stage
+       above the compare tray. Do not set an inline pixel height — that fought
+       the lock and left a tray-sized gap. */
+    if (el.viewHome && el.viewHome.classList.contains("is-assay-collapsed")) {
+      mapEl.style.height = "";
+      pane.classList.add("is-belt-cut");
+      return true;
     }
+    const w = stage.clientWidth || pane.clientWidth || window.innerWidth;
+    const h = Math.round(w / beltAspect());
     pane.classList.add("is-belt-cut");
     mapEl.style.height = h + "px";
     return true;
@@ -3261,38 +3264,33 @@
       const wasCollapsed = el.mapSliders.classList.contains("is-collapsed");
       toggled = wasCollapsed !== collapse;
       const pane = document.getElementById("map-pane");
-      const tray = document.getElementById("compare-tray");
+      const home = el.viewHome || document.getElementById("view-home");
       const phone = window.innerWidth <= 699;
 
-      if (toggled && collapse && phone && pane) {
-        /* Pane height before hide = map + strip + tray. After hide we want the
-           same pane height, so map must become (before − tray). Using the strip
-           alone came up short by about the compare row and left a gap. */
-        const before = pane.offsetHeight;
-        const trayH = tray && !tray.hidden ? tray.offsetHeight : 0;
-        if (el.mapSliders.offsetHeight > 0) {
-          state._assayStripH = el.mapSliders.offsetHeight;
+      if (toggled && collapse) {
+        /* Freeze the pane at its current height, then hide the strip. The map
+           stage fills what the strip leaves behind (CSS). Inspector does not
+           move. */
+        if (phone && pane && home) {
+          home.style.setProperty("--map-pane-h", pane.offsetHeight + "px");
+          home.classList.add("is-assay-collapsed");
         }
         el.mapSliders.classList.add("is-collapsed");
-        state._collapsedMapH = Math.max(
-          Math.round((pane.clientWidth || window.innerWidth) / beltAspect()),
-          before - trayH
-        );
-        /* Apply height this frame — waiting for rAF left one paint of a short
-           map and a jumped inspector (the bounce). */
+        if (pane) pane.classList.add("is-assay-collapsed");
         sizeMapToBelt();
       } else if (toggled && !collapse) {
         el.mapSliders.classList.remove("is-collapsed");
-        state._collapsedMapH = 0;
+        if (home) {
+          home.classList.remove("is-assay-collapsed");
+          home.style.removeProperty("--map-pane-h");
+        }
+        if (pane) pane.classList.remove("is-assay-collapsed");
         sizeMapToBelt();
-        const h = el.mapSliders.offsetHeight;
-        if (h > 0) state._assayStripH = h;
       } else {
         el.mapSliders.classList.toggle("is-collapsed", collapse);
       }
 
       el.mapSliders.classList.remove("is-inert");
-      if (pane) pane.classList.toggle("is-assay-collapsed", collapse);
     }
     const stack = el.mapSliders && el.mapSliders.querySelector(".map-slider-stack");
     if (stack) stack.setAttribute("aria-disabled", collapse ? "true" : "false");
@@ -3302,9 +3300,7 @@
     return toggled;
   }
 
-  /* One refit after the strip toggles — never animate. The old path ran
-     fitMapFull(true) from setLayer and again from rAF, which bounced the
-     map by about a chrome-row of pixels. */
+  /* One refit after the strip toggles — never animate. */
   function refitAfterAssayToggle() {
     if (!state.map || state.route !== "home") return;
     requestAnimationFrame(() => {
@@ -3313,16 +3309,6 @@
         sizeMapToBelt();
         state.map.invalidateSize({ pan: false });
         fitMapFull(false);
-        /* Consume the one-shot pane budget; keep strip delta for rotate. */
-        if (state._collapsedMapH) {
-          const mapEl = document.getElementById("map");
-          const w = mapEl?.clientWidth || window.innerWidth;
-          state._assayStripH = Math.max(
-            0,
-            state._collapsedMapH - Math.round(w / beltAspect())
-          );
-          state._collapsedMapH = 0;
-        }
       });
     });
   }
@@ -4986,7 +4972,9 @@
          a mismatch is legible here instead of needing the console. JS and CSS
          are shown apart because they go stale independently. */
       '<div class="about-block"><h3>Build</h3><p class="about-build">' +
-        "app " +
+        "version " +
+        escapeHtml(DISPLAY_VERSION) +
+        " · app " +
         escapeHtml(APP_VERSION) +
         " · styles " +
         escapeHtml(loadedCssVersion()) +
@@ -5819,6 +5807,8 @@
 
   function init() {
     cacheEls();
+    const brandVer = $("brand-version");
+    if (brandVer) brandVer.textContent = DISPLAY_VERSION;
     blockPageZoomGestures();
     pinShellViewport();
     forgetStorage();
