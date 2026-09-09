@@ -44,7 +44,7 @@
   /* Bump with the ?v= query strings in index.html and CACHE in sw.js. The
      badge is written from here so a stale app.js shows its own old number. */
   /* Cache-busting build id (bump-version.py). */
-  const APP_VERSION = "v323";
+  const APP_VERSION = "v324";
   window.__APP_VERSION = APP_VERSION;
 
   /* Compare tray hard cap — UI readability, not a market rule. */
@@ -89,7 +89,9 @@
     hubId: null,
     refineryId: null,
     pipelineId: null,
-    selectionCleared: false,
+    /* × on a card clears that layer only. A global flag made Sites open blank
+       after closing WTI — clearedKinds keeps each layer's empty state local. */
+    clearedKinds: Object.create(null),
     inspExpanded: false,
     compareIds: [],
     query: "",
@@ -929,9 +931,10 @@
 
   function ensureHomeSelection() {
     if (state.route !== "home") return;
-    /* × cleared the starter card — do not put WTI (etc.) back until a pin is picked. */
-    if (state.selectionCleared) return;
     const kind = pinKindFromLayer(state.layer);
+    /* × cleared this layer's starter card — leave it empty until a pin is
+       picked here. Other layers still get their own opener. */
+    if (state.clearedKinds[kind]) return;
     const idField = PIN_KIND_IDS[kind];
     if (pinRecord(kind, state[idField])) return;
     const id = pickDefaultId(kind);
@@ -1647,7 +1650,7 @@
   }
 
   function selectStream(id, fly) {
-    state.selectionCleared = false;
+    delete state.clearedKinds.stream;
     const prev = state.streamId;
     const same = prev === id && otherSelectionsEmpty("stream");
     state.streamId = id;
@@ -1673,7 +1676,7 @@
   }
 
   function selectSite(id, fly) {
-    state.selectionCleared = false;
+    delete state.clearedKinds.site;
     const prev = state.siteId;
     const same = prev === id && otherSelectionsEmpty("site");
     state.siteId = id;
@@ -1695,7 +1698,7 @@
   }
 
   function selectHub(id, fly) {
-    state.selectionCleared = false;
+    delete state.clearedKinds.hub;
     const prev = state.hubId;
     const same = prev === id && otherSelectionsEmpty("hub");
     state.hubId = id;
@@ -1717,7 +1720,7 @@
   }
 
   function selectRefinery(id, fly) {
-    state.selectionCleared = false;
+    delete state.clearedKinds.refinery;
     const prev = state.refineryId;
     const same = prev === id && otherSelectionsEmpty("refinery");
     state.refineryId = id;
@@ -1741,7 +1744,7 @@
   /* A line has no single dot, so the fly-to frames the whole route instead of
      centring a point. */
   function selectPipeline(id, fly) {
-    state.selectionCleared = false;
+    delete state.clearedKinds.pipeline;
     const prev = state.pipelineId;
     const same = prev === id && otherSelectionsEmpty("pipeline");
     state.pipelineId = id;
@@ -3023,11 +3026,13 @@
   function clearSelection() {
     clearPinTrail();
     state.pinStackIds = null;
-    state.streamId = null;
-    state.siteId = null;
-    state.hubId = null;
-    state.refineryId = null;
-    state.selectionCleared = true;
+    /* Close only the active layer's card — a global wipe left Sites blank
+       after × on WTI, and pipelines were never cleared at all so Trans-Alaska
+       could not be dismissed. */
+    const kind = pinKindFromLayer(state.layer);
+    const idField = PIN_KIND_IDS[kind];
+    if (idField) state[idField] = null;
+    state.clearedKinds[kind] = true;
     const wasExpanded = !!state.inspExpanded;
     state.inspExpanded = false;
     $("inspector-rail")?.classList.remove("is-drawer-open");
